@@ -12,7 +12,7 @@ export default function NotFound() {
       <p className="mt-3 text-ink/70">A página que você procura não existe ou foi movida.</p>
       <Link
         to="/"
-        className="mt-8 rounded-sm bg-coffee px-8 py-3 text-sm font-semibold uppercase tracking-wide text-cream"
+        className="mt-8 rounded-full bg-coffee px-8 py-3 text-sm font-semibold uppercase tracking-wide text-cream"
       >
         Voltar para o início
       </Link>

@@ -37,7 +37,7 @@ export default function About() {
             />
             <img
               src="/assets/lara-foto.png"
-              alt="Dra. Lara Café, advogada especialista em Direito de Família e Sucessões"
+              alt="Lara Café, advogada especialista em Direito de Família e Sucessões"
               className="aspect-[4/5] w-full rounded-[2rem] rounded-tr-[5rem] object-cover shadow-2xl"
             />
 
@@ -48,7 +48,7 @@ export default function About() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="absolute -bottom-6 left-1/2 w-[85%] -translate-x-1/2 rounded-lg bg-white px-6 py-4 text-center shadow-xl sm:left-6 sm:w-auto sm:translate-x-0 sm:text-left"
             >
-              <p className="font-serif text-lg font-semibold text-coffee">Dra. Lara Café</p>
+              <p className="font-serif text-lg font-semibold text-coffee">Lara Café</p>
               <p className="mt-0.5 text-xs uppercase tracking-wide text-ink/50">
                 Direito de Família e Sucessões
               </p>
@@ -58,28 +58,29 @@ export default function About() {
 
         <Reveal delay={0.15} className="lg:pl-4">
           <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
-            Sobre o escritório
+            Sobre mim
           </p>
-          <h2 className="font-serif text-3xl font-semibold leading-tight text-coffee sm:text-4xl">
-            Sobre a Dra. Lara Café
+          <h2 className="font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
+            Sobre a Lara Café
           </h2>
 
           <div className="mt-6 space-y-4 text-base leading-relaxed text-ink/80">
             <p>
               Existem decisões que não cabem em modelos prontos. Herança, separação, partilha de
-              bens — cada uma dessas situações carrega camadas que vão além do processo
-              judicial, e é nesse espaço que a atuação da Dra. Lara Café se concentra.
+              bens — cada uma dessas situações carrega camadas que vão muito além do processo
+              judicial, e é nesse espaço, entre a técnica e o que realmente importa para cada
+              pessoa, que concentro a minha prática.
             </p>
             <p>
-              Formada para o rigor técnico e moldada pela prática para a escuta, ela conduz
-              casos de Direito de Família e Sucessões a partir de uma premissa simples:
-              informação clara, sigilo absoluto e presença real em cada etapa — da primeira
-              conversa à resolução do caso.
+              Formei-me para o rigor técnico; a experiência me ensinou a escutar. Conduzo casos
+              de Direito de Família e Sucessões a partir de uma premissa simples: informação
+              clara, sigilo absoluto e presença real em cada etapa — da primeira conversa até a
+              resolução do caso.
             </p>
             <p>
-              Mais do que representar clientes, o escritório se propõe a caminhar ao lado deles
-              nos momentos em que decisões bem fundamentadas fazem toda a diferença — hoje e nas
-              gerações seguintes.
+              Mais do que representar, procuro estar ao lado de quem me procura nos momentos em
+              que uma decisão bem pensada muda o rumo das coisas — para você e para as gerações
+              que vêm depois.
             </p>
           </div>
 
@@ -98,7 +99,7 @@ export default function About() {
 
           <Link
             to="/#areas-de-atuacao"
-            className="mt-9 inline-flex items-center gap-2 rounded-sm bg-coffee px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg"
+            className="mt-9 inline-flex items-center gap-2 rounded-full bg-coffee px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg"
           >
             Ver Áreas de Atuação
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">

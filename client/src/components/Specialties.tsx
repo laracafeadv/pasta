@@ -6,7 +6,7 @@ const CARDS = [
     number: "01",
     title: "Direito de Família",
     description:
-      "Casamento, divórcio, guarda e pensão — conduzidos com estratégia jurídica e sensibilidade para o momento que sua família atravessa.",
+      "Casamento, divórcio, união estável e mediação familiar — conduzidos com estratégia jurídica e sensibilidade para o momento que sua família atravessa.",
   },
   {
     number: "02",
@@ -26,14 +26,14 @@ export default function Specialties() {
   return (
     <section
       id="areas-de-atuacao"
-      className="scroll-mt-28 lg:scroll-mt-32 bg-white py-24 lg:py-36"
+      className="scroll-mt-28 lg:scroll-mt-32 border-t border-coffee/10 bg-cream py-24 lg:py-36"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
           <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
             Áreas de Atuação
           </p>
-          <h2 className="font-serif text-3xl font-semibold text-coffee sm:text-4xl">
+          <h2 className="font-serif text-3xl font-medium text-coffee sm:text-4xl">
             Direito de Família e Sucessões
           </h2>
           <p className="mt-4 text-base leading-relaxed text-ink/70">
@@ -64,7 +64,7 @@ export default function Specialties() {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 inline-block rounded-sm border border-coffee px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-coffee transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee hover:text-cream"
+            className="mt-5 inline-block rounded-full border border-coffee px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-coffee transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee hover:text-cream"
           >
             Falar Diretamente Comigo
           </a>

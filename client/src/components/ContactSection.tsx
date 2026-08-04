@@ -4,13 +4,13 @@ import { CONTACT_EMAIL, WHATSAPP_DISPLAY, WHATSAPP_URL } from "../lib/constants"
 
 export default function ContactSection() {
   return (
-    <section id="contato" className="scroll-mt-28 lg:scroll-mt-32 bg-white py-24 lg:py-36">
+    <section id="contato" className="scroll-mt-28 lg:scroll-mt-32 bg-cream py-24 lg:py-36">
       <div className="mx-auto grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
         <Reveal>
           <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
             Fale Comigo
           </p>
-          <h2 className="font-serif text-3xl font-semibold leading-tight text-coffee sm:text-4xl">
+          <h2 className="font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
             O primeiro passo é uma conversa
           </h2>
           <p className="mt-5 max-w-md text-base leading-relaxed text-ink/70">
@@ -23,7 +23,7 @@ export default function ContactSection() {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-4 rounded-lg border border-coffee-light/20 bg-cream px-5 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-coffee/40 hover:shadow-md"
+              className="flex items-center gap-4 rounded-lg border border-coffee-light/20 bg-white px-5 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-coffee/40 hover:shadow-md"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-coffee/10 text-coffee">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
@@ -38,7 +38,7 @@ export default function ContactSection() {
 
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="flex items-center gap-4 rounded-lg border border-coffee-light/20 bg-cream px-5 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-coffee/40 hover:shadow-md"
+              className="flex items-center gap-4 rounded-lg border border-coffee-light/20 bg-white px-5 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-coffee/40 hover:shadow-md"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-coffee/10 text-coffee">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5">
@@ -55,7 +55,7 @@ export default function ContactSection() {
         </Reveal>
 
         <Reveal delay={0.15}>
-          <div className="rounded-xl border border-coffee-light/20 bg-cream p-6 shadow-sm sm:p-8">
+          <div className="rounded-xl border border-coffee-light/20 bg-white p-6 shadow-sm sm:p-8">
             <ContactForm />
           </div>
         </Reveal>

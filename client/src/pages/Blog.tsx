@@ -62,7 +62,7 @@ export default function Blog() {
         <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
           Blog Jurídico
         </p>
-        <h1 className="font-serif text-3xl font-semibold text-coffee sm:text-4xl">
+        <h1 className="font-serif text-3xl font-medium text-coffee sm:text-4xl">
           Clareza jurídica, um artigo de cada vez
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-ink/70">
@@ -109,7 +109,7 @@ export default function Blog() {
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={isFetching}
-                className="rounded-sm border border-coffee px-8 py-3 text-sm font-semibold uppercase tracking-wide text-coffee transition-colors hover:bg-coffee hover:text-cream disabled:opacity-60"
+                className="rounded-full border border-coffee px-8 py-3 text-sm font-semibold uppercase tracking-wide text-coffee transition-colors hover:bg-coffee hover:text-cream disabled:opacity-60"
               >
                 {isFetching ? "Carregando..." : "Carregar Mais"}
               </button>

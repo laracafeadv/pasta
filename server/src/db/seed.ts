@@ -15,7 +15,7 @@ async function seed() {
       {
         name: "Direito de Família",
         description:
-          "Casamento, divórcio, guarda de filhos, pensão alimentícia e mediação familiar.",
+          "Casamento, divórcio, união estável e mediação familiar.",
       },
       {
         name: "Sucessões",
@@ -43,18 +43,18 @@ async function seed() {
   if (existingArticles.length === 0) {
     const articlesData = [
       {
-        title: "Guarda Compartilhada: Como Funciona na Prática",
+        title: "Divórcio Consensual: Como Funciona o Processo",
         category: "Direito de Família",
         excerpt:
-          "Entenda os direitos e deveres de cada genitor na guarda compartilhada e como ela protege o melhor interesse da criança.",
-        content: `<h2>O que é a guarda compartilhada?</h2><p>A guarda compartilhada é a regra geral no ordenamento jurídico brasileiro desde 2014, e determina que ambos os genitores dividam a responsabilidade legal pelas decisões sobre a vida do filho, mesmo quando a criança reside predominantemente com um deles.</p><h3>Principais direitos e deveres</h3><ul><li>Participação conjunta nas decisões sobre educação e saúde</li><li>Convivência ampla e equilibrada com ambos os genitores</li><li>Divisão proporcional das despesas conforme a capacidade financeira</li></ul><p>Cada caso possui particularidades que devem ser avaliadas por um profissional especializado, garantindo que o acordo firmado realmente atenda às necessidades da família.</p><blockquote>O foco de qualquer decisão sobre guarda deve ser sempre o melhor interesse da criança.</blockquote><h3>Quando buscar orientação jurídica</h3><p>Se você está passando por uma separação e tem dúvidas sobre guarda, convivência ou pensão alimentícia, procure orientação especializada antes de firmar qualquer acordo.</p>`,
+          "Entenda as etapas do divórcio consensual e como um acordo bem construído evita desgaste e economiza tempo.",
+        content: `<h2>O que é o divórcio consensual?</h2><p>Quando o casal está de acordo sobre a separação e seus termos — partilha de bens, uso do nome —, o divórcio pode ser resolvido de forma consensual, judicial ou extrajudicialmente em cartório.</p><h3>Requisitos para a via extrajudicial</h3><ul><li>Consenso entre as partes sobre todos os termos</li><li>Ausência de filhos menores ou incapazes</li><li>Assistência de advogado, obrigatória em qualquer modalidade</li></ul><p>Cada caso possui particularidades que devem ser avaliadas por um profissional especializado, garantindo que o acordo firmado realmente reflita a vontade das partes.</p><blockquote>Um acordo bem construído protege tanto quanto uma sentença — e custa muito menos em tempo e desgaste.</blockquote><h3>Quando buscar orientação jurídica</h3><p>Se você está considerando uma separação, procure orientação especializada antes de firmar qualquer acordo, mesmo que a relação com o outro cônjuge esteja amigável.</p>`,
       },
       {
-        title: "Pensão Alimentícia: Como é Calculado o Valor?",
+        title: "União Estável: Direitos e Deveres do Casal",
         category: "Direito de Família",
         excerpt:
-          "Descubra os principais critérios usados pela Justiça para fixar o valor da pensão alimentícia entre pais e filhos.",
-        content: `<h2>Critérios para fixação da pensão</h2><p>O valor da pensão alimentícia é definido com base no binômio necessidade-possibilidade: a necessidade de quem recebe e a possibilidade financeira de quem paga.</p><h3>Fatores considerados</h3><ul><li>Renda comprovada do alimentante</li><li>Despesas essenciais do alimentado (educação, saúde, moradia)</li><li>Padrão de vida da família antes da separação</li></ul><p>Não existe uma fórmula fixa em lei, o que torna essencial uma análise individualizada de cada situação para propor um valor justo e sustentável.</p>`,
+          "Conheça os efeitos jurídicos da união estável e por que formalizar a relação protege ambas as partes.",
+        content: `<h2>O que caracteriza a união estável?</h2><p>A união estável é reconhecida quando há convivência pública, contínua e duradoura, com o objetivo de constituir família — independentemente de contrato formal.</p><h3>Efeitos jurídicos</h3><ul><li>Regime de bens equivalente ao da comunhão parcial, salvo contrato em contrário</li><li>Direitos sucessórios entre os companheiros</li><li>Possibilidade de conversão em casamento</li></ul><p>Formalizar a união por meio de um contrato de convivência permite às partes escolher o regime de bens e evitar disputas futuras sobre o que foi ou não acordado.</p>`,
       },
       {
         title: "Testamento: Por Que Todo Mundo Deveria Ter Um",
@@ -93,7 +93,7 @@ async function seed() {
         content: art.content,
         excerpt: art.excerpt,
         categoryId: categoryIds[art.category],
-        author: "Dra. Lara Café",
+        author: "Lara Café",
         imageUrl: "/assets/blog-cover-default.jpg",
         status: "published",
         publishedAt: new Date(),
@@ -111,7 +111,7 @@ async function seed() {
         authorName: "Maria Silva",
         profession: "Empresária",
         content:
-          "A Dra. Lara foi fundamental na resolução do meu caso. Muito profissional e atenciosa.",
+          "A Lara foi fundamental na resolução do meu caso. Muito profissional e atenciosa.",
         rating: 5,
       },
       {
@@ -144,7 +144,7 @@ async function seed() {
     await db.insert(schema.adminUsers).values({
       email: adminEmail,
       passwordHash,
-      name: "Dra. Lara Café",
+      name: "Lara Café",
     });
     console.log(`Admin user created: ${adminEmail}`);
     if (!process.env.ADMIN_PASSWORD) {

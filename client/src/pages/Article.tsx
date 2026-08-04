@@ -61,10 +61,10 @@ export default function Article() {
       <div className="grid gap-10 lg:grid-cols-[1fr_300px]">
         <article>
           <Reveal>
-            <span className="rounded-sm bg-coffee-light/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-coffee">
+            <span className="rounded-full bg-coffee-light/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-coffee">
               {article.categoryName}
             </span>
-            <h1 className="mt-4 font-serif text-3xl font-semibold leading-tight text-coffee sm:text-4xl">
+            <h1 className="mt-4 font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
               {article.title}
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink/60">
@@ -137,7 +137,7 @@ export default function Article() {
             </div>
             <Link
               to="/#contato"
-              className="mt-4 block rounded-sm bg-coffee px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-cream"
+              className="mt-4 block rounded-full bg-coffee px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-cream"
             >
               Agendar Consulta
             </Link>

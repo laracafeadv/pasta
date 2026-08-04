@@ -15,7 +15,7 @@ export default function Hero() {
           <p className="mb-4 font-sans text-xs font-semibold uppercase tracking-[0.25em] text-coffee-light">
             Direito de Família e Sucessões
           </p>
-          <h1 className="font-serif text-4xl font-semibold leading-[1.15] text-coffee sm:text-5xl lg:text-[3.2rem]">
+          <h1 className="font-serif text-4xl font-medium leading-[1.15] text-coffee sm:text-5xl lg:text-[3.2rem]">
             Para os momentos que só se enfrentam uma vez.
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-ink/80 sm:text-lg">
@@ -28,13 +28,13 @@ export default function Hero() {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-sm bg-coffee px-8 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg"
+              className="rounded-full bg-coffee px-8 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg"
             >
               Iniciar uma Conversa Reservada
             </a>
             <Link
               to="/#sobre"
-              className="rounded-sm border border-coffee bg-white px-8 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-coffee transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee hover:text-cream"
+              className="rounded-full border border-coffee bg-white px-8 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-coffee transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee hover:text-cream"
             >
               Conhecer meu Trabalho
             </Link>
@@ -51,7 +51,7 @@ export default function Hero() {
             <div className="absolute -inset-4 -z-10 rounded-tr-[6rem] bg-coffee-light/20 sm:-inset-6" />
             <img
               src="/assets/lara-foto.png"
-              alt="Dra. Lara Café, advogada especialista em Direito de Família e Sucessões"
+              alt="Lara Café, advogada especialista em Direito de Família e Sucessões"
               className="aspect-[2/3] w-full rounded-tr-[6rem] object-cover shadow-2xl"
             />
           </div>

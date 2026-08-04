@@ -18,7 +18,7 @@ export default function BlogCard({ article }: { article: ArticleSummary }) {
         />
       </Link>
       <div className="flex flex-1 flex-col p-5">
-        <span className="w-fit rounded-sm bg-coffee-light/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-coffee">
+        <span className="w-fit rounded-full bg-coffee-light/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-coffee">
           {article.categoryName}
         </span>
         <Link to={`/blog/${article.slug}`}>
@@ -39,7 +39,7 @@ export default function BlogCard({ article }: { article: ArticleSummary }) {
         </div>
         <Link
           to={`/blog/${article.slug}`}
-          className="mt-4 inline-block w-fit rounded-sm bg-coffee px-5 py-2 text-xs font-semibold uppercase tracking-wide text-cream transition-colors hover:bg-coffee/90"
+          className="mt-4 inline-block w-fit rounded-full bg-coffee px-5 py-2 text-xs font-semibold uppercase tracking-wide text-cream transition-colors hover:bg-coffee/90"
         >
           Leia Mais
         </Link>

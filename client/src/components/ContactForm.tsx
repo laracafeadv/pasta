@@ -145,7 +145,7 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={submit.isPending}
-        className="w-full rounded-sm bg-coffee px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-full bg-coffee px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submit.isPending ? "Enviando..." : "Enviar Mensagem"}
       </button>

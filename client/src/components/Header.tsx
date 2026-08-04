@@ -50,7 +50,7 @@ export default function Header() {
           ))}
           <Link
             to="/#contato"
-            className="rounded-sm border border-cream/40 px-5 py-2 text-[13px] font-medium uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:border-cream hover:bg-cream hover:text-coffee"
+            className="rounded-full border border-cream/40 px-5 py-2 text-[13px] font-medium uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:border-cream hover:bg-cream hover:text-coffee"
           >
             Agende sua Consulta
           </Link>
@@ -100,7 +100,7 @@ export default function Header() {
               <Link
                 to="/#contato"
                 onClick={() => setOpen(false)}
-                className="mt-2 rounded-sm border border-cream/40 px-4 py-2.5 text-center text-sm font-medium uppercase tracking-wide"
+                className="mt-2 rounded-full border border-cream/40 px-4 py-2.5 text-center text-sm font-medium uppercase tracking-wide"
               >
                 Agende sua Consulta
               </Link>
