@@ -13,8 +13,8 @@ export default function Footer() {
               className="mb-5 h-12 w-auto object-contain"
             />
             <p className="max-w-xs text-sm leading-relaxed text-cream/70">
-              Advocacia estratégica em Direito de Família, Sucessões e Direito Patrimonial —
-              orientação clara, sigilosa e humana, para clientes em todo o Brasil.
+              Advocacia estratégica em Direito de Família e Sucessões — orientação clara,
+              sigilosa e humana, para clientes em todo o Brasil.
             </p>
           </div>
 

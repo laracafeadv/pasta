@@ -20,12 +20,7 @@ async function seed() {
       {
         name: "Sucessões",
         description:
-          "Planejamento sucessório, testamentos, inventário e partilha de bens.",
-      },
-      {
-        name: "Direito Patrimonial",
-        description:
-          "Proteção e gestão de patrimônio, contratos imobiliários e direitos reais.",
+          "Planejamento sucessório e patrimonial, testamentos, inventário e partilha de bens.",
       },
     ];
 
@@ -77,14 +72,14 @@ async function seed() {
       },
       {
         title: "Como Proteger seu Patrimônio em uma União Estável",
-        category: "Direito Patrimonial",
+        category: "Sucessões",
         excerpt:
           "Contratos de convivência e planejamento patrimonial são aliados importantes para casais em união estável.",
         content: `<h2>Planejamento patrimonial na união estável</h2><p>A união estável gera efeitos patrimoniais entre os companheiros, semelhantes aos do casamento, salvo estipulação em contrário por meio de contrato de convivência.</p><h3>Ferramentas de proteção</h3><ul><li>Contrato de convivência com escolha do regime de bens</li><li>Cláusulas de incomunicabilidade patrimonial</li><li>Planejamento sucessório integrado</li></ul><p>Formalizar essas questões evita disputas futuras e garante segurança jurídica para ambos os parceiros.</p>`,
       },
       {
         title: "Contratos Imobiliários: Cuidados Essenciais Antes de Assinar",
-        category: "Direito Patrimonial",
+        category: "Sucessões",
         excerpt:
           "Veja os pontos de atenção antes de fechar negócio na compra, venda ou locação de imóveis.",
         content: `<h2>Antes de assinar o contrato</h2><p>Contratos imobiliários envolvem valores expressivos e riscos jurídicos que podem ser evitados com uma análise prévia cuidadosa.</p><h3>Pontos de atenção</h3><ul><li>Verificação de certidões do imóvel e das partes</li><li>Cláusulas de rescisão e multas</li><li>Condições de pagamento e reajuste</li></ul><p>A revisão contratual por um advogado especializado é um investimento que evita prejuízos muito maiores no futuro.</p>`,

@@ -5,11 +5,11 @@ import Reveal from "./Reveal";
 const PILLARS = [
   {
     title: "Estratégia",
-    text: "Cada caso é único — a solução também deve ser, pensada para o seu cenário específico.",
+    text: "Decisões pensadas para o seu cenário específico — nunca copiadas de um modelo padrão.",
   },
   {
     title: "Prevenção",
-    text: "Antecipar riscos custa menos, em dinheiro e em desgaste, do que remediá-los depois.",
+    text: "Antecipar riscos custa menos, em tempo e desgaste, do que remediá-los depois.",
   },
   {
     title: "Sigilo",
@@ -17,7 +17,7 @@ const PILLARS = [
   },
   {
     title: "Clareza",
-    text: "Você decide com informação — a lei traduzida em linguagem que faz sentido para você.",
+    text: "Você decide com informação — a lei traduzida em linguagem que faz sentido.",
   },
 ];
 
@@ -37,7 +37,7 @@ export default function About() {
             />
             <img
               src="/assets/lara-foto.png"
-              alt="Dra. Lara Café, advogada especialista em Direito de Família, Sucessões e Direito Patrimonial"
+              alt="Dra. Lara Café, advogada especialista em Direito de Família e Sucessões"
               className="aspect-[4/5] w-full rounded-[2rem] rounded-tr-[5rem] object-cover shadow-2xl"
             />
 
@@ -50,7 +50,7 @@ export default function About() {
             >
               <p className="font-serif text-lg font-semibold text-coffee">Dra. Lara Café</p>
               <p className="mt-0.5 text-xs uppercase tracking-wide text-ink/50">
-                Família · Sucessões · Patrimônio
+                Direito de Família e Sucessões
               </p>
             </motion.div>
           </div>
@@ -58,7 +58,7 @@ export default function About() {
 
         <Reveal delay={0.15} className="lg:pl-4">
           <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
-            Quem cuida do seu caso
+            Sobre o escritório
           </p>
           <h2 className="font-serif text-3xl font-semibold leading-tight text-coffee sm:text-4xl">
             Sobre a Dra. Lara Café
@@ -66,16 +66,20 @@ export default function About() {
 
           <div className="mt-6 space-y-4 text-base leading-relaxed text-ink/80">
             <p>
-              Sou Lara Café, advogada dedicada ao Direito de Família, Sucessões e Direito
-              Patrimonial. Ao longo da minha trajetória, aprendi que por trás de cada processo
-              existe uma história — e que decisões bem orientadas hoje evitam anos de desgaste
-              amanhã.
+              Existem decisões que não cabem em modelos prontos. Herança, separação, partilha de
+              bens — cada uma dessas situações carrega camadas que vão além do processo
+              judicial, e é nesse espaço que a atuação da Dra. Lara Café se concentra.
             </p>
             <p>
-              Atendo, por videochamada segura e sigilosa, clientes em todo o Brasil. Meu
-              compromisso é traduzir a complexidade da lei em decisões claras, construídas com
-              técnica, discrição e uma escuta genuína sobre o que realmente importa para você e
-              para a sua família.
+              Formada para o rigor técnico e moldada pela prática para a escuta, ela conduz
+              casos de Direito de Família e Sucessões a partir de uma premissa simples:
+              informação clara, sigilo absoluto e presença real em cada etapa — da primeira
+              conversa à resolução do caso.
+            </p>
+            <p>
+              Mais do que representar clientes, o escritório se propõe a caminhar ao lado deles
+              nos momentos em que decisões bem fundamentadas fazem toda a diferença — hoje e nas
+              gerações seguintes.
             </p>
           </div>
 
@@ -89,7 +93,7 @@ export default function About() {
           </dl>
 
           <blockquote className="mt-10 border-l-4 border-coffee pl-5 font-serif text-lg italic leading-snug text-coffee-light">
-            "O planejamento que você faz hoje é o que protege o seu amanhã."
+            "O cuidado que se tem hoje é o que sustenta o amanhã."
           </blockquote>
 
           <Link
