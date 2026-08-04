@@ -104,7 +104,7 @@ export default function ContactForm() {
           onChange={(e) => handleChange("phone", e.target.value)}
           onBlur={() => handleBlur("phone")}
           className={inputClass("phone")}
-          placeholder="(11) 99999-9999"
+          placeholder="(71) 99999-9999"
           inputMode="tel"
         />
         {touched.phone && errors.phone && (

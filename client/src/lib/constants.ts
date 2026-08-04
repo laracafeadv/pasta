@@ -1,14 +1,18 @@
-export const WHATSAPP_NUMBER = "5511999999999";
-export const WHATSAPP_DEFAULT_MESSAGE =
-  "Olá! Gostaria de agendar uma consulta com a Dra. Lara Café.";
+export const WHATSAPP_NUMBER = "5571993812266";
+export const WHATSAPP_DISPLAY = "(71) 99381-2266";
+export const CONTACT_EMAIL = "laracafe.adv@gmail.com";
+
+export const WHATSAPP_DEFAULT_MESSAGE = "Olá, Dra. Lara! Gostaria de agendar uma consulta.";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   WHATSAPP_DEFAULT_MESSAGE
 )}`;
 
+export const HEADER_OFFSET_CLASS = "scroll-mt-28 lg:scroll-mt-32";
+
 export const NAV_LINKS = [
-  { label: "Home", href: "/#home" },
-  { label: "Sobre mim", href: "/#sobre" },
-  { label: "Especialidades", href: "/#especialidades" },
+  { label: "Início", href: "/#home" },
+  { label: "Sobre", href: "/#sobre" },
+  { label: "Áreas de Atuação", href: "/#areas-de-atuacao" },
   { label: "Blog", href: "/blog" },
   { label: "Contato", href: "/#contato" },
 ];

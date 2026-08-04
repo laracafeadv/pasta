@@ -1,8 +1,7 @@
 import SEO from "../components/SEO";
 import Hero from "../components/Hero";
-import Specialties from "../components/Specialties";
 import About from "../components/About";
-import Attendance from "../components/Attendance";
+import Specialties from "../components/Specialties";
 import Testimonials from "../components/Testimonials";
 import FinalCTA from "../components/FinalCTA";
 import ContactSection from "../components/ContactSection";
@@ -12,12 +11,11 @@ export default function Home() {
     <>
       <SEO
         title="Lara Café Advocacia | Direito de Família, Sucessões e Patrimonial"
-        description="Escritório especializado em Direito de Família, Sucessões e Direito Patrimonial. Atendimento online, estratégico e sigiloso para todo o Brasil."
+        description="Advocacia estratégica em Direito de Família, Sucessões e Direito Patrimonial. Atendimento particular, sigiloso e por videochamada para todo o Brasil."
       />
       <Hero />
-      <Specialties />
       <About />
-      <Attendance />
+      <Specialties />
       <Testimonials />
       <FinalCTA />
       <ContactSection />

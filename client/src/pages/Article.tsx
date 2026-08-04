@@ -44,7 +44,7 @@ export default function Article() {
 
       <nav className="mb-6 flex flex-wrap items-center gap-1 text-xs text-ink/50">
         <Link to="/" className="hover:text-coffee">
-          Home
+          Início
         </Link>
         <span>&gt;</span>
         <Link to="/blog" className="hover:text-coffee">

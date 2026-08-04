@@ -1,21 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { NAV_LINKS } from "../lib/constants";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 24);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-coffee text-cream shadow-md">
+    <header
+      className={`sticky top-0 z-40 bg-coffee text-cream transition-shadow duration-300 ${
+        scrolled ? "shadow-lg shadow-black/10" : ""
+      }`}
+    >
       <div className="border-b border-cream/10 bg-coffee/95">
-        <p className="mx-auto max-w-7xl px-4 py-1.5 text-center text-xs tracking-wide text-cream/80 sm:px-6 lg:px-8">
-          Atendimento para todo o Brasil
+        <p className="mx-auto max-w-7xl px-4 py-1.5 text-center text-[11px] font-medium uppercase tracking-[0.15em] text-cream/70 sm:px-6 lg:px-8">
+          Atendimento particular para todo o Brasil
         </p>
       </div>
 
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
+        <Link to="/#home" className="flex items-center gap-2" onClick={() => setOpen(false)}>
           <img
             src="/assets/logo-lockup-light.png"
             alt="Lara Café Advocacia"
@@ -28,16 +42,17 @@ export default function Header() {
             <Link
               key={link.label}
               to={link.href}
-              className="font-sans text-sm font-medium uppercase tracking-wide text-cream/90 transition-colors hover:text-cream"
+              className="group relative py-1 font-sans text-[13px] font-medium uppercase tracking-wider text-cream/85 transition-colors hover:text-cream"
             >
               {link.label}
+              <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-cream transition-all duration-300 ease-out group-hover:w-full" />
             </Link>
           ))}
           <Link
             to="/#contato"
-            className="rounded-sm border border-cream/40 px-5 py-2 text-sm font-medium uppercase tracking-wide transition-colors hover:bg-cream hover:text-coffee"
+            className="rounded-sm border border-cream/40 px-5 py-2 text-[13px] font-medium uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:border-cream hover:bg-cream hover:text-coffee"
           >
-            Agendar Consulta
+            Agende sua Consulta
           </Link>
         </nav>
 
@@ -87,7 +102,7 @@ export default function Header() {
                 onClick={() => setOpen(false)}
                 className="mt-2 rounded-sm border border-cream/40 px-4 py-2.5 text-center text-sm font-medium uppercase tracking-wide"
               >
-                Agendar Consulta
+                Agende sua Consulta
               </Link>
             </div>
           </motion.nav>

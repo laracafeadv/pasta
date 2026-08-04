@@ -65,7 +65,7 @@ pnpm start   # sobe o servidor Express, que também serve o client/dist
 
 ## Funcionalidades
 
-- Landing page completa (hero, especialidades, sobre, atendimento, depoimentos, CTA, contato)
+- Landing page completa (hero, sobre, áreas de atuação, depoimentos, CTA final, contato)
 - Blog jurídico com categorias, busca, paginação "carregar mais" e página de artigo
 - Formulário de contato com validação em tempo real, salvo no banco
 - Botão flutuante do WhatsApp
@@ -77,6 +77,9 @@ pnpm start   # sobe o servidor Express, que também serve o client/dist
 
 ## Observações
 
-- O número de WhatsApp e o e-mail de contato em `client/src/lib/constants.ts` e no rodapé são
-  placeholders — atualize com os dados reais do escritório.
-- O número da OAB no rodapé (`client/src/components/Footer.tsx`) também é um placeholder.
+- WhatsApp e e-mail de contato ficam centralizados em `client/src/lib/constants.ts`
+  (`WHATSAPP_NUMBER`, `WHATSAPP_DISPLAY`, `CONTACT_EMAIL`) — atualize ali para propagar a
+  mudança para header, rodapé, seção de contato e botão flutuante.
+- A navegação principal (Início, Sobre, Áreas de Atuação, Blog, Contato) usa rolagem suave por
+  âncoras (`/#sobre`, `/#areas-de-atuacao`, `/#contato`) definidas em `NAV_LINKS`, no mesmo
+  arquivo de constantes.

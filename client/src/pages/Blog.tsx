@@ -45,26 +45,29 @@ export default function Blog() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
+    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
       <SEO
-        title="Artigos sobre Direito de Família, Sucessões e Patrimonial com Lara Café"
-        description="Conteúdos sobre família, divórcio, planejamento sucessório, patrimônio, testamento e muito mais."
+        title="Blog Jurídico | Lara Café Advocacia"
+        description="Reflexões sobre família, sucessões e patrimônio, escritas para ajudar você a decidir com mais clareza."
       />
 
       <nav className="mb-6 text-xs text-ink/50">
         <Link to="/" className="hover:text-coffee">
-          Home
+          Início
         </Link>{" "}
         &gt; <span className="text-coffee">Blog</span>
       </nav>
 
       <Reveal>
+        <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
+          Blog Jurídico
+        </p>
         <h1 className="font-serif text-3xl font-semibold text-coffee sm:text-4xl">
-          Artigos sobre Direito de Família, Sucessões e Patrimonial com Lara Café
+          Clareza jurídica, um artigo de cada vez
         </h1>
-        <p className="mt-3 max-w-2xl text-base text-ink/70">
-          Conteúdos sobre família, divórcio, planejamento sucessório, patrimônio, testamento e
-          muito mais.
+        <p className="mt-3 max-w-2xl text-base leading-relaxed text-ink/70">
+          Reflexões sobre família, sucessões e patrimônio — escritas para ajudar você a entender
+          seus direitos antes de precisar deles.
         </p>
       </Reveal>
 
@@ -90,7 +93,9 @@ export default function Blog() {
               ))}
             </div>
           ) : items.length === 0 ? (
-            <p className="py-16 text-center text-ink/60">Nenhum artigo encontrado.</p>
+            <p className="py-16 text-center text-ink/60">
+              Nenhum artigo encontrado por aqui ainda. Novos conteúdos chegam em breve.
+            </p>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {items.map((article) => (
