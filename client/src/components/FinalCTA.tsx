@@ -3,8 +3,17 @@ import Reveal from "./Reveal";
 
 export default function FinalCTA() {
   return (
-    <section className="bg-coffee py-24 text-cream lg:py-32">
-      <Reveal className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-coffee py-24 text-cream lg:py-32">
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.07]"
+        style={{
+          backgroundImage: "url(/assets/pattern-monogram.jpg)",
+          backgroundSize: "260px 260px",
+          backgroundRepeat: "repeat",
+        }}
+      />
+      <Reveal className="relative mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
         <img src="/assets/mono-light.png" alt="" aria-hidden className="mx-auto mb-6 h-10 w-auto opacity-70" />
         <h2 className="font-serif text-3xl font-medium leading-tight sm:text-4xl">
           O melhor momento para proteger seu futuro é antes que ele precise ser defendido.
