@@ -27,6 +27,12 @@ export default function About() {
       <div className="mx-auto grid max-w-7xl gap-16 px-4 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-14 lg:px-8">
         <Reveal>
           <div className="relative mx-auto max-w-lg lg:max-w-none">
+            <img
+              src="/assets/monogram-outline.png"
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute -right-10 -top-14 -z-20 h-40 w-auto opacity-[0.14] sm:-right-14 sm:-top-16 sm:h-52"
+            />
             <div
               aria-hidden
               className="absolute -inset-5 -z-10 rounded-[2.5rem] border border-coffee/15 sm:-inset-6"

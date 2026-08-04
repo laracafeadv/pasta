@@ -5,7 +5,16 @@ import { WHATSAPP_URL } from "../lib/constants";
 export default function Hero() {
   return (
     <section id="home" className="scroll-mt-28 lg:scroll-mt-32 relative overflow-hidden bg-cream">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage: "url(/assets/pattern-monogram-light.jpg)",
+          backgroundSize: "260px 260px",
+          backgroundRepeat: "repeat",
+        }}
+      />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
