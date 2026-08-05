@@ -4,6 +4,7 @@ import About from "../components/About";
 import Specialties from "../components/Specialties";
 import HowItWorks from "../components/HowItWorks";
 import ContactSection from "../components/ContactSection";
+import EditorialBand from "../components/EditorialBand";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       <About />
       <Specialties />
       <HowItWorks />
+      <EditorialBand />
       <ContactSection />
     </>
   );
