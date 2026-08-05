@@ -29,10 +29,10 @@ export default function HowItWorks() {
   return (
     <section className="relative overflow-hidden bg-cream py-24 lg:py-36">
       <img
-        src="/assets/monogram-texture-cream.jpg"
+        src="/assets/monogram-outline.png"
         alt=""
         aria-hidden
-        className="pointer-events-none absolute -left-16 bottom-0 hidden h-[34rem] w-auto opacity-60 lg:block"
+        className="pointer-events-none absolute bottom-10 left-8 hidden h-[24rem] w-auto opacity-[0.14] sm:left-12 lg:block"
       />
 
       <div className="relative mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
