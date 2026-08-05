@@ -3,18 +3,17 @@ import Reveal from "./Reveal";
 
 export default function FinalCTA() {
   return (
-    <section className="relative overflow-hidden bg-coffee py-24 text-cream lg:py-32">
-      <div
+    <section className="relative overflow-hidden bg-coffee py-24 text-cream lg:py-36">
+      <img
+        src="/assets/support-veil-embrace.jpg"
+        alt=""
         aria-hidden
-        className="absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage: "url(/assets/pattern-monogram.jpg)",
-          backgroundSize: "260px 260px",
-          backgroundRepeat: "repeat",
-        }}
+        className="absolute inset-0 h-full w-full object-cover opacity-[0.35]"
       />
+      <div className="absolute inset-0 bg-gradient-to-b from-coffee via-coffee/85 to-coffee" />
+
       <Reveal className="relative mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
-        <img src="/assets/mono-light.png" alt="" aria-hidden className="mx-auto mb-7 h-9 w-auto opacity-60" />
+        <span className="mx-auto mb-7 block h-px w-10 bg-cream/50" aria-hidden />
         <h2 className="text-[1.85rem] font-normal leading-[1.25] tracking-tight sm:text-[2.25rem]">
           Decidir bem começa com uma boa conversa.
         </h2>

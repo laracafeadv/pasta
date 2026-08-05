@@ -46,31 +46,41 @@ export default function Blog() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+    <div>
       <SEO
         title="Blog Jurídico | Lara Café Advocacia"
         description="Reflexões sobre divórcio, união estável, inventário e planejamento sucessório, escritas para ajudar você a decidir com mais clareza."
       />
 
-      <nav className="mb-6 text-xs text-ink/50">
-        <Link to="/" className="hover:text-coffee">
-          Início
-        </Link>{" "}
-        &gt; <span className="text-coffee">Blog</span>
-      </nav>
+      <section className="relative flex h-64 items-end overflow-hidden bg-coffee sm:h-72">
+        <img
+          src="/assets/support-certificate.jpg"
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-coffee via-coffee/60 to-coffee/20" />
+        <Reveal className="relative mx-auto w-full max-w-7xl px-4 pb-9 sm:px-6 lg:px-8">
+          <nav className="mb-3 text-xs text-cream/60">
+            <Link to="/" className="hover:text-cream">
+              Início
+            </Link>{" "}
+            &gt; <span className="text-cream">Blog</span>
+          </nav>
+          <Eyebrow light>Blog Jurídico</Eyebrow>
+          <h1 className="text-[1.85rem] font-normal leading-[1.25] tracking-tight text-cream sm:text-[2.15rem]">
+            Clareza jurídica, um artigo de cada vez
+          </h1>
+        </Reveal>
+      </section>
 
-      <Reveal>
-        <Eyebrow>Blog Jurídico</Eyebrow>
-        <h1 className="text-[1.85rem] font-normal leading-[1.25] tracking-tight text-coffee sm:text-[2.15rem]">
-          Clareza jurídica, um artigo de cada vez
-        </h1>
-        <p className="mt-3 max-w-2xl text-[0.975rem] leading-relaxed text-ink/70">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+        <p className="max-w-2xl text-[0.975rem] leading-relaxed text-ink/70">
           Divórcio, união estável, inventário e planejamento sucessório — escritos para ajudar
           você a entender seus direitos antes de precisar deles.
         </p>
-      </Reveal>
 
-      <div className="mt-8">
+        <div className="mt-8">
         <CategoryPills active={category} onChange={handleCategoryChange} />
       </div>
 
@@ -117,6 +127,7 @@ export default function Blog() {
         </div>
 
         <BlogSidebar search={search} onSearchChange={setSearch} activeCategory={category} />
+      </div>
       </div>
     </div>
   );
