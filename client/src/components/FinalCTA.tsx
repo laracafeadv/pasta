@@ -14,18 +14,21 @@ export default function FinalCTA() {
         }}
       />
       <Reveal className="relative mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
-        <img src="/assets/mono-light.png" alt="" aria-hidden className="mx-auto mb-6 h-10 w-auto opacity-70" />
-        <h2 className="font-serif text-3xl font-medium leading-tight sm:text-4xl">
+        <img src="/assets/mono-light.png" alt="" aria-hidden className="mx-auto mb-7 h-9 w-auto opacity-60" />
+        <h2 className="text-[1.85rem] font-normal leading-[1.25] tracking-tight sm:text-[2.25rem]">
           Decidir bem começa com uma boa conversa.
         </h2>
-        <p className="mt-4 text-base text-cream/75 sm:text-lg">
+        <p className="mt-4 text-[0.975rem] text-cream/70 sm:text-base">
           Marque a sua e saia com clareza sobre os próximos passos.
         </p>
         <Link
           to="/#contato"
-          className="mt-9 inline-block rounded-full bg-cream px-9 py-4 text-sm font-semibold uppercase tracking-wide text-coffee shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-cream/90 hover:shadow-xl"
+          className="group mt-9 inline-flex items-center gap-3 rounded-full bg-cream px-9 py-3.5 text-[0.8rem] font-medium tracking-wide text-coffee shadow-sm transition-all duration-300 hover:gap-4 hover:shadow-md"
         >
           Marcar uma Conversa
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
+          </svg>
         </Link>
       </Reveal>
     </section>

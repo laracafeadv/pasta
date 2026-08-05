@@ -4,7 +4,9 @@ export default function PrivacyPolicy() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
       <SEO title="Política de Privacidade | Lara Café Advocacia" />
-      <h1 className="font-serif text-3xl font-semibold text-coffee">Política de Privacidade</h1>
+      <h1 className="text-[1.85rem] font-normal tracking-tight text-coffee">
+        Política de Privacidade
+      </h1>
       <div className="prose-article mt-6 text-ink/80">
         <p>
           A Lara Café Advocacia respeita a sua privacidade e está comprometida com a proteção

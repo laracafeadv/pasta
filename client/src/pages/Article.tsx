@@ -64,7 +64,7 @@ export default function Article() {
             <span className="rounded-full bg-coffee-light/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-coffee">
               {article.categoryName}
             </span>
-            <h1 className="mt-4 font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
+            <h1 className="mt-4 text-[1.75rem] font-normal leading-[1.25] tracking-tight text-coffee sm:text-[2.1rem]">
               {article.title}
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink/60">

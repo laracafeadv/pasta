@@ -36,19 +36,22 @@ export default function HowItWorks() {
       <div className="relative mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
         <Reveal>
           <Eyebrow>Como Funciona</Eyebrow>
-          <h2 className="font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
+          <h2 className="max-w-sm text-[1.85rem] font-normal leading-[1.25] tracking-tight text-coffee sm:text-[2.15rem]">
             Um caminho claro, do primeiro contato à solução.
           </h2>
-          <p className="mt-5 max-w-md text-base leading-relaxed text-ink/70">
+          <p className="mt-5 max-w-md text-[0.975rem] leading-relaxed text-ink/70">
             Cada etapa é pensada para trazer segurança e transparência a um momento sensível.
           </p>
           <a
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-9 inline-block rounded-full bg-coffee px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg"
+            className="group mt-9 inline-flex items-center gap-3 rounded-full bg-coffee px-8 py-3.5 text-[0.8rem] font-medium tracking-wide text-cream shadow-sm transition-all duration-300 hover:gap-4 hover:bg-coffee/90 hover:shadow-md"
           >
             Dar o Primeiro Passo
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
+            </svg>
           </a>
         </Reveal>
 
@@ -60,10 +63,10 @@ export default function HowItWorks() {
                   i < STEPS.length - 1 ? "border-b border-coffee/15" : ""
                 }`}
               >
-                <span className="font-serif text-2xl text-coffee-light">{step.number}</span>
+                <span className="font-serif text-xl text-coffee-light">{step.number}</span>
                 <div>
-                  <h3 className="font-serif text-lg font-semibold text-coffee">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink/70">{step.text}</p>
+                  <h3 className="font-serif text-[1.05rem] text-coffee">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-ink/65">{step.text}</p>
                 </div>
               </div>
             </Reveal>

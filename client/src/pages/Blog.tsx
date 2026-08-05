@@ -61,10 +61,10 @@ export default function Blog() {
 
       <Reveal>
         <Eyebrow>Blog Jurídico</Eyebrow>
-        <h1 className="font-serif text-3xl font-medium text-coffee sm:text-4xl">
+        <h1 className="text-[1.85rem] font-normal leading-[1.25] tracking-tight text-coffee sm:text-[2.15rem]">
           Clareza jurídica, um artigo de cada vez
         </h1>
-        <p className="mt-3 max-w-2xl text-base leading-relaxed text-ink/70">
+        <p className="mt-3 max-w-2xl text-[0.975rem] leading-relaxed text-ink/70">
           Divórcio, união estável, inventário e planejamento sucessório — escritos para ajudar
           você a entender seus direitos antes de precisar deles.
         </p>

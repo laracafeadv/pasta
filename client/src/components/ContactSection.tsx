@@ -9,10 +9,10 @@ export default function ContactSection() {
       <div className="mx-auto grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
         <Reveal>
           <Eyebrow>Fale Comigo</Eyebrow>
-          <h2 className="font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
+          <h2 className="max-w-md text-[1.85rem] font-normal leading-[1.25] tracking-tight text-coffee sm:text-[2.15rem]">
             O primeiro passo é uma conversa
           </h2>
-          <p className="mt-5 max-w-md text-base leading-relaxed text-ink/70">
+          <p className="mt-5 max-w-md text-[0.975rem] leading-relaxed text-ink/70">
             Conte, em poucas palavras, o que está acontecendo. Eu leio com atenção e retorno
             pessoalmente com os próximos passos possíveis para o seu caso.
           </p>

@@ -6,11 +6,11 @@ import { formatDate, readingTime } from "../lib/format";
 export default function BlogCard({ article }: { article: ArticleSummary }) {
   return (
     <motion.article
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -3 }}
       transition={{ duration: 0.3 }}
-      className="group flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow duration-300 hover:shadow-[0_10px_28px_rgba(0,0,0,0.14)]"
+      className="group flex h-full flex-col overflow-hidden rounded-md bg-white shadow-[0_1px_3px_rgba(59,31,14,0.08)] transition-shadow duration-300 hover:shadow-[0_14px_32px_rgba(59,31,14,0.12)]"
     >
-      <Link to={`/blog/${article.slug}`} className="block h-[250px] overflow-hidden">
+      <Link to={`/blog/${article.slug}`} className="block h-[230px] overflow-hidden">
         <img
           src={article.imageUrl || "/assets/blog-cover-default.jpg"}
           alt={article.title}
@@ -18,20 +18,20 @@ export default function BlogCard({ article }: { article: ArticleSummary }) {
         />
       </Link>
       <div className="flex flex-1 flex-col p-5">
-        <span className="w-fit rounded-full bg-coffee-light/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-coffee">
+        <span className="w-fit text-[0.7rem] font-medium uppercase tracking-[0.14em] text-coffee-light">
           {article.categoryName}
         </span>
         <Link to={`/blog/${article.slug}`}>
-          <h3 className="mt-3 font-serif text-lg font-semibold leading-snug text-coffee">
+          <h3 className="mt-2.5 font-serif text-[1.15rem] leading-snug text-coffee">
             {article.title}
           </h3>
         </Link>
         {article.excerpt && (
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink/70">
+          <p className="mt-2 line-clamp-3 text-[0.875rem] leading-relaxed text-ink/65">
             {article.excerpt}
           </p>
         )}
-        <div className="mt-4 flex items-center justify-between border-t border-black/5 pt-4 text-xs text-ink/50">
+        <div className="mt-4 flex items-center justify-between border-t border-coffee/8 pt-4 text-[0.7rem] text-ink/45">
           <span>
             {formatDate(article.publishedAt ?? article.createdAt)} · {readingTime(article.content)}{" "}
             min de leitura
@@ -39,9 +39,10 @@ export default function BlogCard({ article }: { article: ArticleSummary }) {
         </div>
         <Link
           to={`/blog/${article.slug}`}
-          className="mt-4 inline-block w-fit rounded-full bg-coffee px-5 py-2 text-xs font-semibold uppercase tracking-wide text-cream transition-colors hover:bg-coffee/90"
+          className="group/link mt-3 inline-flex w-fit items-center gap-2 text-[0.8rem] font-medium text-coffee"
         >
-          Leia Mais
+          Leia mais
+          <span className="h-px w-4 bg-coffee transition-all duration-300 group-hover/link:w-6" />
         </Link>
       </div>
     </motion.article>

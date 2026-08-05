@@ -18,9 +18,7 @@ export default function Home() {
       <Hero />
       <SectionDivider />
       <About />
-      <SectionDivider />
       <Specialties />
-      <SectionDivider />
       <HowItWorks />
       <SectionDivider />
       <Testimonials />

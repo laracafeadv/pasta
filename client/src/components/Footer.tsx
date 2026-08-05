@@ -3,8 +3,14 @@ import { CONTACT_EMAIL, NAV_LINKS, WHATSAPP_DISPLAY, WHATSAPP_URL } from "../lib
 
 export default function Footer() {
   return (
-    <footer className="bg-coffee text-cream">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+    <footer className="relative overflow-hidden bg-coffee text-cream">
+      <img
+        src="/assets/monogram-outline.png"
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute -bottom-16 -right-10 h-64 w-auto opacity-[0.04] invert sm:h-80"
+      />
+      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
         <div className="grid gap-12 md:grid-cols-4 md:gap-8">
           <div>
             <img

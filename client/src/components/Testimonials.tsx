@@ -12,11 +12,11 @@ export default function Testimonials() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow align="center">Confiança Construída</Eyebrow>
-          <h2 className="font-serif text-3xl font-medium text-coffee sm:text-4xl">
-            Quem já esteve aqui, hoje está mais tranquilo
+          <h2 className="text-[1.85rem] font-normal leading-[1.25] tracking-tight text-coffee sm:text-[2.15rem]">
+            A confiança de quem já viveu o processo
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-ink/70">
-            Casos reais, resolvidos com técnica e proximidade — na voz de quem confiou o próprio
+          <p className="mt-4 text-[0.975rem] leading-relaxed text-ink/70">
+            Casos reais, conduzidos com técnica e proximidade — na voz de quem confiou o próprio
             caso a este trabalho.
           </p>
         </Reveal>
@@ -29,16 +29,17 @@ export default function Testimonials() {
 
           {testimonials?.map((t, i) => (
             <Reveal key={t.id} delay={i * 0.1}>
-              <div className="h-full rounded-lg border-l-4 border-coffee bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,0.06)]">
+              <div className="h-full rounded-md border border-coffee-light/15 bg-white p-7 transition-shadow duration-300 hover:shadow-[0_8px_28px_rgba(59,31,14,0.08)]">
+                <span className="font-serif text-3xl leading-none text-coffee-light/40">"</span>
                 <Stars rating={t.rating} />
-                <p className="mt-3 text-sm leading-relaxed text-ink/80">"{t.content}"</p>
-                <div className="mt-5 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-coffee text-sm font-semibold text-cream">
+                <p className="mt-3 text-[0.9rem] leading-relaxed text-ink/75">{t.content}</p>
+                <div className="mt-6 flex items-center gap-3 border-t border-coffee/10 pt-4">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-coffee text-xs font-medium text-cream">
                     {t.authorName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-coffee">{t.authorName}</p>
-                    {t.profession && <p className="text-xs text-ink/60">{t.profession}</p>}
+                    <p className="text-sm font-medium text-coffee">{t.authorName}</p>
+                    {t.profession && <p className="text-xs text-ink/55">{t.profession}</p>}
                   </div>
                 </div>
               </div>
