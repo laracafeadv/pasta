@@ -65,11 +65,11 @@ export default function Hero() {
 
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-tr-[5rem] shadow-2xl">
               <img
-                src="/assets/lara-foto-duotone.jpg"
-                alt="Lara Café, advogada especialista em Direito de Família e Sucessões"
+                src="/assets/support-veil-embrace.jpg"
+                alt=""
+                aria-hidden
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-coffee/25 via-transparent to-transparent" />
             </div>
 
             <div
