@@ -32,7 +32,7 @@ export default function HowItWorks() {
         src="/assets/monogram-watermark.png"
         alt=""
         aria-hidden
-        className="pointer-events-none absolute -bottom-24 -left-24 hidden h-[58rem] w-auto opacity-[0.05] mix-blend-multiply lg:block"
+        className="pointer-events-none absolute -bottom-16 left-4 hidden h-[42rem] w-auto opacity-[0.05] mix-blend-multiply lg:block"
       />
 
       <div className="relative mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
