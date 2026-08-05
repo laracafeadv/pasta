@@ -28,16 +28,12 @@ const STEPS = [
 export default function HowItWorks() {
   return (
     <section className="relative overflow-hidden bg-cream py-24 lg:py-36">
-      <div
+      <img
+        src="/assets/monogram-texture-cream.jpg"
+        alt=""
         aria-hidden
-        className="pointer-events-none absolute -left-24 bottom-0 hidden h-[36rem] w-[36rem] overflow-hidden rounded-full border border-coffee-light/25 lg:block"
-      >
-        <img
-          src="/assets/monogram-texture-cream.jpg"
-          alt=""
-          className="h-full w-full object-cover opacity-60"
-        />
-      </div>
+        className="pointer-events-none absolute -left-16 bottom-0 hidden h-[34rem] w-auto opacity-60 lg:block"
+      />
 
       <div className="relative mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
         <Reveal>
