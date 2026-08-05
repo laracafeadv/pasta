@@ -7,6 +7,7 @@ import Testimonials from "../components/Testimonials";
 import FinalCTA from "../components/FinalCTA";
 import ContactSection from "../components/ContactSection";
 import SectionDivider from "../components/SectionDivider";
+import EditorialBand from "../components/EditorialBand";
 
 export default function Home() {
   return (
@@ -20,7 +21,7 @@ export default function Home() {
       <About />
       <Specialties />
       <HowItWorks />
-      <SectionDivider />
+      <EditorialBand />
       <Testimonials />
       <FinalCTA />
       <ContactSection />
