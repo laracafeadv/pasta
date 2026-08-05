@@ -4,13 +4,21 @@ import Reveal from "./Reveal";
 export default function FinalCTA() {
   return (
     <section className="relative overflow-hidden bg-coffee py-24 text-cream lg:py-36">
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage: "url(/assets/pattern-monogram.jpg)",
+          backgroundSize: "260px 260px",
+          backgroundRepeat: "repeat",
+        }}
+      />
       <img
-        src="/assets/support-veil-embrace.jpg"
+        src="/assets/monogram-outline.png"
         alt=""
         aria-hidden
-        className="absolute inset-0 h-full w-full object-cover opacity-[0.35]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[34rem] w-auto -translate-x-1/2 -translate-y-1/2 opacity-[0.05] invert sm:h-[42rem]"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-coffee via-coffee/85 to-coffee" />
 
       <Reveal className="relative mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
         <span className="mx-auto mb-7 block h-px w-10 bg-cream/50" aria-hidden />

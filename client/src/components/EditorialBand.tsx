@@ -4,16 +4,16 @@ export default function EditorialBand() {
   return (
     <section className="relative h-[65vh] min-h-[420px] max-h-[560px] overflow-hidden bg-coffee">
       <motion.img
-        src="/assets/support-hands.jpg"
+        src="/assets/support-ring-banner.jpg"
         alt=""
         aria-hidden
         initial={{ scale: 1.08 }}
         whileInView={{ scale: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 1.4, ease: "easeOut" }}
-        className="absolute inset-0 h-full w-full object-cover opacity-80"
+        className="absolute inset-0 h-full w-full object-cover"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-coffee via-coffee/25 to-coffee/10" />
+      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-coffee to-transparent" />
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
