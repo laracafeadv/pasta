@@ -3,7 +3,6 @@ import Hero from "../components/Hero";
 import About from "../components/About";
 import Specialties from "../components/Specialties";
 import HowItWorks from "../components/HowItWorks";
-import FinalCTA from "../components/FinalCTA";
 import ContactSection from "../components/ContactSection";
 import EditorialBand from "../components/EditorialBand";
 
@@ -19,7 +18,6 @@ export default function Home() {
       <Specialties />
       <HowItWorks />
       <EditorialBand />
-      <FinalCTA />
       <ContactSection />
     </>
   );
