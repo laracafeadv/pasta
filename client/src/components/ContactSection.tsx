@@ -8,6 +8,14 @@ export default function ContactSection() {
     <section id="contato" className="scroll-mt-28 lg:scroll-mt-32 bg-cream py-24 lg:py-36">
       <div className="mx-auto grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
         <Reveal>
+          <div className="relative mb-9 h-56 w-full overflow-hidden rounded-lg rounded-tr-[3rem] shadow-lg sm:h-64">
+            <img
+              src="/assets/support-veil-embrace.jpg"
+              alt=""
+              aria-hidden
+              className="h-full w-full object-cover object-[50%_20%]"
+            />
+          </div>
           <Eyebrow>Fale Comigo</Eyebrow>
           <h2 className="max-w-md text-[1.85rem] font-normal leading-[1.25] tracking-tight text-coffee sm:text-[2.15rem]">
             O primeiro passo é uma conversa
