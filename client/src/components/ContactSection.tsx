@@ -1,5 +1,6 @@
 import Reveal from "./Reveal";
 import ContactForm from "./ContactForm";
+import Eyebrow from "./Eyebrow";
 import { CONTACT_EMAIL, WHATSAPP_DISPLAY, WHATSAPP_URL } from "../lib/constants";
 
 export default function ContactSection() {
@@ -7,9 +8,7 @@ export default function ContactSection() {
     <section id="contato" className="scroll-mt-28 lg:scroll-mt-32 bg-cream py-24 lg:py-36">
       <div className="mx-auto grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
         <Reveal>
-          <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
-            Fale Comigo
-          </p>
+          <Eyebrow>Fale Comigo</Eyebrow>
           <h2 className="font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
             O primeiro passo é uma conversa
           </h2>

@@ -6,6 +6,7 @@ import HowItWorks from "../components/HowItWorks";
 import Testimonials from "../components/Testimonials";
 import FinalCTA from "../components/FinalCTA";
 import ContactSection from "../components/ContactSection";
+import SectionDivider from "../components/SectionDivider";
 
 export default function Home() {
   return (
@@ -15,9 +16,13 @@ export default function Home() {
         description="Advocacia estratégica em Direito de Família e Sucessões, com discrição e proximidade em cada etapa do caso."
       />
       <Hero />
+      <SectionDivider />
       <About />
+      <SectionDivider />
       <Specialties />
+      <SectionDivider />
       <HowItWorks />
+      <SectionDivider />
       <Testimonials />
       <FinalCTA />
       <ContactSection />

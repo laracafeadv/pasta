@@ -2,17 +2,16 @@ import { Link } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 import Reveal from "./Reveal";
 import Stars from "./Stars";
+import Eyebrow from "./Eyebrow";
 
 export default function Testimonials() {
   const { data: testimonials, isLoading } = trpc.testimonials.list.useQuery();
 
   return (
-    <section className="border-t border-coffee/10 bg-cream py-24 lg:py-36">
+    <section className="bg-cream py-24 lg:py-36">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
-            Confiança Construída
-          </p>
+          <Eyebrow align="center">Confiança Construída</Eyebrow>
           <h2 className="font-serif text-3xl font-medium text-coffee sm:text-4xl">
             Quem já esteve aqui, hoje está mais tranquilo
           </h2>

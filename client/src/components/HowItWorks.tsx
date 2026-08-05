@@ -1,4 +1,5 @@
 import Reveal from "./Reveal";
+import Eyebrow from "./Eyebrow";
 import { WHATSAPP_URL } from "../lib/constants";
 
 const STEPS = [
@@ -26,7 +27,7 @@ const STEPS = [
 
 export default function HowItWorks() {
   return (
-    <section className="relative overflow-hidden border-t border-coffee/10 bg-cream py-24 lg:py-36">
+    <section className="relative overflow-hidden bg-cream py-24 lg:py-36">
       <div
         aria-hidden
         className="pointer-events-none absolute -left-24 bottom-0 hidden h-[36rem] w-[36rem] rounded-full border border-coffee-light/25 lg:block"
@@ -34,9 +35,7 @@ export default function HowItWorks() {
 
       <div className="relative mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
         <Reveal>
-          <p className="mb-4 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
-            Como Funciona
-          </p>
+          <Eyebrow>Como Funciona</Eyebrow>
           <h2 className="font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
             Um caminho claro, do primeiro contato à solução.
           </h2>
@@ -49,7 +48,7 @@ export default function HowItWorks() {
             rel="noopener noreferrer"
             className="mt-9 inline-block rounded-full bg-coffee px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg"
           >
-            Começar meu Atendimento
+            Dar o Primeiro Passo
           </a>
         </Reveal>
 

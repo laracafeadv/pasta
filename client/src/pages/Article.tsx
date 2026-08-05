@@ -125,11 +125,9 @@ export default function Article() {
         <aside className="space-y-8">
           <div className="rounded-lg border border-coffee-light/20 bg-white p-5">
             <div className="flex items-center gap-3">
-              <img
-                src="/assets/lara-foto.png"
-                alt={article.author}
-                className="h-14 w-14 rounded-full object-cover"
-              />
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-coffee">
+                <img src="/assets/mono-light.png" alt="" aria-hidden className="h-7 w-auto opacity-90" />
+              </span>
               <div>
                 <p className="font-serif font-semibold text-coffee">{article.author}</p>
                 <p className="text-xs text-ink/60">Advocacia de Família e Sucessões</p>
@@ -139,7 +137,7 @@ export default function Article() {
               to="/#contato"
               className="mt-4 block rounded-full bg-coffee px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-cream"
             >
-              Agendar Consulta
+              Marcar uma Conversa
             </Link>
           </div>
 

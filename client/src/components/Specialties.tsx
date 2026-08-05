@@ -1,57 +1,58 @@
 import Reveal from "./Reveal";
+import Eyebrow from "./Eyebrow";
 import { WHATSAPP_URL } from "../lib/constants";
 
-const CARDS = [
+const GROUPS = [
   {
     number: "01",
-    title: "Direito de Família",
-    description:
-      "Casamento, divórcio, união estável e mediação familiar — conduzidos com estratégia jurídica e sensibilidade para o momento que sua família atravessa.",
+    title: "Família & União",
+    items: [
+      "Divórcio",
+      "Planejamento matrimonial",
+      "União estável",
+      "Reconhecimento de união estável",
+      "Dissolução de união estável",
+    ],
   },
   {
     number: "02",
     title: "Sucessões",
-    description:
-      "Testamentos, inventário, partilha de bens e planejamento sucessório e patrimonial, para que sua vontade seja cumprida sem disputas desnecessárias.",
-  },
-  {
-    number: "03",
-    title: "Estratégia Jurídica",
-    description:
-      "Orientação preventiva para antecipar riscos e proteger o patrimônio familiar diante das decisões que o futuro ainda vai exigir.",
+    items: ["Inventário", "Partilha de bens", "Planejamento sucessório"],
   },
 ];
 
 export default function Specialties() {
   return (
-    <section
-      id="areas-de-atuacao"
-      className="scroll-mt-28 lg:scroll-mt-32 border-t border-coffee/10 bg-cream py-24 lg:py-36"
-    >
+    <section id="areas-de-atuacao" className="scroll-mt-28 lg:scroll-mt-32 bg-cream py-24 lg:py-36">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
-            Áreas de Atuação
-          </p>
+          <Eyebrow align="center">Áreas de Atuação</Eyebrow>
           <h2 className="font-serif text-3xl font-medium text-coffee sm:text-4xl">
             Direito de Família e Sucessões
           </h2>
           <p className="mt-4 text-base leading-relaxed text-ink/70">
-            Atuação concentrada, para oferecer profundidade em cada caso — do processo de
-            família ao planejamento sucessório e patrimonial.
+            Da formalização de uma união ao encerramento de um inventário, atuo em cada etapa
+            que a vida em família pode exigir.
           </p>
         </Reveal>
 
-        <div className="mt-16 grid gap-x-8 gap-y-14 sm:grid-cols-3">
-          {CARDS.map((card, i) => (
-            <Reveal key={card.title} delay={i * 0.1}>
-              <div className="border-t border-coffee/20 pt-6 transition-colors duration-300 hover:border-coffee">
-                <span className="font-serif text-sm text-coffee-light">{card.number}</span>
-                <h3 className="mt-3 font-serif text-xl font-semibold text-coffee">
-                  {card.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-ink/70">{card.description}</p>
+        <div className="mt-16 grid gap-x-16 gap-y-14 lg:grid-cols-2">
+          {GROUPS.map((group, i) => (
+            <Reveal key={group.title} delay={i * 0.1}>
+              <div className="flex items-baseline gap-3 border-b border-coffee/20 pb-4">
+                <span className="font-serif text-sm text-coffee-light">{group.number}</span>
+                <h3 className="font-serif text-xl font-semibold text-coffee">{group.title}</h3>
               </div>
+              <ul>
+                {group.items.map((item) => (
+                  <li
+                    key={item}
+                    className="border-b border-coffee/10 py-4 text-base text-ink/80 transition-colors duration-200 last:border-none hover:text-coffee"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </Reveal>
           ))}
         </div>

@@ -22,12 +22,6 @@ export default function Header() {
         scrolled ? "shadow-lg shadow-black/10" : ""
       }`}
     >
-      <div className="border-b border-cream/10 bg-coffee/95">
-        <p className="mx-auto max-w-7xl px-4 py-1.5 text-center text-[11px] font-medium uppercase tracking-[0.15em] text-cream/70 sm:px-6 lg:px-8">
-          Atendimento particular para todo o Brasil
-        </p>
-      </div>
-
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
         <Link to="/#home" className="flex items-center gap-2" onClick={() => setOpen(false)}>
           <img
@@ -52,7 +46,7 @@ export default function Header() {
             to="/#contato"
             className="rounded-full border border-cream/40 px-5 py-2 text-[13px] font-medium uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:border-cream hover:bg-cream hover:text-coffee"
           >
-            Agende sua Consulta
+            Marcar uma Conversa
           </Link>
         </nav>
 
@@ -102,7 +96,7 @@ export default function Header() {
                 onClick={() => setOpen(false)}
                 className="mt-2 rounded-full border border-cream/40 px-4 py-2.5 text-center text-sm font-medium uppercase tracking-wide"
               >
-                Agende sua Consulta
+                Marcar uma Conversa
               </Link>
             </div>
           </motion.nav>

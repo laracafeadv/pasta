@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import SEO from "../components/SEO";
 import Reveal from "../components/Reveal";
+import Eyebrow from "../components/Eyebrow";
 import CategoryPills from "../components/CategoryPills";
 import BlogCard from "../components/BlogCard";
 import BlogSidebar from "../components/BlogSidebar";
@@ -48,7 +49,7 @@ export default function Blog() {
     <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
       <SEO
         title="Blog Jurídico | Lara Café Advocacia"
-        description="Reflexões sobre família, sucessões e patrimônio, escritas para ajudar você a decidir com mais clareza."
+        description="Reflexões sobre divórcio, união estável, inventário e planejamento sucessório, escritas para ajudar você a decidir com mais clareza."
       />
 
       <nav className="mb-6 text-xs text-ink/50">
@@ -59,15 +60,13 @@ export default function Blog() {
       </nav>
 
       <Reveal>
-        <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
-          Blog Jurídico
-        </p>
+        <Eyebrow>Blog Jurídico</Eyebrow>
         <h1 className="font-serif text-3xl font-medium text-coffee sm:text-4xl">
           Clareza jurídica, um artigo de cada vez
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-ink/70">
-          Reflexões sobre família, sucessões e patrimônio — escritas para ajudar você a entender
-          seus direitos antes de precisar deles.
+          Divórcio, união estável, inventário e planejamento sucessório — escritos para ajudar
+          você a entender seus direitos antes de precisar deles.
         </p>
       </Reveal>
 

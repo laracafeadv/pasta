@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Reveal from "./Reveal";
+import Eyebrow from "./Eyebrow";
 
 const PILLARS = [
   {
@@ -63,9 +64,7 @@ export default function About() {
         </Reveal>
 
         <Reveal delay={0.15} className="lg:pl-4">
-          <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-coffee-light">
-            Sobre mim
-          </p>
+          <Eyebrow>Sobre mim</Eyebrow>
           <h2 className="font-serif text-3xl font-medium leading-tight text-coffee sm:text-4xl">
             Sobre a Lara Café
           </h2>

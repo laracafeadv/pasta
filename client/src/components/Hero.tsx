@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import Eyebrow from "./Eyebrow";
 import { WHATSAPP_URL } from "../lib/constants";
 
 export default function Hero() {
@@ -21,9 +22,7 @@ export default function Hero() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="order-2 lg:order-1"
         >
-          <p className="mb-4 font-sans text-xs font-semibold uppercase tracking-[0.25em] text-coffee-light">
-            Direito de Família e Sucessões
-          </p>
+          <Eyebrow>Direito de Família e Sucessões</Eyebrow>
           <h1 className="font-serif text-4xl font-medium leading-[1.15] text-coffee sm:text-5xl lg:text-[3.2rem]">
             Para os momentos que só se enfrentam uma vez.
           </h1>
@@ -39,13 +38,13 @@ export default function Hero() {
               rel="noopener noreferrer"
               className="rounded-full bg-coffee px-8 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-cream shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee/90 hover:shadow-lg"
             >
-              Iniciar uma Conversa Reservada
+              Conversar em Sigilo
             </a>
             <Link
               to="/#sobre"
               className="rounded-full border border-coffee bg-white px-8 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-coffee transition-all duration-200 hover:-translate-y-0.5 hover:bg-coffee hover:text-cream"
             >
-              Conhecer meu Trabalho
+              Conhecer a Advocacia
             </Link>
           </div>
         </motion.div>
@@ -58,11 +57,24 @@ export default function Hero() {
         >
           <div className="relative w-full max-w-md">
             <div className="absolute -inset-4 -z-10 rounded-tr-[6rem] bg-coffee-light/20 sm:-inset-6" />
-            <img
-              src="/assets/lara-foto.png"
-              alt="Lara Café, advogada especialista em Direito de Família e Sucessões"
-              className="aspect-[2/3] w-full rounded-tr-[6rem] object-cover shadow-2xl"
-            />
+            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-tr-[6rem] bg-coffee shadow-2xl">
+              <div
+                aria-hidden
+                className="absolute inset-0 opacity-[0.08]"
+                style={{
+                  backgroundImage: "url(/assets/pattern-monogram.jpg)",
+                  backgroundSize: "220px 220px",
+                  backgroundRepeat: "repeat",
+                }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center p-16">
+                <img
+                  src="/assets/mono-light.png"
+                  alt="Monograma Lara Café"
+                  className="w-2/5 opacity-90"
+                />
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
