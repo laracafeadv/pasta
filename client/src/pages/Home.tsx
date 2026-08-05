@@ -3,7 +3,6 @@ import Hero from "../components/Hero";
 import About from "../components/About";
 import Specialties from "../components/Specialties";
 import HowItWorks from "../components/HowItWorks";
-import Testimonials from "../components/Testimonials";
 import FinalCTA from "../components/FinalCTA";
 import ContactSection from "../components/ContactSection";
 import SectionDivider from "../components/SectionDivider";
@@ -22,7 +21,6 @@ export default function Home() {
       <Specialties />
       <HowItWorks />
       <EditorialBand />
-      <Testimonials />
       <FinalCTA />
       <ContactSection />
     </>

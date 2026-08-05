@@ -4,7 +4,7 @@ export default function EditorialBand() {
   return (
     <section className="relative h-[65vh] min-h-[420px] max-h-[560px] overflow-hidden bg-coffee">
       <motion.img
-        src="/assets/support-ring-banner.jpg"
+        src="/assets/support-veil-embrace.jpg"
         alt=""
         aria-hidden
         initial={{ scale: 1.08 }}
