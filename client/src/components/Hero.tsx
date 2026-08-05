@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import Eyebrow from "./Eyebrow";
 import { WHATSAPP_URL } from "../lib/constants";
 
@@ -34,25 +33,18 @@ export default function Hero() {
             apurada, sigilo absoluto e a presença de quem entende que, por trás de cada processo,
             existe uma história real.
           </p>
-          <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
+          <div className="mt-10">
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-3 rounded-full bg-cream px-8 py-3.5 text-[0.8rem] font-medium tracking-wide text-coffee shadow-sm transition-all duration-300 hover:gap-4 hover:shadow-md"
+              className="group inline-flex items-center gap-3 rounded-full bg-cream px-9 py-4 text-[0.85rem] font-medium tracking-wide text-coffee shadow-md transition-all duration-300 hover:gap-4 hover:shadow-lg"
             >
               Conversar em Sigilo
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
               </svg>
             </a>
-            <Link
-              to="/#sobre"
-              className="group inline-flex items-center gap-2 text-[0.8rem] font-medium tracking-wide text-cream"
-            >
-              Conhecer Minha Abordagem
-              <span className="h-px w-5 bg-cream transition-all duration-300 group-hover:w-8" />
-            </Link>
           </div>
         </div>
       </motion.div>
