@@ -23,9 +23,9 @@ insert into public.modelos_mensagem (categoria, titulo, atalho, texto, ordem) va
 on conflict (atalho) do nothing;
 
 insert into public.modelos_mensagem (categoria, titulo, atalho, texto, ordem) values
-('10. Relacionamento', 'Relatório semanal do caso', '/relatorio-semanal', $t$Oi, [NOME]! Passando com a atualização da semana sobre o seu caso:
-📌 O que aconteceu: [ANDAMENTO DA SEMANA]
-📌 Próximo passo: [PRÓXIMO PASSO E PRAZO]
-📌 Precisamos de você? [O QUE A CLIENTE PRECISA FAZER, OU "Por enquanto, nada."]
-Qualquer dúvida, estou por aqui.$t$, 15)
+('10. Relacionamento', 'Relatório semanal do caso', '/relatorio-semanal', $t$[SAUDAÇÃO], [NOME]! Tudo bem?
+Segue o relatório semanal com as atualizações do seu processo. [SE HOUVE MOVIMENTAÇÃO IMPORTANTE (EX.: DESIGNAÇÃO DE AUDIÊNCIA), DESCREVA AQUI O ANDAMENTO PARA RESSALTAR A INFORMAÇÃO]
+Qualquer dúvida, estamos à disposição!
+
+Te desejamos uma ótima semana! ✨$t$, 15)
 on conflict (atalho) do nothing;

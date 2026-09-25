@@ -58,7 +58,14 @@
             <template v-if="dados.contato.classificacao">{{ CLASSIFICACOES[dados.contato.classificacao].nome }} <span class="text-xs text-gray-500">— {{ CLASSIFICACOES[dados.contato.classificacao].dica }}</span></template>
             <template v-else>—</template>
           </p>
-          <p><b>NPS:</b> {{ dados.contato.nps ?? '—' }}</p>
+          <div>
+            <p><b>NPS:</b> {{ dados.contato.nps ?? '—' }} <span class="text-xs text-gray-500">— registrar a nota que a cliente deu:</span></p>
+            <div class="flex flex-wrap gap-1 mt-1">
+              <button v-for="n in 11" :key="n" type="button" class="w-7 h-7 rounded-full text-xs font-semibold border"
+                      :class="dados.contato.nps === n - 1 ? 'bg-primary text-white border-primary' : n - 1 >= 9 ? 'border-success/50 text-success-dark' : n - 1 >= 7 ? 'border-warning/50 text-warning-dark' : 'border-danger/40 text-danger-dark'"
+                      @click="registrarNps(n - 1)">{{ n - 1 }}</button>
+            </div>
+          </div>
           <p v-if="dados.contato.obs_relacionamento"><b>Observação:</b> {{ dados.contato.obs_relacionamento }}</p>
           <p v-if="dados.contato.ultimo_contato_em"><b>Último gesto:</b> {{ dataCurta(dados.contato.ultimo_contato_em) }}</p>
         </div>
@@ -184,6 +191,7 @@
             <Icon name="ph:google-drive-logo-bold" class="align-middle" /> {{ criandoPasta ? 'Criando…' : 'Criar pasta no Drive' }}
           </button>
           <button v-if="ehAdmin" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}`)">Procuração (.docx)</button>
+          <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/relatorio-semanal?contato=${dados.contato.id}`)">Relatório semanal (.docx)</button>
           <select v-if="ehAdmin && pecas.length" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 bg-transparent text-primary dark:text-zinc-200" @change="gerarPeca(($event.target as HTMLSelectElement)); ">
             <option value="">Outra peça (.docx)…</option>
             <option v-for="p in pecas" :key="p.id" :value="p.id">{{ p.titulo }}</option>
@@ -506,6 +514,17 @@ async function mensagemParcela(l: Lancamento, atalho: string) {
     'VENCIMENTO': l.vencimento.split('-').reverse().slice(0, 2).join('/'),
   })
   aba.value = 'conversa'
+}
+
+// NPS: registra a nota (a classificação da carteira muda sozinha) e já abre a resposta certa.
+async function registrarNps(nota: number) {
+  if (!dados.value) return
+  await crm.salvar(dados.value.contato.id, { nps: nota })
+  await carregar()
+  await carregarModelos()
+  const atalho = nota >= 9 ? '/nps-promotora' : nota >= 7 ? '/nps-neutra' : '/nps-detratora'
+  const m = modelos.value.find(x => x.atalho === atalho)
+  if (m && dados.value) { resposta.value = preencher(m.texto, dados.value.contato.nome, extrasContato.value); aba.value = 'conversa' }
 }
 
 function usarMensagem(texto: string) {

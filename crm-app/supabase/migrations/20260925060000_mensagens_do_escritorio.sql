@@ -43,5 +43,13 @@ Gostaríamos também de confirmar se você recebeu a proposta de honorários env
 Entramos em contato porque nos preocupamos com a sua demanda e sabemos da importância que ela tem para você. Estamos à disposição para iniciarmos os trabalhos necessários. Tenha uma ótima semana!$t$, 45)
 on conflict (atalho) do nothing;
 
+-- NPS em conversa (três mensagens, uma de cada vez, esperando a resposta).
+insert into public.modelos_mensagem (categoria, titulo, atalho, texto, ordem) values
+('9. Avaliação e NPS', 'NPS 1 — pedir a avaliação', '/nps-convite', $t$Olá, [NOME], tudo bem?
+Pensando em sempre aprimorar o nosso serviço e a qualidade do nosso atendimento, gostaríamos que você avaliasse o nosso desempenho. Seria possível?$t$, 11),
+('9. Avaliação e NPS', 'NPS 2 — pedir a nota', '/nps-nota', $t$Agradecemos muito! Inicialmente, gostaríamos de saber: de 0 a 10, qual nota você daria para a execução do trabalho e o nível de satisfação com o escritório?$t$, 12),
+('9. Avaliação e NPS', 'NPS 3 — pedir o motivo', '/nps-motivo', $t$Perfeito! Poderia nos explicar, brevemente, por que atribuiu essa nota?$t$, 13)
+on conflict (atalho) do nothing;
+
 -- As versões do playbook que cobrem a mesma situação ficam desativadas (não apagadas).
-update public.modelos_mensagem set ativo = false where atalho in ('/agendamento', '/inadimplencia');
+update public.modelos_mensagem set ativo = false where atalho in ('/agendamento', '/inadimplencia', '/nps');
