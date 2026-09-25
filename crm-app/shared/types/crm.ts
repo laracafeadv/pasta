@@ -82,6 +82,7 @@ export interface Contato {
   obs_relacionamento: string | null
   dor: string | null
   objetivo: string | null
+  drive_pasta_url?: string | null
   ia_ativa: boolean
   consentimento_em: string | null
   ultima_mensagem_em: string | null
@@ -573,3 +574,34 @@ export const CAMPOS_PECA = [
   ['{{cidade}}', 'Cidade do foro'],
   ['{{data}}', 'Data por extenso'],
 ] as const
+
+// ─── Gestão de conhecimento: pasta do cliente no Google Drive ──────────────
+/** Estrutura fixa de toda pasta de cliente (a numeração mantém a ordem no Drive). */
+export const ESTRUTURA_PASTA_CLIENTE = [
+  { chave: 'pessoais', nome: '01 Documentos pessoais' },
+  { chave: 'contrato', nome: '02 Contrato, procuração e honorários' },
+  { chave: 'pecas', nome: '03 Peças e petições' },
+  { chave: 'provas', nome: '04 Provas e documentos do caso' },
+  { chave: 'comunicacoes', nome: '05 Comunicações e atas' },
+  { chave: 'financeiro', nome: '06 Financeiro' },
+  { chave: 'arquivo', nome: '99 Arquivo (versões antigas)' },
+] as const
+export type SubpastaCliente = typeof ESTRUTURA_PASTA_CLIENTE[number]['chave']
+
+/** Código estável do cliente, usado em pastas e nomes de arquivo (não expõe CPF nem nome completo). */
+export const codigoCliente = (id: number) => `CLI-${String(id).padStart(4, '0')}`
+
+export const NIVEIS_SIGILO = {
+  interno: 'Interno',
+  confidencial: 'Confidencial',
+  sigiloso: 'Sigiloso (segredo de justiça)',
+} as const
+
+/** Nome padrão: AAAA-MM-DD_CLI-0005_TIPO_descricao_v01.ext (sem acentos nem espaços). */
+export function nomeArquivoPadrao(o: { data: string; contatoId: number; tipo: string; descricao?: string | null; versao?: number; extensao: string }) {
+  const limpar = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  const partes = [o.data, codigoCliente(o.contatoId), limpar(o.tipo).toUpperCase()]
+  if (o.descricao) partes.push(limpar(o.descricao).toLowerCase().slice(0, 40))
+  partes.push(`v${String(o.versao ?? 1).padStart(2, '0')}`)
+  return `${partes.join('_')}.${o.extensao}`
+}

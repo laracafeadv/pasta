@@ -2,7 +2,7 @@ import { serverSupabaseServiceRole } from '#supabase/server'
 import type { Qualificacao } from '../../../shared/types/crm'
 import { requireAdmin } from '../../utils/security'
 import { carregarEscritorio } from '../../utils/escritorio'
-import { advogadaTexto, dataExtenso, gerarDocx, nomeArquivo, qualificacaoTexto, v } from '../../utils/pecas'
+import { advogadaTexto, dataExtenso, entregarPeca, gerarDocx, qualificacaoTexto, v } from '../../utils/pecas'
 import { auditar } from '../../utils/auditoria'
 
 // Procuração ad judicia et extra, com poderes especiais do art. 105 do CPC.
@@ -42,10 +42,5 @@ export default defineEventHandler(async (event) => {
   ])
 
   await auditar(event, 'gerou procuração', 'contato', contatoId)
-  setHeaders(event, {
-    'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'Content-Disposition': `attachment; filename="${nomeArquivo('procuracao', qq.nome_completo || contato.nome)}"`,
-    'Cache-Control': 'private, no-store',
-  })
-  return buffer
+  return entregarPeca(event, { buffer, contatoId: contatoId, tipo: 'Procuração', descricao: contato.demanda, subpasta: 'contrato' })
 })

@@ -178,12 +178,22 @@
         <div class="flex flex-wrap gap-2">
           <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Abrir caso</Button>
           <NuxtLink :to="`/agenda?contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">+ Prazo ou compromisso</NuxtLink>
-          <a v-if="ehAdmin" :href="`/api/pecas/procuracao?contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">Procuração (.docx)</a>
+          <a v-if="dados.contato.drive_pasta_url" :href="dados.contato.drive_pasta_url" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"><Icon name="ph:google-drive-logo-bold" class="align-middle" /> Pasta no Drive</a>
+          <button v-else-if="driveOk" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" :disabled="criandoPasta" @click="criarPastaDrive">
+            <Icon name="ph:google-drive-logo-bold" class="align-middle" /> {{ criandoPasta ? 'Criando…' : 'Criar pasta no Drive' }}
+          </button>
+          <button v-if="ehAdmin" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}`)">Procuração (.docx)</button>
           <select v-if="ehAdmin && pecas.length" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 bg-transparent text-primary dark:text-zinc-200" @change="gerarPeca(($event.target as HTMLSelectElement)); ">
             <option value="">Outra peça (.docx)…</option>
             <option v-for="p in pecas" :key="p.id" :value="p.id">{{ p.titulo }}</option>
           </select>
         </div>
+        <label v-if="ehAdmin && driveOk" class="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400 cursor-pointer">
+          <input v-model="salvarNoDrive" type="checkbox" class="accent-[#3c2923]" /> Salvar as peças direto na pasta do cliente no Drive (em vez de baixar)
+        </label>
+        <p v-if="avisoDrive" class="text-xs" :class="avisoDrive.erro ? 'text-danger' : 'text-success-dark'">
+          {{ avisoDrive.texto }} <a v-if="avisoDrive.url" :href="avisoDrive.url" target="_blank" rel="noopener" class="underline">abrir</a>
+        </p>
         <p v-if="!dados.casos.length" class="text-sm text-gray-400">Nenhum caso aberto.</p>
         <article v-for="k in dados.casos" :key="k.id" class="card">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
@@ -195,7 +205,7 @@
           <div class="flex gap-3 pt-1 text-xs">
             <button class="underline underline-offset-2" @click="editarCaso(k)">Editar</button>
             <NuxtLink :to="`/agenda?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo</NuxtLink>
-            <a v-if="ehAdmin" :href="`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Procuração deste caso</a>
+            <button v-if="ehAdmin" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração deste caso</button>
           </div>
         </article>
         <div v-if="dados.compromissos.length">
@@ -256,7 +266,7 @@
             <p class="text-xs text-gray-500">{{ h.descricao || '—' }}</p>
           </div>
           <div class="flex items-center gap-2">
-            <a v-if="ehAdmin" :href="`/api/pecas/contrato?honorario=${h.id}`" class="text-xs underline underline-offset-2" title="Gerar contrato em Word">Contrato (.docx)</a>
+            <button v-if="ehAdmin" type="button" class="text-xs underline underline-offset-2" title="Gerar contrato em Word" @click="peca(`/api/pecas/contrato?honorario=${h.id}`)">Contrato (.docx)</button>
             <span class="tag">{{ h.status }}</span>
           </div>
         </div>
@@ -471,7 +481,42 @@ function gerarPeca(sel: HTMLSelectElement) {
   sel.value = ''
   if (!id || !dados.value) return
   const caso = dados.value.casos.find(k => k.status === 'ativo') ?? dados.value.casos[0]
-  window.location.href = `/api/pecas/gerar?modelo=${id}&contato=${dados.value.contato.id}${caso ? `&caso=${caso.id}` : ''}`
+  peca(`/api/pecas/gerar?modelo=${id}&contato=${dados.value.contato.id}${caso ? `&caso=${caso.id}` : ''}`)
+}
+
+// ─── Google Drive (repositório único de documentos) ───────────────────────
+const driveOk = ref(false)
+const salvarNoDrive = ref(false)
+const criandoPasta = ref(false)
+const avisoDrive = ref<{ texto: string; url?: string; erro?: boolean } | null>(null)
+watch(() => props.isOpen, async (open) => {
+  avisoDrive.value = null
+  if (open) driveOk.value = (await $fetch<{ configurado: boolean }>('/api/drive/status').catch(() => ({ configurado: false }))).configurado
+}, { immediate: true })
+async function criarPastaDrive() {
+  if (!dados.value) return
+  criandoPasta.value = true
+  try {
+    const r = await $fetch<{ url: string }>(`/api/crm/contatos/${dados.value.contato.id}/drive`, { method: 'POST' })
+    dados.value.contato.drive_pasta_url = r.url
+    avisoDrive.value = { texto: 'Pasta criada com as subpastas padrão.', url: r.url }
+  } catch (e: any) {
+    avisoDrive.value = { texto: e?.data?.message || 'Não foi possível criar a pasta.', erro: true }
+  } finally {
+    criandoPasta.value = false
+  }
+}
+/** Baixa a peça ou, se marcado, grava na pasta do cliente no Drive. */
+async function peca(url: string) {
+  if (!salvarNoDrive.value) { window.location.href = url; return }
+  avisoDrive.value = { texto: 'Salvando no Drive…' }
+  try {
+    const r = await $fetch<{ url: string; nome: string }>(`${url}&drive=1`)
+    avisoDrive.value = { texto: `Salvo no Drive: ${r.nome}`, url: r.url }
+    if (dados.value && !dados.value.contato.drive_pasta_url) carregar()
+  } catch (e: any) {
+    avisoDrive.value = { texto: e?.data?.message || 'Não foi possível salvar no Drive.', erro: true }
+  }
 }
 
 // ─── Atividades ───────────────────────────────────────────────────────────

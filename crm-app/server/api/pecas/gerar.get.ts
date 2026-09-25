@@ -2,7 +2,7 @@ import { serverSupabaseServiceRole } from '#supabase/server'
 import type { Qualificacao } from '../../../shared/types/crm'
 import { requireAdmin } from '../../utils/security'
 import { carregarEscritorio } from '../../utils/escritorio'
-import { advogadaTexto, dataExtenso, gerarDocx, nomeArquivo, qualificacaoTexto, v } from '../../utils/pecas'
+import { advogadaTexto, dataExtenso, entregarPeca, gerarDocx, qualificacaoTexto, v } from '../../utils/pecas'
 import { auditar } from '../../utils/auditoria'
 
 /** Gera uma peça a partir de um modelo, trocando {{campos}} pelos dados da cliente, do caso e do escritório. */
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   const admin = serverSupabaseServiceRole(event)
   const [{ data: modelo }, { data: contato }, { data: qual }, escritorio, { data: caso }] = await Promise.all([
     admin.from('pecas_modelos').select('*').eq('id', modeloId).single(),
-    admin.from('contatos').select('nome, parte_contraria').eq('id', contatoId).single(),
+    admin.from('contatos').select('nome, parte_contraria, demanda').eq('id', contatoId).single(),
     admin.from('qualificacao').select('*').eq('contato_id', contatoId).maybeSingle(),
     carregarEscritorio(admin),
     q.caso ? admin.from('casos').select('titulo, numero_processo, orgao, parte_contraria').eq('id', Number(q.caso)).eq('contato_id', contatoId).maybeSingle() : Promise.resolve({ data: null }),
@@ -46,10 +46,5 @@ export default defineEventHandler(async (event) => {
 
   const buffer = await gerarDocx(primeira!.trim() || modelo.titulo, blocos)
   await auditar(event, 'gerou peça', 'contato', contatoId, { modelo: modelo.titulo })
-  setHeaders(event, {
-    'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'Content-Disposition': `attachment; filename="${nomeArquivo(modelo.titulo.toLowerCase(), qq.nome_completo || contato.nome)}"`,
-    'Cache-Control': 'private, no-store',
-  })
-  return buffer
+  return entregarPeca(event, { buffer, contatoId: contatoId, tipo: modelo.titulo, descricao: contato.demanda, subpasta: 'pecas' })
 })

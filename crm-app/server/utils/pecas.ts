@@ -1,5 +1,8 @@
 import { AlignmentType, Document, Packer, Paragraph, TextRun } from 'docx'
-import type { Escritorio, Qualificacao } from '../../shared/types/crm'
+import type { H3Event } from 'h3'
+import { NIVEIS_SIGILO, nomeArquivoPadrao, codigoCliente, type Escritorio, type Qualificacao, type SubpastaCliente } from '../../shared/types/crm'
+import { enviarArquivo, garantirPastaCliente } from './drive'
+import { auditar } from './auditoria'
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 export function dataExtenso(d = new Date()) {
@@ -48,7 +51,31 @@ export async function gerarDocx(titulo: string, blocos: Bloco[]): Promise<Buffer
   return Packer.toBuffer(doc)
 }
 
-export function nomeArquivo(prefixo: string, nome: string | null | undefined) {
-  const base = String(nome ?? 'cliente').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '')
-  return `${prefixo}-${base || 'cliente'}.docx`
+
+const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+/**
+ * Entrega a peça: download (padrão) ou, com ?drive=1, grava na subpasta do cliente
+ * no Google Drive com nome padronizado e rótulo de sigilo. Nos dois casos, o nome
+ * segue o padrão AAAA-MM-DD_CLI-0005_TIPO_descricao_v01.docx.
+ */
+export async function entregarPeca(event: H3Event, o: { buffer: Buffer; contatoId: number; tipo: string; descricao?: string | null; subpasta: SubpastaCliente }) {
+  const data = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+  const nome = nomeArquivoPadrao({ data, contatoId: o.contatoId, tipo: o.tipo, descricao: o.descricao, extensao: 'docx' })
+  if (getQuery(event).drive) {
+    const pasta = await garantirPastaCliente(event, o.contatoId)
+    try {
+      const f = await enviarArquivo({
+        nome, mime: DOCX, conteudo: o.buffer, pastaId: pasta.subpastas[o.subpasta],
+        propriedades: { cliente: codigoCliente(o.contatoId), tipo: o.tipo, sigilo: NIVEIS_SIGILO.confidencial, origem: 'CRM Lara Café' },
+      })
+      await auditar(event, 'salvou peça no Drive', 'contato', o.contatoId, { tipo: o.tipo })
+      return { url: f.webViewLink, nome }
+    } catch (e) {
+      console.error('[drive] Erro ao enviar arquivo:', e)
+      throw createError({ statusCode: 502, message: 'Não foi possível salvar no Google Drive agora.' })
+    }
+  }
+  setHeaders(event, { 'Content-Type': DOCX, 'Content-Disposition': `attachment; filename="${nome}"`, 'Cache-Control': 'private, no-store' })
+  return o.buffer
 }

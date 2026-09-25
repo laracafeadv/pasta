@@ -79,7 +79,7 @@ Não há autocadastro: os usuários são criados pela administração em **Equip
 
 ### 1. Supabase (banco de dados e login)
 1. Crie um projeto em [supabase.com](https://supabase.com). Para dados de clientes, escolha a região **São Paulo (sa-east-1)**.
-2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql`, `supabase/migrations/20260925010000_playbook_e_auditoria.sql`, `supabase/migrations/20260925020000_cliente_caso_agenda.sql` e `supabase/migrations/20260925030000_gestao_do_escritorio.sql`.
+2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql`, `supabase/migrations/20260925010000_playbook_e_auditoria.sql`, `supabase/migrations/20260925020000_cliente_caso_agenda.sql` e `supabase/migrations/20260925030000_gestao_do_escritorio.sql` e `supabase/migrations/20260925040000_drive.sql`.
 3. Em **Authentication → Providers → Email**, **desative "Allow new users to sign up"**.
 4. Em **Authentication → Users → Add user**, crie o usuário da Lara (e-mail e senha).
 5. Entre uma vez no CRM com esse usuário. Depois, no **SQL Editor**, torne-o administrador:
@@ -101,6 +101,14 @@ Crie uma chave em [platform.openai.com](https://platform.openai.com/api-keys) e 
    - URL: `https://SEU-DOMINIO/api/whatsapp/webhook` (também aparece na aba *Testar* da Assistente IA)
    - Token de verificação: o mesmo valor de `WHATSAPP_VERIFY_TOKEN`
    - Assine o campo **messages**.
+
+### Google Drive (repositório único de documentos)
+1. No Google Workspace do escritório, crie um **Drive compartilhado** "Lara Café — Clientes" e, dentro dele, a pasta `Clientes`. Membros: só quem atende casos (advogadas e secretaria). Nada de links "qualquer pessoa com o link".
+2. No [Google Cloud](https://console.cloud.google.com/), ative a **Google Drive API**, crie uma **conta de serviço** e baixe a chave JSON.
+3. Adicione o e-mail da conta de serviço como **Gerente de conteúdo** do Drive compartilhado.
+4. Preencha `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY` e `GOOGLE_DRIVE_PASTA_CLIENTES` (o ID que aparece na URL da pasta `Clientes`).
+
+Na ficha da cliente (aba Caso), "Criar pasta no Drive" gera `CLI-0005 — Nome` com as subpastas padrão (01 Documentos pessoais … 99 Arquivo). Procuração, contrato e peças podem ser salvos direto na subpasta certa, com o nome `AAAA-MM-DD_CLI-0005_TIPO_descricao_v01.docx` e o rótulo de sigilo nas propriedades do arquivo. As regras completas estão no Manual de Gestão de Conhecimento e Compliance.
 
 ### Lembretes automáticos de prazos
 Ao abrir a tela Hoje, a equipe recebe notificação de prazos e audiências de hoje, amanhã e daqui a 3 dias (uma vez por dia). Para receber mesmo sem abrir o sistema, configure um agendador (ex.: Vercel Cron, às 7h) chamando `GET /api/cron/lembretes` com o cabeçalho `Authorization: Bearer <CRON_SECRET>` (mínimo de 16 caracteres).
