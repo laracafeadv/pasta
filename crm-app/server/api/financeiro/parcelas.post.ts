@@ -32,6 +32,16 @@ export default defineEventHandler(async (event) => {
       honorario_id: h.id,
     }
   })
+  // Em camadas: depois do arranque, as mensalidades (a partir do mês seguinte).
+  if (h.tipo === 'Em camadas' && Number(h.valor_mensal) > 0 && Number(h.meses) > 0) {
+    for (let i = 0; i < Number(h.meses); i++) {
+      const dt = new Date(Date.UTC(a!, m! + n + i, Math.min(d!, 28)))
+      linhas.push({
+        tipo: 'receber', descricao: `Mensalidade — ${h.contato?.nome ?? 'cliente'} (${i + 1}/${h.meses})`, categoria: 'Honorários',
+        valor: Number(h.valor_mensal), vencimento: dt.toISOString().slice(0, 10), pago_em: null, contato_id: h.contato_id, honorario_id: h.id,
+      })
+    }
+  }
   const { error } = await admin.from('lancamentos').insert(linhas)
   if (error) {
     console.error('[financeiro/parcelas] Erro:', error)

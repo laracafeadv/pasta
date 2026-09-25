@@ -1,6 +1,5 @@
 import { createSign } from 'node:crypto'
-import type { H3Event } from 'h3'
-import { serverSupabaseServiceRole } from '#supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { ESTRUTURA_PASTA_CLIENTE, codigoCliente, type SubpastaCliente } from '../../shared/types/crm'
 
 /**
@@ -66,9 +65,8 @@ export async function enviarArquivo(o: { nome: string; mime: string; conteudo: B
  * Garante a pasta do cliente ("CLI-0005 — Juliana Prado") com as subpastas padrão.
  * Idempotente: se já existe, só completa subpastas que faltarem.
  */
-export async function garantirPastaCliente(event: H3Event, contatoId: number) {
+export async function garantirPastaCliente(admin: SupabaseClient, contatoId: number) {
   if (!driveConfigurado()) throw createError({ statusCode: 503, message: 'Google Drive não configurado (veja o guia de implantação).' })
-  const admin = serverSupabaseServiceRole(event)
   const { data: c } = await admin.from('contatos').select('id, nome, drive_pasta_id, drive_pasta_url, drive_subpastas').eq('id', contatoId).single()
   if (!c) throw createError({ statusCode: 404, message: 'Contato não encontrado.' })
 

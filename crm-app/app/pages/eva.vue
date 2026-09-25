@@ -9,7 +9,7 @@
             <p class="eyebrow">WhatsApp</p>
             <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Assistente de IA</h1>
             <p class="text-slate-500 dark:text-slate-400 mt-1">
-              Ela faz a triagem no WhatsApp, preenche a ficha no CRM e passa para a equipe quando precisa. As regras de ética da OAB e da LGPD ficam fixas e não podem ser apagadas aqui.
+              Ela faz a triagem no WhatsApp, preenche a ficha no CRM e passa a conversa para você quando precisa. As regras de ética da OAB e da LGPD ficam fixas e não podem ser apagadas aqui.
             </p>
           </div>
 

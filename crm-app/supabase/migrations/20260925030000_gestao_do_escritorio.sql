@@ -2,7 +2,7 @@
 -- CRM Lara Café — migração 4
 -- Carteira por classificação (playbook "Classificando seus clientes"),
 -- diagnóstico com 5 porquês e viabilidade, Mapa da Empatia (vozes reais),
--- financeiro, qualidade (revisão por amostragem), fluxo da equipe e modelos de peças.
+-- financeiro e qualidade (revisão semanal).
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -57,9 +57,8 @@ create policy "diagnosticos: equipe" on public.diagnosticos
   for all using (public.is_staff()) with check (public.is_staff());
 
 -- -----------------------------------------------------------------------------
--- Equipe: cargo (organograma) e tempo gasto (rentabilidade)
+-- Tempo gasto por atividade (rentabilidade)
 -- -----------------------------------------------------------------------------
-alter table public.profiles add column if not exists cargo text;
 alter table public.atividades add column if not exists minutos int check (minutos is null or minutos between 0 and 1440);
 
 -- -----------------------------------------------------------------------------
@@ -117,58 +116,6 @@ alter table public.revisoes enable row level security;
 create policy "revisoes: equipe" on public.revisoes
   for all using (public.is_staff()) with check (public.is_staff());
 
--- -----------------------------------------------------------------------------
--- Modelos de peças (padronização). Campos entre {{ }} são preenchidos na geração.
--- -----------------------------------------------------------------------------
-create table if not exists public.pecas_modelos (
-  id          bigint generated always as identity primary key,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now(),
-  titulo      text not null,
-  categoria   text not null default 'Geral',
-  corpo       text not null,
-  ativo       boolean not null default true
-);
-create unique index if not exists pecas_modelos_titulo_idx on public.pecas_modelos (titulo);
-create trigger pecas_modelos_updated_at before update on public.pecas_modelos
-  for each row execute function public.set_updated_at();
-alter table public.pecas_modelos enable row level security;
-create policy "pecas_modelos: equipe lê" on public.pecas_modelos for select using (public.is_staff());
-create policy "pecas_modelos: admin edita" on public.pecas_modelos
-  for all using (public.is_admin()) with check (public.is_admin());
-
-insert into public.pecas_modelos (titulo, categoria, corpo) values
-('Declaração de hipossuficiência', 'Declarações', $t$DECLARAÇÃO DE HIPOSSUFICIÊNCIA ECONÔMICA
-
-{{cliente.qualificacao}}, DECLARA, para os fins do art. 98 e seguintes do Código de Processo Civil, que não possui condições de arcar com as custas processuais e os honorários advocatícios sem prejuízo do próprio sustento e de sua família.
-
-Declara, ainda, estar ciente de que a falsidade desta declaração sujeita o declarante às sanções civis, administrativas e penais cabíveis.
-
-{{cidade}}, {{data}}.
-
-_______________________________________
-{{cliente.nome}}$t$),
-('Substabelecimento com reserva de poderes', 'Procurações', $t$SUBSTABELECIMENTO COM RESERVA DE PODERES
-
-{{advogada}}, substabelece, COM RESERVA de iguais poderes, a(o) advogada(o) [NOME DA(O) ADVOGADA(O)], inscrita(o) na OAB/[UF] sob o nº [NÚMERO], os poderes que lhe foram conferidos por {{cliente.nome}} nos autos do processo nº {{caso.numero}}, em trâmite perante {{caso.orgao}}.
-
-{{cidade}}, {{data}}.
-
-_______________________________________
-{{advogada.nome}}$t$),
-('Requerimento de juntada de documentos', 'Petições simples', $t$EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DA {{caso.orgao}}
-
-Processo nº {{caso.numero}}
-
-{{cliente.nome}}, já qualificada(o) nos autos em epígrafe, por sua advogada que esta subscreve, vem, respeitosamente, à presença de Vossa Excelência, requerer a juntada dos documentos anexos, [DESCREVER OS DOCUMENTOS], para os devidos fins.
-
-Nestes termos, pede deferimento.
-
-{{cidade}}, {{data}}.
-
-_______________________________________
-{{advogada}}$t$)
-on conflict (titulo) do nothing;
 
 -- -----------------------------------------------------------------------------
 -- Novos scripts: plano de ação por classificação, triagem x consulta, ancoragem

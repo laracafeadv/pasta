@@ -2,11 +2,11 @@
 <template>
   <div class="min-h-screen bg-slate-100 dark:bg-slate-950 text-[#2c2c2c] dark:text-slate-100 font-sans selection:bg-primary/30">
     <NuxtRouteAnnouncer />
-    <HeaderBar v-if="route.path !== '/login'" />
+    <HeaderBar v-if="!semMoldura" />
     <main :class="[route.path !== '/' && showHeader ? 'max-w-7xl mx-auto px-4 py-8 md:px-8 md:py-12' : '']">
       <NuxtPage />
     </main>
-    <FooterBar v-if="route.path !== '/login'" />
+    <FooterBar v-if="!semMoldura" />
   </div>
 </template>
 
@@ -20,8 +20,10 @@ const route = useRoute()
 
 const showHeader = computed(() => {
   const publicPages = ['/', '/login', '/confirm', '/recovery', '/privacidade']
-  return !publicPages.includes(route.path)
+  return !publicPages.includes(route.path) && !route.path.startsWith('/f/')
 })
+// Login e formulário da cliente (/f/…) aparecem sem o menu do CRM.
+const semMoldura = computed(() => route.path === '/login' || route.path.startsWith('/f/'))
 
 const defaultTitle = 'Lara Café'
 useHead({

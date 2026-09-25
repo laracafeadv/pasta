@@ -1,4 +1,5 @@
-import { assinaturaValida, extrairMensagens } from '../../utils/whatsapp'
+import { assinaturaValida, extrairEcos, extrairMensagens } from '../../utils/whatsapp'
+import { registrarEco } from '../../utils/ecos'
 import { processarMensagem } from '../../utils/atendimento'
 
 /**
@@ -19,7 +20,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const mensagens = extrairMensagens(payload)
+  const ecos = extrairEcos(payload)
   const tarefa = (async () => {
+    for (const eco of ecos) {
+      try {
+        await registrarEco(event, eco)
+      } catch (e) {
+        console.error('[whatsapp/webhook] Erro ao registrar mensagem do celular:', e)
+      }
+    }
     for (const m of mensagens) {
       try {
         await processarMensagem(event, m)

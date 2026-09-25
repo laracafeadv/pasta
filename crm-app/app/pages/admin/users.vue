@@ -4,8 +4,8 @@
       <!-- Header Area -->
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 class="text-3xl sm:text-4xl font-black tracking-tight mb-2 text-slate-900 dark:text-white">Gerenciar Usuários</h1>
-          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Quem tem acesso ao CRM do escritório e com qual nível. <NuxtLink to="/admin/escritorio" class="underline underline-offset-2">Dados do escritório</NuxtLink> · <NuxtLink to="/admin/auditoria" class="underline underline-offset-2">Auditoria</NuxtLink></p>
+          <h1 class="text-3xl sm:text-4xl font-black tracking-tight mb-2 text-slate-900 dark:text-white">Configurações</h1>
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Seu acesso ao CRM (e de quem você convidar no futuro). <NuxtLink to="/admin/escritorio" class="underline underline-offset-2">Dados do escritório</NuxtLink> · <NuxtLink to="/admin/auditoria" class="underline underline-offset-2">Auditoria</NuxtLink></p>
         </div>
         <Button variant="primary" @click="openModal(null)" class="shrink-0 shadow-glow-primary/20">
           <div class="flex items-center gap-2">
@@ -63,10 +63,6 @@
                     <div>
                       <p class="text-sm font-bold text-slate-900 dark:text-white">{{ user.name }}</p>
                       <p class="text-xs text-slate-500 dark:text-slate-400">{{ user.email }}</p>
-                      <select v-if="user.role !== 'user'" :value="(user as any).cargo ?? ''" class="mt-1 text-xs bg-transparent border-b border-dashed border-slate-300 dark:border-slate-600" title="Cargo (organograma)" @change="mudarCargo(user, ($event.target as HTMLSelectElement).value)">
-                        <option value="">Definir cargo…</option>
-                        <option v-for="c in CARGOS" :key="c" :value="c">{{ c }}</option>
-                      </select>
                     </div>
                   </div>
                 </td>
@@ -98,8 +94,6 @@
           </div>
         </div>
       </Card>
-
-      <FluxoEquipe :usuarios="users" />
     </div>
 
     <UserModal 
@@ -123,8 +117,7 @@ import Button from '../../components/Button.vue'
 import Badge from '../../components/Badge.vue'
 import UserModal from '../../components/admin/UserModal.vue'
 import type { Profile } from '../../../shared/types/profile'
-import FluxoEquipe from '../../components/gestao/FluxoEquipe.vue'
-import { CARGOS } from '../../../shared/types/crm'
+
 
 definePageMeta({
   middleware: ['auth', 'admin']
@@ -144,11 +137,6 @@ const externalCount = computed(() => users.value.filter(u => u.role === 'user').
 onMounted(async () => {
   await adminStore.fetchUsers()
 })
-
-async function mudarCargo(user: Profile, cargo: string) {
-  await $fetch(`/api/admin/users/${user.id}`, { method: 'PUT', body: { cargo } })
-  ;(user as any).cargo = cargo || null
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })

@@ -24,7 +24,8 @@ export interface Custos {
  */
 export async function calcularCustos(admin: SupabaseClient, e: Escritorio): Promise<Custos> {
   const { data } = await admin.from('lancamentos').select('valor').eq('tipo', 'pagar').eq('recorrente', true)
-  const custoMensal = (data ?? []).reduce((s, l) => s + Number(l.valor), 0)
+  // Pró-labore entra no custo: sem ele, o preço mínimo não paga a própria advogada.
+  const custoMensal = (data ?? []).reduce((s, l) => s + Number(l.valor), 0) + (Number(e.pro_labore) || 0)
   const horasProdutivas = Math.max(1, Number(e.horas_produtivas_mes) || 120)
   const margem = Number.isFinite(Number(e.margem_desejada)) && e.margem_desejada ? Number(e.margem_desejada) : 30
   let horas = { ...HORAS_PADRAO }

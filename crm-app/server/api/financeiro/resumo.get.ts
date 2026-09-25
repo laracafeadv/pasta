@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
   const [{ data: lanc }, { data: honor }, { data: ativs }, { data: contatos }] = await Promise.all([
     admin.from('lancamentos').select('tipo, valor, vencimento, pago_em, recorrente, contato_id, honorario_id').limit(5000),
-    admin.from('honorarios').select('contato_id, valor, status').limit(5000),
+    admin.from('honorarios').select('contato_id, valor, status, tipo, data_contratacao, valor_mensal, meses').limit(5000),
     admin.from('atividades').select('contato_id, minutos').not('minutos', 'is', null).limit(10000),
     admin.from('contatos').select('id, nome, area, demanda').or('etapa.in.(ativo,concluido)').limit(2000),
   ])
@@ -38,7 +38,8 @@ export default defineEventHandler(async (event) => {
     const entradas = soma(doMes.filter(l => l.tipo === 'receber'))
     let saidas = soma(doMes.filter(l => l.tipo === 'pagar'))
     // Despesa recorrente ainda não lançada neste mês entra como projeção.
-    const projetadas = recorrentes.filter(r => r.vencimento.slice(0, 7) < mes).reduce((s, r) => s + Number(r.valor), 0)
+    // O pró-labore não é lançado em Contas: entra como saída projetada todo mês.
+    const projetadas = recorrentes.filter(r => r.vencimento.slice(0, 7) < mes).reduce((s, r) => s + Number(r.valor), 0) + (Number(escritorio.pro_labore) || 0)
     saidas += projetadas
     const recebido = soma(doMes.filter(l => l.tipo === 'receber' && l.pago_em))
     const pago = soma(doMes.filter(l => l.tipo === 'pagar' && l.pago_em))
@@ -71,5 +72,29 @@ export default defineEventHandler(async (event) => {
   }).filter(r => r.contratado || r.recebido || r.despesas || r.horas)
     .sort((a, b) => a.resultado - b.resultado)
 
-  return { hoje, fluxo, atrasados, custos, rentabilidade: rent }
+  // ── Faturamento × receita × pró-labore do mês (Módulo 1) ──────────────────
+  // Faturamento = contratos fechados no mês (o que foi vendido); receita = o que entrou no caixa.
+  const fechados = (honor ?? []).filter(h => ['Contratado', 'Pago'].includes(h.status))
+  const totalContrato = (h: any) => Number(h.valor) + (Number(h.valor_mensal) || 0) * (Number(h.meses) || 0)
+  const faturamento = fechados.filter(h => (h.data_contratacao ?? '').slice(0, 7) === mesAtual).reduce((s, h) => s + totalContrato(h), 0)
+  const receita = L.filter(l => l.tipo === 'receber' && (l.pago_em ?? '').slice(0, 7) === mesAtual).reduce((s, l) => s + Number(l.valor), 0)
+  const despesasPagas = L.filter(l => l.tipo === 'pagar' && (l.pago_em ?? '').slice(0, 7) === mesAtual).reduce((s, l) => s + Number(l.valor), 0)
+  const proLabore = Number(escritorio.pro_labore) || 0
+  const mes = { mes: mesAtual, faturamento, receita, despesasPagas, proLabore, sobra: receita - despesasPagas - proLabore }
+
+  // ── Ticket médio real por demanda (contratos fechados) ─────────────────────
+  // Consulta fica fora: é porta de entrada, não o preço da demanda.
+  const casos = fechados.filter(h => h.tipo !== 'Consulta')
+  const ids = [...new Set(casos.map(h => h.contato_id))]
+  const { data: dem } = ids.length ? await admin.from('contatos').select('id, demanda, area').in('id', ids) : { data: [] }
+  const demandaDe = new Map((dem ?? []).map(c => [c.id, c.demanda || c.area || 'Sem demanda']))
+  const porDemanda = new Map<string, number[]>()
+  for (const h of casos) {
+    const d = demandaDe.get(h.contato_id) ?? 'Sem demanda'
+    porDemanda.set(d, [...(porDemanda.get(d) ?? []), totalContrato(h)])
+  }
+  const ticket = [...porDemanda].map(([demanda, vs]) => ({ demanda, contratos: vs.length, medio: vs.reduce((a, b) => a + b, 0) / vs.length }))
+    .sort((a, b) => b.contratos - a.contratos)
+
+  return { hoje, fluxo, atrasados, custos, rentabilidade: rent, mes, ticket }
 })

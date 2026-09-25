@@ -1,16 +1,13 @@
 <template>
   <div class="space-y-5">
     <div class="flex flex-wrap items-center gap-3 text-sm">
-      <label class="flex items-center gap-2 cursor-pointer select-none">
-        <input v-model="soMinhas" type="checkbox" class="accent-[#3c2923]" /> Só as minhas
-      </label>
       <NuxtLink v-if="agenda.relacionamento" :to="{ query: { aba: 'carteira' } }" class="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-secondary/15 text-secondary-dark dark:text-secondary-200 hover:bg-secondary/25">
         <Icon name="ph:heart-bold" /> {{ agenda.relacionamento }} cliente(s) da carteira pedem um gesto
       </NuxtLink>
     </div>
     <div v-if="agenda.transferidas.length" class="rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm flex flex-wrap items-center gap-2">
       <Icon name="ph:user-switch-bold" class="text-warning-dark" />
-      <b>{{ agenda.transferidas.length }} conversa(s) aguardam a equipe no WhatsApp</b>
+      <b>{{ agenda.transferidas.length }} conversa(s) aguardam você no WhatsApp</b>
       <span class="text-gray-600 dark:text-zinc-400">(a IA foi pausada):</span>
       <button v-for="c in agenda.transferidas" :key="c.id" class="underline underline-offset-2" @click="emit('abrir', c, 'conversa')">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
     </div>
@@ -71,8 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useProfileStore } from '../../stores/profile'
+import { computed } from 'vue'
 import TarefaItem from './TarefaItem.vue'
 import { TIPOS_COMPROMISSO, dataCompromisso, type Contato } from '../../../shared/types/crm'
 import type { Agenda } from '../../stores/crm'
@@ -84,10 +80,7 @@ const hoje = hojeISO()
 const props = defineProps<{ agenda: Agenda }>()
 const emit = defineEmits<{ abrir: [c: Contato, aba?: string, modelo?: string]; andamento: [c: Contato]; adiar: [c: Contato] }>()
 
-// Delegação: cada pessoa vê o que é dela (contatos com ela como responsável).
-const soMinhas = ref(false)
-const meuId = computed(() => useProfileStore().profile?.id)
-const filtrar = (lista: Contato[]) => (soMinhas.value ? lista.filter(c => c.responsavel_id === meuId.value) : lista)
+const filtrar = (lista: Contato[]) => lista
 
 const blocos = computed(() => [
   { id: 'atrasadas', titulo: 'Atrasadas', sub: 'Próxima ação com data vencida.', vazio: 'Nada atrasado.', pill: 'bg-danger/15 text-danger-dark dark:text-danger-200', itens: filtrar(props.agenda.atrasadas) },

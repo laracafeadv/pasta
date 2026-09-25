@@ -29,16 +29,27 @@ export default defineEventHandler(async (event) => {
     : 'em parcela única'
   const objeto = h.descricao || contato?.demanda || 'serviços advocatícios'
   const exito = h.tipo === 'Êxito'
+  const camadas = h.tipo === 'Em camadas'
+  const venc = h.data_contratacao ? `, vencendo a primeira em ${new Date(h.data_contratacao + 'T12:00').toLocaleDateString('pt-BR')}` : ''
+  const textoCamadas = [
+    `Pelos serviços, o(a) CONTRATANTE pagará à CONTRATADA: (a) honorários iniciais de ${valor}, ${pagamento}, por meio de ${v(h.forma_pagamento, 'forma de pagamento')}${venc}`,
+    Number(h.valor_mensal) > 0 ? `(b) honorários mensais de ${brlServidor(h.valor_mensal)} (${valorPorExtenso(h.valor_mensal)})${h.meses ? `, por ${h.meses} meses` : ''}, a partir do mês seguinte ao protocolo da primeira peça` : null,
+    Number(h.percentual_exito) > 0 ? `(${Number(h.valor_mensal) > 0 ? 'c' : 'b'}) honorários de êxito de ${String(h.percentual_exito).replace('.', ',')}% sobre o proveito econômico efetivamente obtido, devidos no seu recebimento` : null,
+  ].filter(Boolean).join('; ') + '.'
+  const validade = camadas && Number(h.validade_anos) > 0
+    ? { titulo: 'Parágrafo segundo.', texto: `Os valores deste contrato valem por ${h.validade_anos} ano(s). Se o serviço ultrapassar esse prazo, as partes se reunirão para revisar os honorários mensais, sem prejuízo dos já vencidos.` }
+    : null
 
   const buffer = await gerarDocx('CONTRATO DE PRESTAÇÃO DE SERVIÇOS ADVOCATÍCIOS', [
     { titulo: 'CONTRATANTE:', texto: `${qualificacaoTexto(qq, contato?.nome)}.` },
     { titulo: 'CONTRATADA:', texto: `${advogadaTexto(escritorio)}.` },
     { texto: 'As partes acima identificadas têm, entre si, justo e acertado o presente contrato, que se regerá pelas cláusulas seguintes e pelo Estatuto da Advocacia (Lei nº 8.906/1994) e pelo Código de Ética e Disciplina da OAB.' },
     { titulo: 'CLÁUSULA 1ª — DO OBJETO.', texto: `A CONTRATADA prestará ao(à) CONTRATANTE serviços advocatícios referentes a: ${objeto}, compreendendo a orientação jurídica, a elaboração das peças necessárias e o acompanhamento até o seu encerramento na instância em que se iniciar.` },
-    { titulo: 'CLÁUSULA 2ª — DOS HONORÁRIOS.', texto: exito
+    { titulo: 'CLÁUSULA 2ª — DOS HONORÁRIOS.', texto: camadas ? textoCamadas : exito
       ? `Pelos serviços, o(a) CONTRATANTE pagará à CONTRATADA honorários de êxito correspondentes a ${valor}${h.observacao ? ` (${h.observacao})` : ''}, devidos no recebimento do proveito econômico.`
-      : `Pelos serviços, o(a) CONTRATANTE pagará à CONTRATADA o valor total de ${valor}, ${pagamento}, por meio de ${v(h.forma_pagamento, 'forma de pagamento')}${h.data_contratacao ? `, vencendo a primeira em ${new Date(h.data_contratacao + 'T12:00').toLocaleDateString('pt-BR')}` : ''}.` },
-    { titulo: 'Parágrafo único.', texto: 'Os honorários de sucumbência, se houver, pertencem exclusivamente à CONTRATADA (art. 23 da Lei nº 8.906/1994) e não se compensam com os honorários contratuais.' },
+      : `Pelos serviços, o(a) CONTRATANTE pagará à CONTRATADA o valor total de ${valor}, ${pagamento}, por meio de ${v(h.forma_pagamento, 'forma de pagamento')}${venc}.` },
+    { titulo: validade ? 'Parágrafo primeiro.' : 'Parágrafo único.', texto: 'Os honorários de sucumbência, se houver, pertencem exclusivamente à CONTRATADA (art. 23 da Lei nº 8.906/1994) e não se compensam com os honorários contratuais.' },
+    ...(validade ? [validade] : []),
     { titulo: 'CLÁUSULA 3ª — DAS DESPESAS.', texto: 'Custas processuais, emolumentos, taxas, perícias, cópias, deslocamentos e demais despesas necessárias à execução dos serviços não estão incluídos nos honorários e serão suportados pelo(a) CONTRATANTE, mediante prévia ciência.' },
     { titulo: 'CLÁUSULA 4ª — DAS OBRIGAÇÕES.', texto: 'A CONTRATADA obriga-se a empregar todo o zelo e a técnica profissional na defesa dos interesses do(a) CONTRATANTE, mantendo-o(a) informado(a) do andamento, sendo sua obrigação de meio e não de resultado. O(A) CONTRATANTE obriga-se a fornecer, com veracidade e em tempo hábil, as informações e os documentos solicitados.' },
     { titulo: 'CLÁUSULA 5ª — DA RESCISÃO.', texto: 'O contrato poderá ser rescindido por qualquer das partes mediante comunicação escrita. Em caso de revogação do mandato pelo(a) CONTRATANTE, serão devidos os honorários proporcionais aos serviços já prestados, sem prejuízo dos já vencidos.' },

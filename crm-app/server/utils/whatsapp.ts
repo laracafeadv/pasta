@@ -112,3 +112,32 @@ export function extrairMensagens(payload: any): MensagemRecebida[] {
   }
   return out
 }
+
+export interface EcoEnviado {
+  waId: string
+  telefone: string
+  texto: string
+  timestamp: number
+}
+
+/**
+ * Coexistência (WhatsApp Business app + API no mesmo número): o que a advogada envia
+ * pelo aplicativo do celular chega como "smb_message_echoes". Assim a conversa no CRM
+ * fica completa, sem precisar escolher entre o celular e o sistema.
+ */
+export function extrairEcos(payload: any): EcoEnviado[] {
+  const out: EcoEnviado[] = []
+  for (const entry of payload?.entry ?? []) {
+    for (const change of entry?.changes ?? []) {
+      if (change?.field !== 'smb_message_echoes') continue
+      for (const m of change?.value?.message_echoes ?? []) {
+        const tipo = m.type as string
+        const texto = tipo === 'text'
+          ? m.text?.body ?? ''
+          : `[enviado pelo celular: ${ROTULO_MIDIA[tipo] ?? 'mensagem'}${m[tipo]?.caption ? ` — "${m[tipo].caption}"` : ''}]`
+        out.push({ waId: m.id, telefone: String(m.to), texto: texto.slice(0, 4000), timestamp: Number(m.timestamp) * 1000 || Date.now() })
+      }
+    }
+  }
+  return out
+}

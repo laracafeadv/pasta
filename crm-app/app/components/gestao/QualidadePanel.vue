@@ -7,32 +7,15 @@
       <div class="kpi"><span>Prazos cumpridos no prazo</span><b>{{ k?.prazosNoPrazo != null ? `${k.prazosNoPrazo}%` : '—' }}</b><small :class="k?.prazosVencidos ? 'text-danger font-semibold' : ''">{{ k?.prazosVencidos ?? 0 }} vencido(s) em aberto</small></div>
       <div class="kpi"><span>Do contato à consulta</span><b>{{ k?.diasAteConsulta != null ? `${k.diasAteConsulta} dias` : '—' }}</b><small>média, últimos 90 dias</small></div>
       <div class="kpi"><span>Revisões internas</span><b>{{ k?.revisoes90 ?? 0 }}</b><small>{{ k?.revisoesAprovadas != null ? `${k.revisoesAprovadas}% aprovadas` : 'últimos 90 dias' }}</small></div>
-      <div class="kpi"><span>Sem responsável</span><b>{{ k?.semResponsavel ?? 0 }}</b><small>casos abertos sem dono</small></div>
     </div>
 
-    <!-- Carga por pessoa (delegação) -->
-    <section class="painel">
-      <h2 class="text-2xl text-primary dark:text-zinc-100">Quem está com o quê</h2>
-      <p class="text-xs text-gray-500">Casos abertos, atrasos e prazos por pessoa. Atraso concentrado em alguém é sinal de redistribuir, não de cobrar mais. Responsável padrão por etapa: tela Equipe.</p>
-      <table class="w-full text-sm mt-3">
-        <thead><tr class="text-left text-[10px] uppercase tracking-widest text-gray-400"><th class="py-2 font-semibold">Pessoa</th><th class="font-semibold">Cargo</th><th class="text-right font-semibold">Casos</th><th class="text-right font-semibold">Atrasados</th><th class="text-right font-semibold">Prazos</th></tr></thead>
-        <tbody>
-          <tr v-for="p in k?.carga ?? []" :key="p.id" class="border-t border-gray-100 dark:border-zinc-800">
-            <td class="py-2">{{ p.nome }}</td><td class="text-gray-500">{{ p.cargo || '—' }}</td>
-            <td class="text-right tabular-nums">{{ p.abertos }}</td>
-            <td class="text-right tabular-nums" :class="p.atrasados ? 'text-danger font-semibold' : ''">{{ p.atrasados }}</td>
-            <td class="text-right tabular-nums">{{ p.prazosPendentes }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
 
     <!-- Revisão por amostragem -->
     <section class="painel">
       <div class="flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <h2 class="text-2xl text-primary dark:text-zinc-100">Revisão interna por amostragem</h2>
-          <p class="text-xs text-gray-500">Toda semana, sorteie alguns casos ativos e confira o checklist. Falha vira plano de ação com responsável e data (entra na agenda).</p>
+          <h2 class="text-2xl text-primary dark:text-zinc-100">Revisão semanal</h2>
+          <p class="text-xs text-gray-500">Toda sexta, sorteie alguns casos ativos e confira o checklist com calma. O que falhar vira tarefa com data na agenda.</p>
         </div>
         <Button size="sm" icon="ph:shuffle-bold" :loading="sorteando" @click="sortear">Sortear 3 casos</Button>
       </div>
@@ -51,13 +34,9 @@
                   :class="itens[i.chave] === o.v ? o.cor : 'border-gray-200 dark:border-zinc-700 text-gray-500'" @click="itens[i.chave] = o.v">{{ o.n }}</button>
         </div>
         <textarea v-model="obs" rows="2" class="modal-input" placeholder="Observações da revisão" />
-        <div v-if="falhas" class="grid grid-cols-1 sm:grid-cols-[1fr_160px_200px] gap-2">
+        <div v-if="falhas" class="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-2">
           <input v-model="plano" class="modal-input" placeholder="Plano de ação: o que será corrigido" required />
           <input v-model="prazo" type="date" class="modal-input" required />
-          <select v-model="responsavel" class="modal-input">
-            <option value="">Eu mesma</option>
-            <option v-for="p in k?.carga ?? []" :key="p.id" :value="p.id">{{ p.nome }}</option>
-          </select>
         </div>
         <div class="flex items-center gap-3">
           <Button type="submit" size="sm" icon="ph:check-bold" :loading="salvando">{{ falhas ? `Registrar com ${falhas} ponto(s) a corrigir` : 'Aprovar revisão' }}</Button>
@@ -89,7 +68,6 @@ import { hojeISO } from '../../stores/crm'
 interface Kpis {
   tempoMedioSolucao: number | null; encerrados: number; taxaExito: number | null; nps: number | null; respostasNps: number
   prazosNoPrazo: number | null; prazosVencidos: number; diasAteConsulta: number | null; revisoes90: number; revisoesAprovadas: number | null
-  carga: { id: string; nome: string; cargo: string | null; abertos: number; atrasados: number; prazosPendentes: number }[]; semResponsavel: number
 }
 type CasoAmostra = Pick<Caso, 'id' | 'titulo'> & { contato?: Pick<Contato, 'id' | 'nome'> | null }
 
@@ -103,7 +81,6 @@ const itens = reactive<Record<string, ResultadoItem>>({})
 const obs = ref('')
 const plano = ref('')
 const prazo = ref('')
-const responsavel = ref('')
 const salvando = ref(false)
 const erro = ref('')
 const opcoes = [
@@ -136,7 +113,6 @@ function abrirRevisao(c: CasoAmostra) {
   obs.value = ''
   plano.value = ''
   prazo.value = hojeISO(3)
-  responsavel.value = ''
   erro.value = ''
 }
 async function salvarRevisao() {
@@ -146,7 +122,7 @@ async function salvarRevisao() {
   try {
     await $fetch('/api/qualidade/revisoes', {
       method: 'POST',
-      body: { caso_id: revisando.value.id, itens: { ...itens }, observacao: obs.value, plano_acao: falhas.value ? plano.value : null, prazo: falhas.value ? prazo.value : null, responsavel_id: responsavel.value || null },
+      body: { caso_id: revisando.value.id, itens: { ...itens }, observacao: obs.value, plano_acao: falhas.value ? plano.value : null, prazo: falhas.value ? prazo.value : null, responsavel_id: null },
     })
     amostra.value = amostra.value.filter(c => c.id !== revisando.value!.id)
     revisando.value = null

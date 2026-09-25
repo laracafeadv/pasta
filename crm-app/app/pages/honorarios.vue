@@ -90,6 +90,10 @@ function preencher(h?: Honorario, contatoId?: number) {
     parcelas: h?.parcelas ?? 1,
     data_contratacao: h?.data_contratacao ?? '',
     observacao: h?.observacao ?? '',
+    valor_mensal: h?.valor_mensal ?? '',
+    meses: h?.meses ?? '',
+    percentual_exito: h?.percentual_exito ?? '',
+    validade_anos: h?.validade_anos ?? '',
   })
 }
 
@@ -269,6 +273,13 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
           <span>Status</span>
           <select v-model="form.status" class="modal-input"><option v-for="s in STATUS_HONORARIO" :key="s">{{ s }}</option></select>
         </label>
+        <template v-if="form.tipo === 'Em camadas'">
+          <label class="field"><span>Mensal (R$)</span><input v-model="form.valor_mensal" type="number" min="0" step="0.01" class="modal-input" /></label>
+          <label class="field"><span>Por quantos meses</span><input v-model="form.meses" type="number" min="1" max="60" class="modal-input" /></label>
+          <label class="field"><span>% do proveito econômico</span><input v-model="form.percentual_exito" type="number" min="0" max="100" step="0.5" class="modal-input" /></label>
+          <label class="field"><span>Validade do contrato (anos)</span><input v-model="form.validade_anos" type="number" min="1" max="20" class="modal-input" /></label>
+          <p class="sm:col-span-2 text-xs text-gray-500 -mt-2">Em camadas, o "Valor" é o arranque. As parcelas lançadas incluem o arranque e as mensalidades.</p>
+        </template>
         <label class="field"><span>Forma de pagamento</span><input v-model="form.forma_pagamento" class="modal-input" placeholder="Pix, boleto, cartão…" /></label>
         <label class="field"><span>Data da contratação</span><input v-model="form.data_contratacao" type="date" class="modal-input" /></label>
         <label class="field sm:col-span-2"><span>Observação</span><textarea v-model="form.observacao" rows="2" class="modal-input" /></label>

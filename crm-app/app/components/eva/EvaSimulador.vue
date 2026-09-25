@@ -24,7 +24,7 @@
         </div>
         <div v-if="pensando" class="self-start text-xs text-gray-400 italic">A assistente está digitando…</div>
         <div v-if="ultimo?.transferir_para_humano" class="self-center text-xs font-semibold text-warning-dark bg-warning/10 rounded-full px-4 py-1.5">
-          Transferida para a equipe: {{ ultimo.motivo_transferencia || 'pedido de atendimento humano' }}
+          Transferida para você: {{ ultimo.motivo_transferencia || 'pedido de atendimento humano' }}
         </div>
       </div>
 

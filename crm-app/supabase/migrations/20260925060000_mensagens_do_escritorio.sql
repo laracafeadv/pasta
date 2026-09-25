@@ -32,11 +32,11 @@ Segue anexo o boleto referente à parcela [PARCELA], com vencimento em [VENCIMEN
 
 Caso tenha algum problema com o acesso ao boleto, basta nos sinalizar por aqui, estamos à disposição! Tenha um ótimo dia!$t$, 15),
 ('3. Depois da consulta', 'Feedback da consulta', '/feedback', $t$[SAUDAÇÃO], [NOME]! Tudo bem? 🌻
-Me chamo [MEU NOME], faço parte da equipe do escritório da [DRA] e estou entrando em contato para pedir um feedback sobre suas percepções acerca da consulta realizada ontem com a [DRA], e saber se surgiu alguma dúvida sobre os assuntos tratados que queira esclarecer.
+Aqui é do escritório da [DRA]. Estamos passando para saber como você se sentiu com a consulta de ontem e se surgiu alguma dúvida sobre os assuntos tratados que queira esclarecer.
 
-Fico à disposição, e até amanhã enviaremos a proposta de honorários!$t$, 5),
+Ficamos à disposição, e até amanhã enviaremos a proposta de honorários!$t$, 5),
 ('7. Follow-up', 'Remarketing — proposta sem resposta', '/remarketing-proposta', $t$[SAUDAÇÃO], [NOME]! Tudo bem?
-Me chamo [MEU NOME], faço parte da equipe do escritório e estou passando para perguntar como está a situação [DESENVOLVER PARA O CASO ESPECÍFICO] e se restou alguma dúvida que gostaria de esclarecer sobre o caso.
+Aqui é do escritório da [DRA]. Estamos passando para perguntar como está a situação [DESENVOLVER PARA O CASO ESPECÍFICO] e se restou alguma dúvida que gostaria de esclarecer sobre o caso.
 
 Gostaríamos também de confirmar se você recebeu a proposta de honorários enviada no dia [DATA DA PROPOSTA]. Caso não tenha recebido, podemos enviar novamente.
 

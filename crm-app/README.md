@@ -10,28 +10,27 @@ Adaptado do projeto [`loboczss/crm-advogada`](https://github.com/loboczss/crm-ad
 
 | Tela | Para quê |
 |---|---|
-| **CRM → Hoje** | Tela inicial. Casos atrasados, compromissos do dia, casos **sem próxima ação** e conversas que aguardam a equipe. |
+| **CRM → Hoje** | Tela inicial. Casos atrasados, compromissos do dia, casos **sem próxima ação** e conversas que aguardam você. |
 | **CRM → Funil** | Novo contato → Consulta agendada → Diagnóstico → Proposta enviada → Cliente ativo → Concluído / Não contratou. Arrastar um cartão pede o próximo passo. |
 | **CRM → Contatos** | Base completa com busca e filtros. Ficha 360: caso, conversa de WhatsApp, atividades e honorários. |
 | **Agenda** | Prazos processuais, audiências, reuniões, consultas e tarefas. Calculadora de prazo em dias úteis (CPC art. 219/220/224: fins de semana, feriados nacionais e recesso de 20/12 a 20/01). |
 | **Casos** | Dossiê de cada cliente ativo: tipo, número CNJ (validado), vara/cartório, parte contrária e prazos ligados. |
-| **Ficha → Qualificação** | Dados para procuração e contrato. A equipe vê CPF/RG mascarados; só a administração vê completo. |
-| **Peças em Word** | Procuração e contrato de honorários gerados com os dados da qualificação e do escritório (só administração). **Revise o texto antes de usar.** |
+| **Ficha → Qualificação** | Dados para procuração e contrato, preenchidos pela própria cliente no **formulário** (link seguro, depois de contratar). |
+| **Formulário da cliente** (`/f/...`) | Link único, válido por 30 dias e respondido uma vez só. Coleta os dados da procuração, pergunta como ela está e o que espera que mude (vai para o Mapa da Empatia), pede o consentimento LGPD e recebe anexos, que caem na pasta 01 do Drive. |
+| **Peças em Word** | Procuração e contrato de honorários gerados com os dados da qualificação e do escritório e salvos direto na pasta da cliente no Google Drive. **Revise o texto antes de usar.** |
 | **Honorários** | Propostas, contratos e recebimentos por cliente. |
 | **Relatórios** (e Painel, pelo link) | Novos contatos, taxa de fechamento, origem dos clientes, áreas e motivos de perda. |
 | **Assistente IA** | Instruções da assistente, base de conhecimento (PDF, Word, planilhas, imagens) e aba **Testar** para conversar com ela antes de ligar no WhatsApp. |
 | **Mensagens** | Biblioteca de mensagens prontas (playbook "Scripts que Vendem"): triagem, agendamento, documentos, proposta, objeções, follow-up, financeiro, NPS. Na conversa, digite `/` para usar. |
-| **Equipe → Auditoria** | Quem fez o quê e quando. Registro imutável, sem conteúdo dos dados (LGPD). |
-| **Equipe** | Criação de usuários e níveis de acesso. |
+| **Configurações → Auditoria** | O que foi feito e quando. Registro imutável, sem conteúdo dos dados (LGPD). |
 | **CRM → Carteira** | Clientes em 4 grupos (promotora, neutra, fria, detratora), cada um com o seu plano de ação, a mensagem certa e o aviso de quem "pede um gesto". Detratora recente (até 90 dias): reparar; antiga: não reabrir. |
 | **CRM → Remarketing** | Quem não fechou, agrupado por demanda, com o motivo (etiquetas do antigo quadro do Trello), o mês da procura e quem já pode receber conteúdo (a cada 45 dias). "Reabrir" devolve para Em qualificação; "pediu para não receber" tira da lista. |
-| **Ficha → Diagnóstico** | Roteiro da consulta por área, 5 porquês até a causa raiz, checagem de viabilidade (prescrição, competência, provas, conflito…), capacidade de pagamento, o que está em jogo × honorário (e o preço mínimo, para a administração) e a decisão: viável, com ressalvas ou não viável. |
-| **Financeiro** (administração) | Contas a pagar e a receber, parcelas geradas a partir do honorário, fluxo de caixa de 6 meses, custo da hora, preço mínimo por demanda e rentabilidade por cliente (com o tempo registrado no histórico). |
-| **Relatórios → Qualidade e equipe** | Tempo médio de solução, taxa de êxito, NPS, prazos cumpridos, casos por pessoa e revisão interna por amostragem (falha vira tarefa com responsável e data). |
+| **Ficha → Diagnóstico** | Roteiro da consulta por área, 5 porquês até a causa raiz, checagem de viabilidade (prescrição, competência, provas, conflito…), capacidade de pagamento, o que está em jogo × honorário (e o preço mínimo) e a decisão: viável, com ressalvas ou não viável. |
+| **Financeiro** | Faturamento × receita × pró-labore do mês, contas a pagar e a receber, parcelas geradas a partir do honorário (inclusive **em camadas**: arranque + mensal + % de êxito + validade), fluxo de caixa de 6 meses, custo da hora (com o pró-labore), preço mínimo e **ticket médio real** por demanda, rentabilidade por cliente. |
+| **Relatórios → Qualidade** | Tempo médio de solução, taxa de êxito, NPS, prazos cumpridos e revisão por amostragem (falha vira tarefa com data). |
 | **Ana (IA) → Cliente ideal** | Mapa da Empatia. A Ana usa o mapa para falar na língua da cliente e registra, com as palavras de cada pessoa, o que a preocupa e o que quer que mude; a IA compara o mapa com essas falas reais e sugere ajustes e frases. |
-| **Mensagens → Peças (Word)** | Modelos de peças com campos automáticos (`{{cliente.qualificacao}}`, `{{caso.numero}}`…), gerados pela ficha da cliente. |
-| **Equipe** | Cargo de cada pessoa e o fluxo de trabalho: responsável padrão por etapa. Ao mudar de etapa, o caso passa para essa pessoa (filtro "Só as minhas" na tela Hoje). |
-| **Equipe → Dados do escritório** | Nome, OAB, endereço, horários, valor da consulta e PIX. A Ana usa esses dados (menos o PIX) e as peças também. |
+| **WhatsApp Business (coexistência)** | O mesmo número no app do celular e no CRM. O que você responde pelo celular aparece na conversa e pausa a Ana. Arquivos de clientes vão sozinhos para a pasta "00 Recebidos pelo WhatsApp" do Drive; os de leads, pelo botão "Enviar ao Drive". |
+| **Configurações → Dados do escritório** | Nome, OAB, endereço, horários, valor da consulta, PIX, pró-labore e **posicionamento** (proposta de valor, tom de voz, o que não atende). A Ana usa esses dados (menos o PIX), e as peças também. |
 
 ### Estratégias dos playbooks (Desafio Comercial Diamante)
 - **Etapas com comportamento próprio:** Novo contato → *Em qualificação* → Consulta agendada → Diagnóstico → Proposta enviada → Cliente ativo.
@@ -49,11 +48,11 @@ Adaptado do projeto [`loboczss/crm-advogada`](https://github.com/loboczss/crm-ad
 ### Níveis de acesso
 | Nível | Acesso |
 |---|---|
-| `admin` | Tudo, inclusive a configuração da IA e a gestão da equipe. |
-| `equipe` | CRM, conversas, honorários, painel e relatórios. |
+| `admin` | Tudo. É o seu usuário. |
+| `equipe` | Reservado para o futuro (estagiária, secretária): CRM, conversas e honorários, sem financeiro nem CPF completo. |
 | `user` | Nenhum dado. Fica em "aguardando liberação". |
 
-Não há autocadastro: os usuários são criados pela administração em **Equipe**.
+Não há autocadastro nem senha padrão. Veja o primeiro acesso em `DEPLOYMENT.md`.
 
 ---
 
@@ -112,7 +111,7 @@ Crie uma chave em [platform.openai.com](https://platform.openai.com/api-keys) e 
 Na ficha da cliente (aba Caso), "Criar pasta no Drive" gera `CLI-0005 — Nome` com as subpastas padrão (01 Documentos pessoais … 99 Arquivo). Procuração, contrato e peças podem ser salvos direto na subpasta certa, com o nome `AAAA-MM-DD_CLI-0005_TIPO_descricao_v01.docx` e o rótulo de sigilo nas propriedades do arquivo. As regras completas estão no Manual de Gestão de Conhecimento e Compliance.
 
 ### Lembretes automáticos de prazos
-Ao abrir a tela Hoje, a equipe recebe notificação de prazos e audiências de hoje, amanhã e daqui a 3 dias (uma vez por dia). Para receber mesmo sem abrir o sistema, configure um agendador (ex.: Vercel Cron, às 7h) chamando `GET /api/cron/lembretes` com o cabeçalho `Authorization: Bearer <CRON_SECRET>` (mínimo de 16 caracteres).
+Ao abrir a tela Hoje, você recebe notificação de prazos e audiências de hoje, amanhã e daqui a 3 dias (uma vez por dia). Para receber mesmo sem abrir o sistema, configure um agendador (ex.: Vercel Cron, às 7h) chamando `GET /api/cron/lembretes` com o cabeçalho `Authorization: Bearer <CRON_SECRET>` (mínimo de 16 caracteres).
 
 ### 4. Hospedagem
 Precisa de **Node.js 22.12 ou superior**.
@@ -123,11 +122,11 @@ npm run build
 node .output/server/index.mjs
 ```
 - As variáveis são lidas **no build**. Se o build for feito sem elas, defina em produção com o prefixo `NUXT_`: `NUXT_SUPABASE_SECRET_KEY`, `NUXT_OPENAI_API_KEY`, `NUXT_WHATSAPP_TOKEN`, `NUXT_WHATSAPP_PHONE_NUMBER_ID`, `NUXT_WHATSAPP_VERIFY_TOKEN`, `NUXT_WHATSAPP_APP_SECRET`, `NUXT_PUBLIC_SUPABASE_URL`, `NUXT_PUBLIC_SUPABASE_KEY`, `NUXT_PUBLIC_SITE_URL`.
-- Guia específico para Coolify: `DEPLOYMENT.md`.
+- **Onde hospedar (Supabase São Paulo + Vercel), primeiro acesso e WhatsApp Business: `DEPLOYMENT.md`.** Alternativa com VPS/Coolify: `DEPLOYMENT-coolify.md`.
 - Use HTTPS (o login usa cookies seguros) e um subdomínio próprio, por exemplo `crm.laracafe.com.br`.
 
 ### 5. Antes de ligar a assistente
-0. Preencha **Equipe → Dados do escritório** (a Ana responde endereço, horários e valor da consulta a partir dali).
+0. Preencha **Configurações → Dados do escritório** (a Ana responde endereço, horários e valor da consulta a partir dali).
 1. Em **Assistente IA → Instruções**, revise o texto e salve.
 2. Em **Base de conhecimento**, envie o que ela pode informar: valor da consulta (se quiser divulgar), documentos que costumam ser pedidos, horários.
 3. Em **Testar**, simule conversas difíceis: pedido de preço, pergunta "eu tenho direito a…?", ameaça, pedido para falar com a advogada.

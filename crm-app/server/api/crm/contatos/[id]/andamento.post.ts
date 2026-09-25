@@ -1,5 +1,5 @@
 import { serverSupabaseClient } from '#supabase/server'
-import { ETAPAS, MOTIVOS_PERDA, chaveResponsavelEtapa, etapa } from '../../../../../shared/types/crm'
+import { ETAPAS, MOTIVOS_PERDA, etapa } from '../../../../../shared/types/crm'
 import { requireStaff } from '../../../../utils/security'
 import { registrarAtividade } from '../../../../utils/crm'
 import { auditar } from '../../../../utils/auditoria'
@@ -59,7 +59,10 @@ export default defineEventHandler(async (event) => {
     const h = limparHonorario({ ...body.honorario, contato_id: id })
     if (!(h.valor > 0)) throw createError({ statusCode: 400, message: 'Informe o valor.' })
     const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
-    const campos = { valor: h.valor, tipo: h.tipo ?? 'Contrato fixo', forma_pagamento: h.forma_pagamento ?? null, parcelas: h.parcelas ?? 1, descricao: h.descricao ?? null }
+    const campos = {
+      valor: h.valor, tipo: h.tipo ?? 'Contrato fixo', forma_pagamento: h.forma_pagamento ?? null, parcelas: h.parcelas ?? 1, descricao: h.descricao ?? null,
+      valor_mensal: h.valor_mensal ?? null, meses: h.meses ?? null, percentual_exito: h.percentual_exito ?? null, validade_anos: h.validade_anos ?? null,
+    }
     if (destino.id === 'proposta') {
       await client.from('honorarios').insert({ ...campos, contato_id: id, status: 'Proposta', responsavel_id: userId })
       await registrarAtividade(event, id, 'Sistema', `Proposta enviada: ${brlServidor(h.valor)}${h.forma_pagamento ? ` (${h.forma_pagamento})` : ''}.`, userId)
@@ -70,24 +73,29 @@ export default defineEventHandler(async (event) => {
         ? await client.from('honorarios').update(contrato).eq('id', prop[0].id)
         : await client.from('honorarios').insert({ ...contrato, contato_id: id, responsavel_id: userId })
       if (r.error) console.error('[crm/andamento] Erro no contrato:', r.error)
+      // Em camadas: a revisão contratual no fim da validade já entra na agenda.
+      if (campos.tipo === 'Em camadas' && campos.validade_anos) {
+        const revisao = new Date(); revisao.setFullYear(revisao.getFullYear() + campos.validade_anos)
+        await client.from('compromissos').insert({ tipo: 'reuniao', titulo: 'Reunião de revisão contratual (fim da validade do contrato)', contato_id: id, inicio: revisao.toISOString(), responsavel_id: userId })
+      }
       await registrarAtividade(event, id, 'Sistema', `Contrato fechado: ${brlServidor(h.valor)}${h.parcelas > 1 ? ` em ${h.parcelas}x` : ''}${h.forma_pagamento ? ` (${h.forma_pagamento})` : ''}.`, userId)
     }
+  }
+  // Pós-venda: ao concluir, a agenda já lembra de voltar a falar com ela em 30 dias e em 1 ano.
+  if (destino.id === 'concluido' && atual.etapa !== 'concluido') {
+    const dia = (n: number) => new Date(Date.now() + n * 864e5).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+    await client.from('compromissos').insert([
+      { tipo: 'tarefa', titulo: 'Pós-venda: 30 dias depois — /pos-venda-30', contato_id: id, data_limite: dia(30), responsavel_id: userId },
+      { tipo: 'tarefa', titulo: 'Pós-venda: 1 ano depois — /pos-venda-1ano', contato_id: id, data_limite: dia(365), responsavel_id: userId },
+    ])
   }
   if (atual.etapa !== destino.id) {
     await registrarAtividade(event, id, 'Sistema', `Etapa: ${etapa(atual.etapa).nome} → ${destino.nome}${destino.id === 'perdido' ? ` (${body.motivo_perda})` : ''}`, userId)
   }
 
-  // Fluxo da equipe: cada etapa pode ter uma pessoa responsável padrão (tela Equipe).
-  let responsavel: string | null = null
-  if (atual.etapa !== destino.id && destino.aberta) {
-    const { data: r } = await client.from('escritorio').select('valor').eq('chave', chaveResponsavelEtapa(destino.id)).maybeSingle()
-    responsavel = r?.valor || null
-  }
-
   const { data, error } = await client
     .from('contatos')
     .update({
-      ...(responsavel ? { responsavel_id: responsavel } : {}),
       etapa: destino.id,
       motivo_perda: destino.id === 'perdido' ? body.motivo_perda : null,
       proxima_acao: destino.aberta ? body.proxima_acao!.trim().slice(0, 300) : null,

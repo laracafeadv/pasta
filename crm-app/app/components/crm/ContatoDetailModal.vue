@@ -114,6 +114,10 @@
                 <Icon name="ph:file-arrow-down-bold" /> {{ m.midia_nome || 'Baixar arquivo' }}
               </a>
             </template>
+            <p v-if="m.midia_path && m.direcao === 'entrada' && !m.midia_tipo?.startsWith('audio/') && driveOk" class="text-[11px] my-1">
+              <a v-if="m.drive_url" :href="m.drive_url" target="_blank" rel="noopener" class="underline underline-offset-2"><Icon name="ph:google-drive-logo-bold" class="align-middle" /> No Drive</a>
+              <button v-else type="button" class="underline underline-offset-2" @click="enviarAoDrive(m)"><Icon name="ph:google-drive-logo-bold" class="align-middle" /> Enviar ao Drive</button>
+            </p>
             <p v-if="m.transcricao" class="text-xs opacity-80 italic whitespace-pre-wrap break-words">Transcrição: {{ m.transcricao }}</p>
             <p v-else class="whitespace-pre-wrap break-words">{{ m.conteudo }}</p>
             <p class="mt-1 text-[10px] opacity-70 text-right">{{ m.autor === 'ia' ? 'IA · ' : m.autor === 'equipe' ? 'Equipe · ' : '' }}{{ dataHora(m.created_at) }}</p>
@@ -127,7 +131,7 @@
             :nome-contato="dados.contato.nome"
             :sugerido="modeloSugerido"
             :extras="extrasContato"
-            @usar="(t) => { resposta = t; pickerAberto = false }"
+            @usar="(t, m) => { pickerAberto = false; if (m?.atalho === '/formulario') enviarFormulario(); else resposta = t }"
             @fechar="pickerAberto = false"
           />
           <div class="flex items-center gap-3 px-4 pt-3 text-xs">
@@ -192,10 +196,9 @@
           </button>
           <button v-if="ehAdmin" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}`)">Procuração (.docx)</button>
           <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/relatorio-semanal?contato=${dados.contato.id}`)">Relatório semanal (.docx)</button>
-          <select v-if="ehAdmin && pecas.length" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 bg-transparent text-primary dark:text-zinc-200" @change="gerarPeca(($event.target as HTMLSelectElement)); ">
-            <option value="">Outra peça (.docx)…</option>
-            <option v-for="p in pecas" :key="p.id" :value="p.id">{{ p.titulo }}</option>
-          </select>
+          <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full bg-primary text-white" :title="dados.contato.form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Dados da procuração, documentos e perguntas do Mapa'" @click="enviarFormulario">
+            {{ dados.contato.form_respondido_em ? 'Formulário respondido ✓' : 'Formulário da cliente' }}
+          </button>
         </div>
         <label v-if="ehAdmin && driveOk" class="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400 cursor-pointer">
           <input v-model="salvarNoDrive" type="checkbox" class="accent-[#3c2923]" /> Salvar as peças direto na pasta do cliente no Drive (em vez de baixar)
@@ -299,7 +302,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp, type PecaModelo } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
 import DiagnosticoPanel from './DiagnosticoPanel.vue'
@@ -362,7 +365,8 @@ watch(() => props.isOpen, (open) => {
       if (props.modeloInicial && dados.value) {
         await carregarModelos()
         const m = modelos.value.find(x => x.atalho === props.modeloInicial)
-        if (m) resposta.value = preencher(m.texto, dados.value.contato.nome, extrasContato.value)
+        if (m?.atalho === '/formulario') await enviarFormulario()
+        else if (m) resposta.value = preencher(m.texto, dados.value.contato.nome, extrasContato.value)
         aba.value = 'conversa'
       }
     })
@@ -532,18 +536,6 @@ function usarMensagem(texto: string) {
   aba.value = 'conversa'
 }
 
-// ─── Modelos de peças (administração) ─────────────────────────────────────
-const pecas = ref<PecaModelo[]>([])
-watch(() => [props.isOpen, ehAdmin.value] as const, async ([open, admin]) => {
-  if (open && admin && !pecas.value.length) pecas.value = await $fetch<PecaModelo[]>('/api/pecas/modelos').catch(() => [])
-}, { immediate: true })
-function gerarPeca(sel: HTMLSelectElement) {
-  const id = sel.value
-  sel.value = ''
-  if (!id || !dados.value) return
-  const caso = dados.value.casos.find(k => k.status === 'ativo') ?? dados.value.casos[0]
-  peca(`/api/pecas/gerar?modelo=${id}&contato=${dados.value.contato.id}${caso ? `&caso=${caso.id}` : ''}`)
-}
 
 // ─── Google Drive (repositório único de documentos) ───────────────────────
 const driveOk = ref(false)
@@ -565,6 +557,27 @@ async function criarPastaDrive() {
     avisoDrive.value = { texto: e?.data?.message || 'Não foi possível criar a pasta.', erro: true }
   } finally {
     criandoPasta.value = false
+  }
+}
+// Formulário da cliente (Módulo 1: depois de contratar, não antes da consulta).
+async function enviarFormulario() {
+  if (!dados.value) return
+  if (dados.value.contato.form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return
+  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/formulario`, { method: 'POST' })
+  await carregarModelos()
+  const m = modelos.value.find(x => x.atalho === '/formulario')
+  const link = `${window.location.origin}${r.caminho}`
+  resposta.value = m ? preencher(m.texto, dados.value.contato.nome, { ...extrasContato.value, 'LINK DO FORMULÁRIO': link }) : link
+  aba.value = 'conversa'
+}
+
+async function enviarAoDrive(m: MensagemWhatsapp) {
+  try {
+    const r = await $fetch<{ url: string }>(`/api/crm/mensagens/${m.id}/drive`, { method: 'POST' })
+    m.drive_url = r.url
+    if (dados.value && !dados.value.contato.drive_pasta_url) carregar()
+  } catch (e: any) {
+    alert(e?.data?.message || 'Não foi possível enviar ao Drive.')
   }
 }
 /** Baixa a peça ou, se marcado, grava na pasta do cliente no Drive. */

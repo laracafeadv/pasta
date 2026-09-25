@@ -1,5 +1,6 @@
 import { AlignmentType, Document, Packer, Paragraph, TextRun } from 'docx'
 import type { H3Event } from 'h3'
+import { serverSupabaseServiceRole } from '#supabase/server'
 import { NIVEIS_SIGILO, nomeArquivoPadrao, codigoCliente, type Escritorio, type Qualificacao, type SubpastaCliente } from '../../shared/types/crm'
 import { enviarArquivo, garantirPastaCliente } from './drive'
 import { auditar } from './auditoria'
@@ -63,7 +64,7 @@ export async function entregarPeca(event: H3Event, o: { buffer: Buffer; contatoI
   const data = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
   const nome = nomeArquivoPadrao({ data, contatoId: o.contatoId, tipo: o.tipo, descricao: o.descricao, extensao: 'docx' })
   if (getQuery(event).drive) {
-    const pasta = await garantirPastaCliente(event, o.contatoId)
+    const pasta = await garantirPastaCliente(serverSupabaseServiceRole(event), o.contatoId)
     try {
       const f = await enviarArquivo({
         nome, mime: DOCX, conteudo: o.buffer, pastaId: pasta.subpastas[o.subpasta],

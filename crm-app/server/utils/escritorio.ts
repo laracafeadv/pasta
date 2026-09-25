@@ -22,6 +22,13 @@ export function blocoEscritorioParaAna(e: Escritorio): string {
     ['Horário de atendimento da equipe', e.horario_atendimento],
   ]
   const preenchidas = linhas.filter(([, v]) => v?.trim()).map(([k, v]) => `- ${k}: ${v!.trim()}`)
+  // Posicionamento: a Ana fala como o escritório fala e sabe o que não é atendido aqui.
+  const posicionamento = [
+    e.proposta_valor?.trim() && `- Proposta de valor do escritório (guia o seu jeito de explicar o trabalho, não repita literalmente): ${e.proposta_valor.trim()}`,
+    e.tom_de_voz?.trim() && `- Tom de voz obrigatório nas mensagens: ${e.tom_de_voz.trim()}`,
+    e.nao_atende?.trim() && `- Casos que o escritório NÃO atende (trate como fora da área, com elegância, e diga o encaminhamento se houver): ${e.nao_atende.trim()}`,
+  ].filter(Boolean)
+  if (posicionamento.length) preenchidas.push(...(posicionamento as string[]))
   return preenchidas.length
     ? `# Dados do escritório (informações oficiais; use quando perguntarem)\n${preenchidas.join('\n')}`
     : '# Dados do escritório\nAinda não configurados: para valores e horários, diga que a equipe envia as informações.'

@@ -3,7 +3,7 @@ import { serverSupabaseUser, serverSupabaseServiceRole } from '#supabase/server'
 import { assertActorRole } from '../../../utils/security'
 import { auditar } from '../../../utils/auditoria'
 
-const PROFILE_SELECT = 'id, email, name, role, cargo, phone, company, avatar_url, created_at'
+const PROFILE_SELECT = 'id, email, name, role, phone, company, avatar_url, created_at'
 
 export default defineEventHandler(async (event) => {
   // 1. Params and auth
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
   // 2. Read body
   const body = await readBody(event)
-  const { role, company, phone, name, cargo } = body ?? {}
+  const { role, company, phone, name } = body ?? {}
 
   if (role !== undefined && !['admin', 'equipe', 'user'].includes(role)) {
     throw createError({ statusCode: 400, message: 'Nível de acesso inválido.' })
@@ -37,7 +37,6 @@ export default defineEventHandler(async (event) => {
   if (company !== undefined) updates.company = company
   if (phone !== undefined) updates.phone = phone
   if (name !== undefined) updates.name = name
-  if (cargo !== undefined) updates.cargo = typeof cargo === 'string' ? cargo.trim().slice(0, 60) || null : null
 
   const { data: updatedProfile, error: updateError } = await supabaseAdmin
     .from('profiles')

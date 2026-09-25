@@ -11,6 +11,7 @@ const RATE_LIMITED_PATHS = [
   '/api/eva/rag',
   '/api/email/send',
   '/api/admin/users',
+  '/api/formulario',
 ]
 const WINDOW_MS = 60 * 1000 // 1 minute
 const MAX_REQUESTS = 20

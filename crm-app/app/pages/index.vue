@@ -6,7 +6,7 @@
 
       <template v-if="!user">
         <h1 class="text-4xl sm:text-5xl mt-4 leading-tight">Área restrita do escritório</h1>
-        <p class="mt-4 text-cafe-creme/75 max-w-lg mx-auto">CRM, conversas de WhatsApp e honorários em um só lugar. Acesso apenas para a equipe.</p>
+        <p class="mt-4 text-cafe-creme/75 max-w-lg mx-auto">CRM, conversas de WhatsApp e honorários em um só lugar. Acesso restrito ao escritório.</p>
         <NuxtLink to="/login" class="inline-block mt-8 px-8 py-3 rounded-full border border-cafe-creme/50 text-xs font-semibold uppercase tracking-[0.16em] hover:bg-cafe-creme hover:text-cafe transition-colors">Entrar</NuxtLink>
       </template>
 

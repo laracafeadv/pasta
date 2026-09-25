@@ -1,12 +1,25 @@
 <template>
   <div v-if="!r" class="text-sm text-gray-400">Carregando…</div>
   <div v-else class="space-y-6">
+    <!-- Faturamento × receita × pró-labore -->
+    <section v-if="modo === 'caixa'" class="painel">
+      <h2 class="text-2xl text-primary dark:text-zinc-100">{{ nomeMes(r.mes.mes) }}: vendido × recebido</h2>
+      <p class="text-xs text-gray-500">Faturamento é o que você fechou no mês; receita é o que entrou no caixa. Seu pró-labore é custo fixo (entra no custo da hora; não lance de novo em “Contas”): o que sobra depois dele é do escritório.</p>
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+        <div class="kpi"><span>Faturamento</span><b>{{ brl(r.mes.faturamento) }}</b></div>
+        <div class="kpi"><span>Receita</span><b>{{ brl(r.mes.receita) }}</b></div>
+        <div class="kpi"><span>Despesas pagas</span><b>{{ brl(r.mes.despesasPagas) }}</b></div>
+        <label class="kpi"><span>Pró-labore (R$)</span><input v-model="config.pro_labore" type="number" min="0" step="100" class="bg-transparent text-xl font-semibold w-full" @change="salvarConfig" /></label>
+        <div class="kpi"><span>Sobra do escritório</span><b :class="r.mes.sobra < 0 ? 'text-danger' : 'text-success-dark'">{{ brl(r.mes.sobra) }}</b></div>
+      </div>
+    </section>
+
     <!-- Fluxo de caixa -->
     <section v-if="modo === 'caixa'" class="painel">
       <div class="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <h2 class="text-2xl text-primary dark:text-zinc-100">Fluxo de caixa — próximos 6 meses</h2>
-          <p class="text-xs text-gray-500">Entradas e saídas lançadas + despesas fixas projetadas. O saldo parte do caixa informado ao lado.</p>
+          <p class="text-xs text-gray-500">Entradas e saídas lançadas + despesas fixas e pró-labore projetados. O saldo parte do caixa informado ao lado.</p>
         </div>
         <label class="text-xs flex items-center gap-2">Caixa hoje (R$)
           <input v-model="config.saldo_caixa" type="number" step="100" class="w-32 rounded-full border border-gray-200 dark:border-zinc-700 bg-transparent px-3 py-1" @change="salvarConfig" />
@@ -42,7 +55,7 @@
     <template v-if="modo === 'precos'">
       <section class="painel">
         <h2 class="text-2xl text-primary dark:text-zinc-100">Quanto custa uma hora do escritório</h2>
-        <p class="text-xs text-gray-500">Custo operacional mensal (despesas fixas) ÷ horas produtivas. É a base do preço mínimo: abaixo dele, o caso dá prejuízo.</p>
+        <p class="text-xs text-gray-500">Custo operacional mensal (despesas fixas + seu pró-labore) ÷ horas produtivas. É a base do preço mínimo: abaixo dele, o caso dá prejuízo.</p>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
           <div class="kpi"><span>Custo mensal</span><b>{{ brl(r.custos.custoMensal) }}</b></div>
           <label class="kpi"><span>Horas produtivas/mês</span><input v-model="config.horas_produtivas_mes" type="number" min="1" class="bg-transparent text-xl font-semibold w-full" @change="salvarConfig" /></label>
@@ -60,6 +73,17 @@
             <input v-model.number="horas[p.demanda]" type="number" min="0" class="w-16 text-right bg-transparent border-b border-dashed border-gray-300 dark:border-zinc-700" @change="salvarHoras" />
             <span class="text-xs text-gray-400">h</span>
             <b class="w-28 text-right tabular-nums">{{ r.custos.custoMensal ? brl(p.minimo) : '—' }}</b>
+          </div>
+        </div>
+      </section>
+      <section class="painel">
+        <h2 class="text-2xl text-primary dark:text-zinc-100">Ticket médio real por demanda</h2>
+        <p class="text-xs text-gray-500">Média dos contratos fechados (arranque + mensais). Compare com o preço mínimo acima: se o ticket real está abaixo, você está cobrando menos do que a demanda custa.</p>
+        <p v-if="!r.ticket.length" class="text-sm italic text-gray-400 mt-3">Nenhum contrato fechado ainda.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 mt-3">
+          <div v-for="t in r.ticket" :key="t.demanda" class="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-zinc-800 text-sm">
+            <span class="flex-1">{{ t.demanda }} <span class="text-xs text-gray-400">{{ t.contratos }} contrato(s)</span></span>
+            <b class="tabular-nums" :class="abaixo(t) ? 'text-danger' : ''">{{ brl(t.medio) }}</b>
           </div>
         </div>
       </section>
@@ -98,6 +122,8 @@ interface Resumo {
   fluxo: { mes: string; entradas: number; saidas: number; projetadas: number; resultado: number; saldo: number }[]
   atrasados: { receber: number; pagar: number }
   custos: { custoMensal: number; horasProdutivas: number; custoHora: number; margem: number; horas: Record<string, number>; precos: { demanda: string; horas: number; minimo: number }[] }
+  mes: { mes: string; faturamento: number; receita: number; despesasPagas: number; proLabore: number; sobra: number }
+  ticket: { demanda: string; contratos: number; medio: number }[]
   rentabilidade: { contato_id: number; nome: string; demanda: string | null; contratado: number; recebido: number; despesas: number; horas: number; resultado: number; valorHora: number | null }[]
 }
 const r = ref<Resumo | null>(null)
@@ -107,14 +133,14 @@ const horas = reactive<Record<string, number>>({})
 async function carregar() {
   const [res, esc] = await Promise.all([$fetch<Resumo>('/api/financeiro/resumo'), $fetch<Record<string, string>>('/api/escritorio')])
   r.value = res
-  Object.assign(config, { saldo_caixa: esc.saldo_caixa ?? '', horas_produtivas_mes: res.custos.horasProdutivas, margem_desejada: res.custos.margem })
+  Object.assign(config, { saldo_caixa: esc.saldo_caixa ?? '', pro_labore: esc.pro_labore ?? '', horas_produtivas_mes: res.custos.horasProdutivas, margem_desejada: res.custos.margem })
   Object.assign(horas, res.custos.horas)
 }
 onMounted(carregar)
 defineExpose({ recarregar: carregar })
 
 async function salvarConfig() {
-  await $fetch('/api/escritorio', { method: 'PUT', body: { saldo_caixa: String(config.saldo_caixa ?? ''), horas_produtivas_mes: String(config.horas_produtivas_mes ?? ''), margem_desejada: String(config.margem_desejada ?? '') } })
+  await $fetch('/api/escritorio', { method: 'PUT', body: { saldo_caixa: String(config.saldo_caixa ?? ''), pro_labore: String(config.pro_labore ?? ''), horas_produtivas_mes: String(config.horas_produtivas_mes ?? ''), margem_desejada: String(config.margem_desejada ?? '') } })
   await carregar()
 }
 async function salvarHoras() {
@@ -125,6 +151,10 @@ async function salvarHoras() {
 const nomeMes = (m: string) => { const t = new Date(`${m}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1) }
 const maxFluxo = computed(() => Math.max(1, ...(r.value?.fluxo ?? []).map(m => Math.abs(m.resultado))))
 const mesNegativo = computed(() => r.value?.fluxo.find(m => m.saldo < 0)?.mes ?? null)
+const abaixo = (t: { demanda: string; medio: number }) => {
+  const p = r.value?.custos.precos.find(x => x.demanda === t.demanda)
+  return !!(p && r.value?.custos.custoMensal && t.medio < p.minimo)
+}
 void props
 </script>
 

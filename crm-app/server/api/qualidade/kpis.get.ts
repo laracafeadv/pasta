@@ -6,20 +6,18 @@ import { hojeBR } from '../../utils/crm'
 const media = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null)
 const dias = (a: string, b: string) => Math.max(0, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 864e5))
 
-/** Indicadores de qualidade e da carga de trabalho por pessoa (delegação). */
+/** Indicadores de qualidade do escritório. */
 export default defineEventHandler(async (event) => {
   await requireStaff(event, 'qualidade/kpis')
   const client = await serverSupabaseClient(event)
   const hoje = hojeBR()
   const desde90 = new Date(Date.now() - 90 * 864e5).toISOString()
 
-  const [{ data: casos }, { data: prazos }, { data: nps }, { data: revisoes }, { data: abertos }, { data: equipe }, { data: consultas }] = await Promise.all([
+  const [{ data: casos }, { data: prazos }, { data: nps }, { data: revisoes }, { data: consultas }] = await Promise.all([
     client.from('casos').select('status, data_abertura, data_encerramento, resultado').limit(5000),
     client.from('compromissos').select('data_limite, status, concluido_em, responsavel_id').eq('tipo', 'prazo').limit(5000),
     client.from('contatos').select('nps').not('nps', 'is', null).limit(5000),
     client.from('revisoes').select('aprovado, created_at').gte('created_at', desde90).limit(1000),
-    client.from('contatos').select('responsavel_id, proxima_data, etapa').not('etapa', 'in', '(concluido,perdido)').limit(5000),
-    client.from('profiles').select('id, name, cargo').in('role', ['admin', 'equipe']),
     client.from('contatos').select('created_at, consulta_em').not('consulta_em', 'is', null).gte('created_at', desde90).limit(2000),
   ])
 
@@ -32,16 +30,6 @@ export default defineEventHandler(async (event) => {
   const notas = (nps ?? []).map(n => Number(n.nps))
   const R = revisoes ?? []
 
-  const carga = (equipe ?? []).map(p => {
-    const meus = (abertos ?? []).filter(c => c.responsavel_id === p.id)
-    return {
-      id: p.id, nome: p.name || 'Sem nome', cargo: p.cargo,
-      abertos: meus.length,
-      atrasados: meus.filter(c => c.proxima_data && c.proxima_data < hoje).length,
-      prazosPendentes: P.filter(x => x.responsavel_id === p.id && x.status === 'pendente').length,
-    }
-  })
-  const semResponsavel = (abertos ?? []).filter(c => !c.responsavel_id).length
 
   return {
     tempoMedioSolucao: media(encerrados.map(c => dias(c.data_abertura, c.data_encerramento!))),
@@ -55,8 +43,6 @@ export default defineEventHandler(async (event) => {
     diasAteConsulta: media((consultas ?? []).map(c => dias(c.created_at, c.consulta_em!))),
     revisoes90: R.length,
     revisoesAprovadas: R.length ? Math.round((R.filter(r => r.aprovado).length / R.length) * 100) : null,
-    carga,
-    semResponsavel,
     etapasAbertas: ETAPAS.filter(e => e.aberta).length,
   }
 })

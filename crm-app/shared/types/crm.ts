@@ -38,18 +38,19 @@ export const MOTIVOS_PERDA = [
   'Não respondeu',
   'Resolveu sem advogado',
   'Fora da área de atuação',
+  'Encaminhado a parceiro(a)',
   'Conflito de interesses',
   'Outro',
 ]
 /** Quem não fechou por estes motivos não entra no remarketing (não faz sentido ou não é ético insistir). */
-export const MOTIVOS_SEM_REMARKETING = ['Fora da área de atuação', 'Conflito de interesses']
+export const MOTIVOS_SEM_REMARKETING = ['Fora da área de atuação', 'Encaminhado a parceiro(a)', 'Conflito de interesses']
 /** Intervalo mínimo entre conteúdos de remarketing para a mesma pessoa. */
 export const REMARKETING_INTERVALO_DIAS = 45
 
 export const URGENCIAS = ['Alta', 'Média', 'Baixa'] as const
 export const SENTIMENTOS = ['Positivo', 'Neutro', 'Negativo'] as const
 
-export const TIPOS_HONORARIO = ['Consulta', 'Contrato fixo', 'Êxito', 'Assessoria mensal'] as const
+export const TIPOS_HONORARIO = ['Consulta', 'Contrato fixo', 'Em camadas', 'Êxito', 'Assessoria mensal'] as const
 export const STATUS_HONORARIO = ['Proposta', 'Contratado', 'Pago', 'Cancelado'] as const
 // Status que contam como receita do escritório
 export const STATUS_RECEITA = ['Contratado', 'Pago']
@@ -92,6 +93,8 @@ export interface Contato {
   objetivo: string | null
   drive_pasta_url?: string | null
   nao_contatar?: boolean
+  tem_filhos?: boolean | null
+  form_respondido_em?: string | null
   ia_ativa: boolean
   consentimento_em: string | null
   ultima_mensagem_em: string | null
@@ -121,13 +124,18 @@ export interface Honorario {
   data_contratacao: string | null
   responsavel_id: string | null
   observacao: string | null
+  // Em camadas: arranque (valor) + mensal por prazo + % do proveito econômico + validade
+  valor_mensal?: number | null
+  meses?: number | null
+  percentual_exito?: number | null
+  validade_anos?: number | null
   // join
   contato?: Pick<Contato, 'id' | 'nome' | 'telefone'> | null
 }
 
 export const HONORARIO_CAMPOS_EDITAVEIS = [
   'contato_id', 'descricao', 'valor', 'tipo', 'status', 'forma_pagamento', 'parcelas',
-  'data_contratacao', 'responsavel_id', 'observacao',
+  'data_contratacao', 'responsavel_id', 'observacao', 'valor_mensal', 'meses', 'percentual_exito', 'validade_anos',
 ] as const
 
 export interface MensagemWhatsapp {
@@ -144,6 +152,7 @@ export interface MensagemWhatsapp {
   midia_tipo: string | null
   midia_nome: string | null
   transcricao: string | null
+  drive_url?: string | null
 }
 
 export interface Atividade {
@@ -180,7 +189,7 @@ export const CADENCIA: Record<string, { acao: string; dias: number; modelo?: str
   // Quadro antigo: feedback no dia seguinte à consulta ("até amanhã enviaremos a proposta").
   diagnostico: { acao: 'Mensagem de feedback pós-consulta', dias: 1, modelo: '/feedback' },
   proposta: { acao: 'Follow-up 24h da proposta', dias: 1, modelo: '/followup-24h' },
-  ativo: { acao: 'Enviar checklist de documentos', dias: 1, modelo: '/documentos' },
+  ativo: { acao: 'Enviar o formulário da cliente (dados e documentos)', dias: 0, modelo: '/formulario' },
 }
 
 /** Próximo passo depois de concluir um follow-up (24h → 7 dias → final). */
@@ -257,6 +266,9 @@ export const ESCRITORIO_CAMPOS = [
   { chave: 'telefone', rotulo: 'Telefone / WhatsApp', grupo: 'Identificação', exemplo: '(71) 99381-2266' },
   { chave: 'endereco', rotulo: 'Endereço profissional completo', grupo: 'Identificação', exemplo: 'Rua…, nº…, bairro, cidade/UF, CEP' },
   { chave: 'cidade_foro', rotulo: 'Cidade para foro e assinatura', grupo: 'Identificação', exemplo: 'Salvador/BA' },
+  { chave: 'proposta_valor', rotulo: 'Proposta única de valor', grupo: 'Posicionamento (usado pela Ana)', exemplo: 'Eu ajudo mulheres a atravessar a separação com segurança, por meio de uma advocacia humana e estratégica, sem reviver o desgaste do conflito.' },
+  { chave: 'tom_de_voz', rotulo: 'Tom de voz nas mensagens', grupo: 'Posicionamento (usado pela Ana)', exemplo: 'Acolhedor; sem ponto final no fim das mensagens; emoji 🤍 com moderação' },
+  { chave: 'nao_atende', rotulo: 'Casos que não atendo (e para onde encaminho)', grupo: 'Posicionamento (usado pela Ana)', exemplo: 'Violência doméstica: encaminho a uma parceira; trabalhista e previdenciário' },
   { chave: 'valor_consulta', rotulo: 'Valor da consulta', grupo: 'Consulta (usado pela Ana)', exemplo: 'R$ 350,00' },
   { chave: 'consulta_abatida', rotulo: 'Consulta abatida dos honorários?', grupo: 'Consulta (usado pela Ana)', exemplo: 'sim' },
   { chave: 'duracao_consulta', rotulo: 'Duração média da consulta', grupo: 'Consulta (usado pela Ana)', exemplo: '60 minutos' },
@@ -507,14 +519,10 @@ export const MAPA_EMPATIA = [
 ] as const
 
 // ─── Gestão: fluxo da equipe, precificação e financeiro ─────────────────────
-export const CARGOS = ['Advogada titular', 'Advogada(o) associada(o)', 'Estagiária(o)', 'Atendimento / secretaria', 'Financeiro']
-/** Chave em "escritorio" com o responsável padrão (id do perfil) por etapa. */
-export const chaveResponsavelEtapa = (etapaId: string) => `resp_etapa_${etapaId}`
-export const CHAVES_GESTAO = ['horas_produtivas_mes', 'margem_desejada', 'saldo_caixa', 'horas_estimadas'] as const
+export const CHAVES_GESTAO = ['horas_produtivas_mes', 'margem_desejada', 'saldo_caixa', 'pro_labore', 'horas_estimadas'] as const
 export const CHAVES_EXTRAS: string[] = [
   ...MAPA_EMPATIA.map(m => m.chave),
   ...CHAVES_GESTAO,
-  ...ETAPAS.filter(e => e.aberta).map(e => chaveResponsavelEtapa(e.id)),
 ]
 
 export const CATEGORIAS_LANCAMENTO = {
@@ -550,7 +558,7 @@ export const ITENS_REVISAO = [
   { chave: 'proxima_acao', rotulo: 'Próxima ação definida e com data' },
   { chave: 'cliente_informado', rotulo: 'Cliente atualizada nos últimos 30 dias' },
   { chave: 'documentos', rotulo: 'Documentos completos e organizados' },
-  { chave: 'pecas', rotulo: 'Última peça revisada por uma segunda pessoa' },
+  { chave: 'pecas', rotulo: 'Última peça relida no dia seguinte, antes de protocolar' },
   { chave: 'financeiro', rotulo: 'Honorários e custas em dia' },
 ] as const
 export type ResultadoItem = 'ok' | 'falha' | 'na'
@@ -567,31 +575,11 @@ export interface Revisao {
   revisor?: { name: string } | null
 }
 
-export interface PecaModelo {
-  id: number
-  titulo: string
-  categoria: string
-  corpo: string
-  ativo: boolean
-}
-/** Campos aceitos nos modelos de peças. */
-export const CAMPOS_PECA = [
-  ['{{cliente.nome}}', 'Nome completo da cliente'],
-  ['{{cliente.qualificacao}}', 'Qualificação completa (nacionalidade, estado civil, RG, CPF, endereço)'],
-  ['{{cliente.cpf}}', 'CPF'],
-  ['{{parte_contraria}}', 'Parte contrária'],
-  ['{{caso.numero}}', 'Número do processo'],
-  ['{{caso.orgao}}', 'Vara / cartório'],
-  ['{{caso.titulo}}', 'Título do caso'],
-  ['{{advogada}}', 'Advogada com qualificação e OAB'],
-  ['{{advogada.nome}}', 'Nome da advogada'],
-  ['{{cidade}}', 'Cidade do foro'],
-  ['{{data}}', 'Data por extenso'],
-] as const
 
 // ─── Gestão de conhecimento: pasta do cliente no Google Drive ──────────────
 /** Estrutura fixa de toda pasta de cliente (a numeração mantém a ordem no Drive). */
 export const ESTRUTURA_PASTA_CLIENTE = [
+  { chave: 'recebidos', nome: '00 Recebidos pelo WhatsApp' },
   { chave: 'pessoais', nome: '01 Documentos pessoais' },
   { chave: 'contrato', nome: '02 Contrato, procuração e honorários' },
   { chave: 'pecas', nome: '03 Peças e petições' },

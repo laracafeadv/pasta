@@ -39,10 +39,17 @@
       <div v-if="pedeValor" class="rounded-lg border border-secondary/30 bg-secondary/5 p-3 space-y-3">
         <p class="text-[10px] font-bold uppercase tracking-widest text-secondary-dark">{{ form.etapa === 'proposta' ? 'Proposta enviada hoje' : 'Contrato fechado' }}</p>
         <div class="grid grid-cols-2 gap-3">
-          <label class="field"><span>Valor (R$) *</span><input v-model="hon.valor" type="number" min="1" step="0.01" class="modal-input" required /></label>
+          <label class="field"><span>{{ hon.tipo === 'Em camadas' ? 'Arranque (R$) *' : 'Valor (R$) *' }}</span><input v-model="hon.valor" type="number" min="1" step="0.01" class="modal-input" required /></label>
           <label class="field"><span>Tipo</span><select v-model="hon.tipo" class="modal-input"><option v-for="t in TIPOS_HONORARIO" :key="t">{{ t }}</option></select></label>
           <label class="field"><span>Parcelas</span><input v-model="hon.parcelas" type="number" min="1" max="120" class="modal-input" /></label>
           <label class="field"><span>Pagamento</span><input v-model="hon.forma_pagamento" class="modal-input" placeholder="Pix, cartão…" /></label>
+        </div>
+        <div v-if="hon.tipo === 'Em camadas'" class="grid grid-cols-2 gap-3">
+          <label class="field"><span>Mensal (R$)</span><input v-model="hon.valor_mensal" type="number" min="0" step="0.01" class="modal-input" /></label>
+          <label class="field"><span>Por quantos meses</span><input v-model="hon.meses" type="number" min="1" max="60" class="modal-input" placeholder="18" /></label>
+          <label class="field"><span>% do proveito econômico</span><input v-model="hon.percentual_exito" type="number" min="0" max="100" step="0.5" class="modal-input" /></label>
+          <label class="field"><span>Validade (anos)</span><input v-model="hon.validade_anos" type="number" min="1" max="20" class="modal-input" placeholder="5" /></label>
+          <p class="col-span-2 text-xs text-gray-500">Arranque para começar; mensal a partir do protocolo, por prazo fechado; percentual só se houver proveito patrimonial; revisão do contrato no fim da validade (entra na agenda).</p>
         </div>
         <p v-if="form.etapa === 'ativo' && propostaAnterior" class="text-xs text-gray-500">Preenchido com a proposta de {{ brl(propostaAnterior.valor) }}; ajuste se o fechamento foi diferente.</p>
       </div>
@@ -98,7 +105,8 @@ const acaoInput = ref<HTMLInputElement | null>(null)
 const form = reactive({ resultado: '', etapa: 'novo', motivo_perda: '', proxima_acao: '', proxima_data: '', consulta_em: '', pagamento_confirmado: false })
 
 // Valor da proposta (ao enviar) e do contrato (ao fechar): o que o quadro antigo anotava no cartão.
-const hon = reactive<{ valor: number | string; tipo: string; parcelas: number | string; forma_pagamento: string }>({ valor: '', tipo: 'Contrato fixo', parcelas: 1, forma_pagamento: '' })
+const HON_VAZIO = { valor: '', tipo: 'Contrato fixo', parcelas: 1, forma_pagamento: '', valor_mensal: '', meses: '', percentual_exito: '', validade_anos: '' }
+const hon = reactive<Record<string, any>>({ ...HON_VAZIO })
 const propostaAnterior = ref<Honorario | null>(null)
 const pedeValor = computed(() => !!props.contato && props.contato.etapa !== form.etapa && (form.etapa === 'proposta' || form.etapa === 'ativo'))
 async function carregarProposta() {
@@ -106,7 +114,7 @@ async function carregarProposta() {
   const d = await $fetch<{ honorarios: Honorario[] }>(`/api/crm/contatos/${props.contato.id}`).catch(() => null)
   const p = d?.honorarios.find(h => h.status === 'Proposta') ?? null
   propostaAnterior.value = p
-  if (p && !hon.valor) Object.assign(hon, { valor: p.valor, tipo: p.tipo, parcelas: p.parcelas, forma_pagamento: p.forma_pagamento ?? '' })
+  if (p && !hon.valor) Object.assign(hon, { valor: p.valor, tipo: p.tipo, parcelas: p.parcelas, forma_pagamento: p.forma_pagamento ?? '', valor_mensal: p.valor_mensal ?? '', meses: p.meses ?? '', percentual_exito: p.percentual_exito ?? '', validade_anos: p.validade_anos ?? '' })
 }
 watch(() => form.etapa, carregarProposta)
 
@@ -148,7 +156,7 @@ watch(() => props.isOpen, async (open) => {
     consulta_em: '',
     pagamento_confirmado: false,
   })
-  Object.assign(hon, { valor: '', tipo: 'Contrato fixo', parcelas: 1, forma_pagamento: '' })
+  Object.assign(hon, HON_VAZIO)
   propostaAnterior.value = null
   carregarProposta()
   aplicarSugestao()

@@ -5,13 +5,11 @@ import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
 import type { ModeloMensagem } from '~~/shared/types/crm'
 import { useModelos } from '~/composables/useModelos'
-import PecasModelos from '~/components/gestao/PecasModelos.vue'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
 useHead({ title: 'Mensagens prontas' })
 
 const { invalidar } = useModelos()
-const aba = ref<'mensagens' | 'pecas'>('mensagens')
 const lista = ref<ModeloMensagem[]>([])
 const carregando = ref(false)
 const busca = ref('')
@@ -88,29 +86,16 @@ async function excluir() {
   <div class="space-y-6">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p class="eyebrow">Padronização</p>
-        <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">{{ aba === 'pecas' ? 'Modelos de peças' : 'Mensagens prontas' }}</h1>
-        <p v-if="aba === 'pecas'" class="text-sm text-gray-500 mt-2 max-w-2xl">
-          Petições simples, declarações e procurações com os dados da cliente, do caso e do escritório preenchidos sozinhos. Gere pela ficha da cliente, na aba Caso.
-        </p>
-        <p v-else class="text-sm text-gray-500 mt-2 max-w-2xl">
+        <p class="eyebrow">Tom de voz do escritório</p>
+        <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Mensagens prontas</h1>
+        <p class="text-sm text-gray-500 mt-2 max-w-2xl">
           A mensagem certa para cada etapa da conversa. Na conversa com o cliente, digite <b>/</b> e o atalho para usar.
           <b>[NOME]</b> é preenchido sozinho; os outros campos entre colchetes você completa antes de enviar.
         </p>
       </div>
-      <Button v-if="aba === 'mensagens'" icon="ph:plus-bold" @click="abrir()">Nova mensagem</Button>
+      <Button icon="ph:plus-bold" @click="abrir()">Nova mensagem</Button>
     </div>
 
-    <div class="flex flex-wrap gap-2">
-      <button v-for="a in [{ id: 'mensagens', n: 'Mensagens (WhatsApp)' }, { id: 'pecas', n: 'Peças (Word)' }]" :key="a.id"
-              class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.14em] border transition-colors"
-              :class="aba === a.id ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary'"
-              @click="aba = a.id as 'mensagens' | 'pecas'">{{ a.n }}</button>
-    </div>
-
-    <PecasModelos v-if="aba === 'pecas'" />
-
-    <template v-else>
     <input v-model="busca" type="search" class="w-full max-w-md rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm" placeholder="Buscar por título, atalho ou texto…" />
 
     <p v-if="carregando" class="text-sm text-gray-400">Carregando…</p>
@@ -130,7 +115,6 @@ async function excluir() {
         </article>
       </div>
     </section>
-    </template>
 
     <Modal :is-open="aberto" :title="editando ? 'Editar mensagem' : 'Nova mensagem'" max-width="2xl" :loading="salvando" @close="aberto = false">
       <form id="modelo-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4" @submit.prevent="salvar">

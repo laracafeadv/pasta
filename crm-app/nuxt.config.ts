@@ -80,7 +80,7 @@ export default defineNuxtConfig({
       login: '/login',
       callback: '/confirm',
       include: undefined,
-      exclude: ['/', '/recovery', '/privacidade'],
+      exclude: ['/', '/recovery', '/privacidade', '/f/*'],
       saveRedirectToCookie: false
     },
     cookieOptions: {
@@ -110,6 +110,8 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
+    // Na Vercel: tempo para a Ana responder depois do webhook (event.waitUntil) e para gerar peças.
+    vercel: { functions: { maxDuration: 60 } },
     // Prevent Nitro from bundling CJS-only packages — they generate
     // invalid Windows absolute paths ('d:/...') in the ESM bundle
     externals: {
