@@ -23,6 +23,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const abertos = (data ?? []) as Contato[]
+
+  // Aniversariantes do dia (clientes e contatos), para o gesto de relacionamento do playbook.
+  const mmdd = hoje.slice(5)
+  const { data: nascidos } = await client.from('contatos').select('id, nome, telefone, data_nascimento, classificacao').not('data_nascimento', 'is', null).limit(2000)
+  const aniversarios = (nascidos ?? []).filter(c => String(c.data_nascimento).slice(5) === mmdd)
   const semAcao = (c: Contato) => !c.proxima_acao || !c.proxima_data
 
   return {
@@ -31,5 +36,6 @@ export default defineEventHandler(async (event) => {
     semAcao: abertos.filter(semAcao).sort((a, b) => a.updated_at.localeCompare(b.updated_at)),
     semana: abertos.filter(c => !semAcao(c) && c.proxima_data! > hoje && c.proxima_data! <= em7),
     transferidas: abertos.filter(c => !c.ia_ativa),
+    aniversarios,
   }
 })

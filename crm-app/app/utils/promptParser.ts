@@ -9,10 +9,11 @@ export const STRATEGIC_SECTIONS = [
   'identidade',
   'comunicacao',
   'objetivo',
+  'objecoes',
 ]
 
 const SECTION_TITLES: Record<string, string> = {
-  'identidade': 'Quem é a assistente',
+  'identidade': 'Quem é a Ana',
   'areas': 'Áreas de atuação',
   'comunicacao': 'Tom de voz',
   'objetivo': 'Roteiro da conversa',
@@ -21,6 +22,10 @@ const SECTION_TITLES: Record<string, string> = {
   'horarios': 'Horários e agenda',
   'documentos': 'Documentos que costumamos pedir',
   'respostas-padrao': 'Respostas prontas',
+  'triagem': 'Perguntas de triagem por área',
+  'consulta': 'Consulta estratégica (valor, formato)',
+  'objecoes': 'Como responder objeções',
+  'fora_da_area': 'Casos fora da área',
 }
 
 export function parsePrompt(content: string): PromptSection[] {

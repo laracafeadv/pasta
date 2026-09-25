@@ -1,5 +1,6 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { requireStaff } from '../../utils/security'
+import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
   await requireStaff(event, 'honorarios/delete')
@@ -12,5 +13,6 @@ export default defineEventHandler(async (event) => {
     console.error('[honorarios] Erro ao excluir:', error)
     throw createError({ statusCode: 500, message: 'Erro interno ao excluir honorário.' })
   }
+  await auditar(event, 'excluiu honorário', 'honorario', id)
   return { success: true }
 })

@@ -1,5 +1,6 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { requireStaff } from '../../../utils/security'
+import { auditar } from '../../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
   await requireStaff(event, 'crm/delete')
@@ -13,5 +14,6 @@ export default defineEventHandler(async (event) => {
     console.error('[crm] Erro ao excluir contato:', error)
     throw createError({ statusCode: 500, message: 'Erro interno ao excluir contato.' })
   }
+  await auditar(event, 'excluiu contato e todo o histórico', 'contato', id)
   return { success: true }
 })

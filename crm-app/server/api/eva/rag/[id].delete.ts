@@ -1,5 +1,6 @@
 import { serverSupabaseServiceRole, serverSupabaseUser } from '#supabase/server'
 import { assertActorRole } from '../../../utils/security'
+import { auditar } from '../../../utils/auditoria'
 
 function parseDocumentId(idParam: string | undefined) {
     const parsedId = Number(idParam)
@@ -30,5 +31,6 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 500, message: 'Erro interno ao deletar documento.' })
     }
 
+    await auditar(event, 'removeu documento da base da Ana', 'assistente', id)
     return { success: true }
 })

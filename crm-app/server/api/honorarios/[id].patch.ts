@@ -3,6 +3,7 @@ import { brlServidor } from '../../utils/formato'
 import { requireStaff } from '../../utils/security'
 import { registrarAtividade } from '../../utils/crm'
 import { limparHonorario } from '../../utils/honorarios'
+import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'honorarios/update')
@@ -21,5 +22,6 @@ export default defineEventHandler(async (event) => {
   if (anterior && data.status && anterior.status !== data.status) {
     await registrarAtividade(event, updated.contato_id, 'Sistema', `Honorário de ${brlServidor(updated.valor)}: ${anterior.status} → ${data.status}.`, userId)
   }
+  await auditar(event, 'editou honorário', 'honorario', id, { campos: Object.keys(data) })
   return updated
 })

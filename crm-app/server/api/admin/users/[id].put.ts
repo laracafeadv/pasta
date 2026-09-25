@@ -1,6 +1,7 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import { serverSupabaseUser, serverSupabaseServiceRole } from '#supabase/server'
 import { assertActorRole } from '../../../utils/security'
+import { auditar } from '../../../utils/auditoria'
 
 const PROFILE_SELECT = 'id, email, name, role, phone, company, avatar_url, created_at'
 
@@ -55,5 +56,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  await auditar(event, 'alterou usuário', 'usuario', userIdToUpdate, { campos: Object.keys(updates).filter(k => k !== 'updated_at') })
   return { success: true, user: updatedProfile }
 })

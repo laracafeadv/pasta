@@ -47,6 +47,18 @@
             <span v-else class="text-warning-dark font-semibold">não definida</span>
           </p>
           <p v-if="dados.contato.motivo_perda"><b>Motivo da perda:</b> {{ dados.contato.motivo_perda }}</p>
+          <p><b>Na etapa há:</b> {{ diasNaEtapa }} dia(s)</p>
+          <p v-if="dados.contato.consulta_em"><b>Consulta:</b> {{ dataHora(dados.contato.consulta_em) }}</p>
+        </div>
+        <div class="card">
+          <h3>Relacionamento</h3>
+          <p><b>Aniversário:</b> {{ dados.contato.data_nascimento ? dataCurta(dados.contato.data_nascimento) : '—' }}</p>
+          <p>
+            <b>Classificação:</b>
+            <template v-if="dados.contato.classificacao">{{ CLASSIFICACOES[dados.contato.classificacao].nome }} <span class="text-xs text-gray-500">— {{ CLASSIFICACOES[dados.contato.classificacao].dica }}</span></template>
+            <template v-else>—</template>
+          </p>
+          <p><b>NPS:</b> {{ dados.contato.nps ?? '—' }}</p>
         </div>
         <div class="card md:col-span-2">
           <h3>Resumo do caso</h3>
@@ -83,10 +95,28 @@
             <p class="mt-1 text-[10px] opacity-70 text-right">{{ m.autor === 'ia' ? 'IA · ' : m.autor === 'equipe' ? 'Equipe · ' : '' }}{{ dataHora(m.created_at) }}</p>
           </div>
         </div>
-        <form class="flex gap-2 p-4 border-t border-gray-100 dark:border-zinc-800" @submit.prevent="enviar">
-          <textarea v-model="resposta" rows="2" class="modal-input flex-1" placeholder="Responder pelo WhatsApp do escritório…" @keydown.enter.exact.prevent="enviar" />
-          <Button type="submit" :loading="enviando" icon="ph:paper-plane-right-bold" :disabled="!resposta.trim()">Enviar</Button>
-        </form>
+        <div class="relative border-t border-gray-100 dark:border-zinc-800">
+          <ModeloPicker
+            v-if="pickerAberto"
+            class="absolute bottom-full left-4 right-4 mb-2 z-20"
+            :filtro="resposta.startsWith('/') ? resposta : undefined"
+            :nome-contato="dados.contato.nome"
+            :sugerido="modeloSugerido"
+            @usar="(t) => { resposta = t; pickerAberto = false }"
+            @fechar="pickerAberto = false"
+          />
+          <div class="flex items-center gap-3 px-4 pt-3 text-xs">
+            <button type="button" class="font-semibold uppercase tracking-wider text-secondary-dark hover:underline" @click="pickerAberto = !pickerAberto">
+              <Icon name="ph:lightning-bold" class="align-middle" /> Mensagens prontas
+            </button>
+            <span class="text-gray-400">ou digite <b>/</b> para buscar</span>
+            <button v-if="resposta.trim()" type="button" class="ml-auto text-gray-500 hover:underline" @click="copiar">{{ copiado ? 'Copiado!' : 'Copiar texto' }}</button>
+          </div>
+          <form class="flex gap-2 p-4 pt-2" @submit.prevent="enviar">
+            <textarea v-model="resposta" rows="3" class="modal-input flex-1" placeholder="Responder pelo WhatsApp do escritório…" @keydown.enter.exact.prevent="enviar" @input="aoDigitar" />
+            <Button type="submit" :loading="enviando" icon="ph:paper-plane-right-bold" :disabled="!resposta.trim() || resposta.startsWith('/')">Enviar</Button>
+          </form>
+        </div>
         <p v-if="erroEnvio" class="px-5 pb-3 text-sm text-danger">{{ erroEnvio }}</p>
         <p class="px-5 pb-4 text-xs text-gray-400">Ao enviar uma mensagem, a IA é pausada neste contato automaticamente. O WhatsApp só permite mensagens livres até 24h após a última mensagem do cliente.</p>
       </div>
@@ -108,6 +138,37 @@
             <p class="whitespace-pre-wrap" :class="a.tipo === 'Sistema' ? 'text-gray-500' : ''">{{ a.texto }}</p>
           </li>
         </ol>
+      </div>
+
+      <!-- Documentos -->
+      <div v-else-if="aba === 'documentos'" class="p-5 space-y-4">
+        <div class="flex flex-wrap gap-2 items-center">
+          <Button size="sm" variant="outline" icon="ph:list-checks-bold" :loading="gerandoDocs" @click="gerarChecklist">
+            {{ dados.documentos.length ? 'Completar com a lista da área' : 'Gerar checklist da área' }}
+          </Button>
+          <Button v-if="pendentes.length" size="sm" icon="ph:whatsapp-logo-bold" @click="cobrarPendentes">Cobrar pendentes pelo WhatsApp</Button>
+          <span class="ml-auto text-xs text-gray-500">{{ recebidos.length }} recebido(s) · {{ pendentes.length }} pendente(s)</span>
+        </div>
+        <p v-if="!dados.documentos.length" class="text-sm text-gray-400">Nenhum documento listado. Gere a lista padrão de {{ dados.contato.area || 'documentos' }}.</p>
+        <ul class="divide-y divide-gray-100 dark:divide-zinc-800">
+          <li v-for="d in dados.documentos" :key="d.id" class="flex items-center gap-3 py-2 text-sm">
+            <Icon :name="d.status === 'recebido' ? 'ph:check-circle-fill' : d.status === 'dispensado' ? 'ph:minus-circle' : 'ph:circle'"
+                  :class="d.status === 'recebido' ? 'text-success' : 'text-gray-400'" class="text-lg shrink-0" />
+            <span class="flex-1" :class="d.status === 'dispensado' ? 'line-through text-gray-400' : ''">
+              {{ d.descricao }} <span v-if="!d.obrigatorio" class="text-xs text-gray-400">(se houver)</span>
+            </span>
+            <select :value="d.status" class="text-xs rounded-full border border-gray-200 dark:border-zinc-700 bg-transparent px-2 py-1" @change="mudarDoc(d.id, ($event.target as HTMLSelectElement).value)">
+              <option value="pendente">Pendente</option>
+              <option value="recebido">Recebido</option>
+              <option value="dispensado">Dispensado</option>
+            </select>
+            <button type="button" class="text-gray-400 hover:text-danger" title="Remover" @click="removerDoc(d.id)"><Icon name="ph:x-bold" /></button>
+          </li>
+        </ul>
+        <form class="flex gap-2" @submit.prevent="adicionarDoc">
+          <input v-model="novoDoc" class="modal-input flex-1" placeholder="Acrescentar documento…" />
+          <Button type="submit" size="sm" :disabled="!novoDoc.trim()">Adicionar</Button>
+        </form>
       </div>
 
       <!-- Honorários -->
@@ -132,11 +193,13 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { TIPOS_ATIVIDADE, etapa, type Atividade, type Contato, type Honorario, type MensagemWhatsapp } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, TIPOS_ATIVIDADE, etapa, type Atividade, type Contato, type Documento, type Honorario, type MensagemWhatsapp } from '../../../shared/types/crm'
+import ModeloPicker from './ModeloPicker.vue'
+import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[] }
+interface Detalhe { contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[] }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
@@ -151,6 +214,7 @@ const abas = computed(() => [
   { id: 'caso', label: 'Caso' },
   { id: 'conversa', label: 'Conversa', badge: dados.value?.mensagens.length || undefined },
   { id: 'atividades', label: 'Atividades', badge: dados.value?.atividades.length || undefined },
+  { id: 'documentos', label: 'Documentos', badge: pendentes.value.length ? `${pendentes.value.length} pend.` : undefined },
   { id: 'honorarios', label: 'Honorários', badge: dados.value?.honorarios.length || undefined },
 ])
 
@@ -214,6 +278,69 @@ async function alternarIa() {
   } finally {
     alternandoIa.value = false
   }
+}
+
+const diasNaEtapa = computed(() => dados.value ? Math.max(0, Math.floor((Date.now() - new Date(dados.value.contato.etapa_desde).getTime()) / 864e5)) : 0)
+
+// ─── Mensagens prontas ────────────────────────────────────────────────────
+const pickerAberto = ref(false)
+const copiado = ref(false)
+const { modelos, carregar: carregarModelos, preencher } = useModelos()
+// Sugestão: atalho citado na próxima ação (ex.: "... — /opcoes") ou o da cadência da etapa.
+const modeloSugerido = computed(() => {
+  const c = dados.value?.contato
+  if (!c) return null
+  return c.proxima_acao?.match(/\/[a-z0-9-]+/)?.[0] ?? CADENCIA[c.etapa]?.modelo ?? null
+})
+function aoDigitar() {
+  pickerAberto.value = resposta.value.startsWith('/') && !resposta.value.includes(' ')
+}
+async function copiar() {
+  await navigator.clipboard?.writeText(resposta.value)
+  copiado.value = true
+  setTimeout(() => { copiado.value = false }, 1500)
+}
+
+// ─── Documentos ───────────────────────────────────────────────────────────
+const pendentes = computed(() => (dados.value?.documentos ?? []).filter(d => d.status === 'pendente'))
+const recebidos = computed(() => (dados.value?.documentos ?? []).filter(d => d.status === 'recebido'))
+const gerandoDocs = ref(false)
+const novoDoc = ref('')
+async function gerarChecklist() {
+  if (!dados.value) return
+  gerandoDocs.value = true
+  try {
+    await $fetch(`/api/crm/contatos/${dados.value.contato.id}/documentos`, { method: 'POST', body: { gerar: true } })
+    await carregar()
+  } finally {
+    gerandoDocs.value = false
+  }
+}
+async function adicionarDoc() {
+  if (!dados.value || !novoDoc.value.trim()) return
+  await $fetch(`/api/crm/contatos/${dados.value.contato.id}/documentos`, { method: 'POST', body: { descricao: novoDoc.value } })
+  novoDoc.value = ''
+  await carregar()
+}
+async function mudarDoc(id: number, status: string) {
+  await $fetch(`/api/documentos/${id}`, { method: 'PATCH', body: { status } })
+  await carregar()
+}
+async function removerDoc(id: number) {
+  await $fetch(`/api/documentos/${id}`, { method: 'DELETE' })
+  await carregar()
+}
+// Monta a mensagem de cobrança (modelo /pendencia) com as listas reais.
+async function cobrarPendentes() {
+  if (!dados.value) return
+  await carregarModelos()
+  const base = modelos.value.find(m => m.atalho === '/pendencia')?.texto
+    ?? 'Oi, [NOME]! Já recebi:\n[RECEBIDOS]\nPassando pra lembrar do envio de:\n[PENDENTES]\nQual prazo fica confortável pra você me enviar?'
+  const lista = (ds: Documento[]) => ds.length ? ds.map(d => `📌 ${d.descricao}`).join('\n') : '—'
+  resposta.value = preencher(base, dados.value.contato.nome)
+    .replace('[RECEBIDOS]', lista(recebidos.value))
+    .replace('[PENDENTES]', lista(pendentes.value))
+  aba.value = 'conversa'
 }
 
 // ─── Atividades ───────────────────────────────────────────────────────────

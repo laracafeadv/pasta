@@ -126,16 +126,22 @@ export async function processarMensagem(event: H3Event, msg: MensagemRecebida) {
     await gravarSaida(admin, atual.id, r.resposta, waId)
 
     const atualizacao: Record<string, unknown> = { ...mesclarFicha(atual, r.ficha) }
+    // Conversa começou: sai de "Novo contato" para "Em qualificação".
+    if (atual.etapa === 'novo') atualizacao.etapa = 'qualificacao'
     if (r.transferir_para_humano) {
+      const querAgendar = /agend|horár|consulta/i.test(r.motivo_transferencia ?? '')
       atualizacao.ia_ativa = false
-      atualizacao.proxima_acao = `Responder no WhatsApp: ${r.motivo_transferencia || 'pediu atendimento humano'}`.slice(0, 300)
+      atualizacao.proxima_acao = (querAgendar
+        ? `Enviar opções de horário da consulta${r.ficha.periodo_preferido ? ` (prefere ${r.ficha.periodo_preferido})` : ''} — /opcoes`
+        : `Responder no WhatsApp: ${r.motivo_transferencia || 'pediu atendimento humano'}`).slice(0, 300)
       atualizacao.proxima_data = hoje()
       if (!atual.urgencia || r.ficha.urgencia === 'Alta') atualizacao.urgencia = r.ficha.urgencia ?? 'Média'
     }
 
     const { data: salvo } = await admin.from('contatos').update(atualizacao).eq('id', atual.id).select().single()
 
-    const camposIA = Object.keys(atualizacao).filter(k => !['ia_ativa', 'proxima_acao', 'proxima_data'].includes(k))
+    const camposIA = Object.keys(atualizacao).filter(k => !['ia_ativa', 'proxima_acao', 'proxima_data', 'etapa'].includes(k))
+    if (atualizacao.etapa === 'qualificacao') await registrarAtividade(event, atual.id, 'Sistema', 'Etapa: Novo contato → Em qualificação (Ana iniciou a triagem).')
     if (camposIA.length) await registrarAtividade(event, atual.id, 'Sistema', `Assistente atualizou a ficha: ${camposIA.join(', ')}.`)
 
     if (r.transferir_para_humano) {

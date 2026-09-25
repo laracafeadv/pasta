@@ -10,6 +10,7 @@ export interface Agenda {
   semAcao: Contato[]
   semana: Contato[]
   transferidas: Contato[]
+  aniversarios: Pick<Contato, 'id' | 'nome' | 'telefone' | 'data_nascimento' | 'classificacao'>[]
 }
 
 export interface AndamentoPayload {
@@ -18,6 +19,7 @@ export interface AndamentoPayload {
   proxima_acao?: string
   proxima_data?: string
   motivo_perda?: string
+  consulta_em?: string | null
 }
 
 const erro = (e: any, fallback: string) => e?.data?.message || e?.message || fallback
@@ -39,7 +41,7 @@ export const useCrmStore = defineStore('crm', () => {
   const funilLoading = ref(false)
 
   // ─── Agenda "Hoje" ───────────────────────────────────────────────────────
-  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], transferidas: [] })
+  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], transferidas: [], aniversarios: [] })
   const agendaLoading = ref(false)
   const pendencias = computed(() => agenda.value.atrasadas.length + agenda.value.hoje.length + agenda.value.semAcao.length)
 

@@ -1,6 +1,7 @@
 import { serverSupabaseServiceRole, serverSupabaseUser } from '#supabase/server'
 import type { EvaSystemPrompt } from '../../../shared/types/EvaSystemPromptDTO'
 import { assertActorRole, normalizeEvaAgentName } from '../../utils/security'
+import { auditar } from '../../utils/auditoria'
 
 const PROMPT_SELECT = 'id, agent_name, content, version, updated_at, updated_by'
 
@@ -83,5 +84,6 @@ export default defineEventHandler(async (event) => {
         result = data as EvaSystemPrompt
     }
 
-    return result
+    await auditar(event, 'alterou as instruções da Ana', 'assistente', agentName, { versao: result.version })
+  return result
 })

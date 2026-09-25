@@ -28,6 +28,7 @@
         <p class="font-semibold text-sm">{{ c.nome || telefoneFormatado(c.telefone) }}</p>
         <p v-if="c.demanda || c.area" class="text-xs text-secondary-dark dark:text-secondary-200">{{ c.demanda || c.area }}</p>
         <p class="text-xs" :class="textoProximo(c).classe">{{ textoProximo(c).texto }}</p>
+        <p class="text-[10px] text-gray-400">há {{ dias(c) }} dia(s) nesta etapa</p>
         <p v-if="!c.ia_ativa" class="text-[10px] font-semibold uppercase tracking-wider text-warning-dark dark:text-warning-300">Aguardando equipe</p>
       </article>
     </section>
@@ -65,6 +66,8 @@ const textoProximo = (c: Contato) => {
   if (s === 'sem') return { texto: 'Sem próxima ação', classe: 'text-warning-dark dark:text-warning-300 font-semibold' }
   return { texto: `${dataCurta(c.proxima_data)} · ${c.proxima_acao}`, classe: s === 'atrasado' ? 'text-danger font-semibold' : 'text-gray-500' }
 }
+
+const dias = (c: Contato) => Math.max(0, Math.floor((Date.now() - new Date(c.etapa_desde).getTime()) / 864e5))
 
 function soltar(etapaId: string, e: DragEvent) {
   arrastandoSobre.value = null

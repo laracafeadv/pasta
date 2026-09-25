@@ -2,6 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { ETAPAS, MOTIVOS_PERDA, etapa } from '../../../../../shared/types/crm'
 import { requireStaff } from '../../../../utils/security'
 import { registrarAtividade } from '../../../../utils/crm'
+import { auditar } from '../../../../utils/auditoria'
 
 /**
  * Registrar andamento: conclui a próxima ação atual e obriga a decidir a seguinte
@@ -13,12 +14,14 @@ export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) throw createError({ statusCode: 400, message: 'ID inválido.' })
 
-  const body = await readBody<{ resultado?: string; etapa: string; proxima_acao?: string; proxima_data?: string; motivo_perda?: string }>(event)
+  const body = await readBody<{ resultado?: string; etapa: string; proxima_acao?: string; proxima_data?: string; motivo_perda?: string; consulta_em?: string | null }>(event)
   const destino = ETAPAS.find(e => e.id === body?.etapa)
   if (!destino) throw createError({ statusCode: 400, message: 'Etapa inválida.' })
   if (destino.aberta && (!body.proxima_acao?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(body.proxima_data ?? ''))) {
     throw createError({ statusCode: 400, message: 'Defina a próxima ação e a data.' })
   }
+  const consultaEm = body.consulta_em ? new Date(body.consulta_em) : null
+  if (consultaEm && Number.isNaN(consultaEm.getTime())) throw createError({ statusCode: 400, message: 'Data da consulta inválida.' })
   if (destino.id === 'perdido' && !MOTIVOS_PERDA.includes(body.motivo_perda ?? '')) {
     throw createError({ statusCode: 400, message: 'Informe o motivo da perda.' })
   }
@@ -29,6 +32,9 @@ export default defineEventHandler(async (event) => {
   const resultado = body.resultado?.trim()
   if (atual.proxima_acao) await registrarAtividade(event, id, 'Andamento', `Concluído: ${atual.proxima_acao}${resultado ? `\n${resultado}` : ''}`, userId)
   else if (resultado) await registrarAtividade(event, id, 'Anotação', resultado, userId)
+  if (consultaEm) {
+    await registrarAtividade(event, id, 'Sistema', `Consulta marcada para ${consultaEm.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' })}.`, userId)
+  }
   if (atual.etapa !== destino.id) {
     await registrarAtividade(event, id, 'Sistema', `Etapa: ${etapa(atual.etapa).nome} → ${destino.nome}${destino.id === 'perdido' ? ` (${body.motivo_perda})` : ''}`, userId)
   }
@@ -40,6 +46,7 @@ export default defineEventHandler(async (event) => {
       motivo_perda: destino.id === 'perdido' ? body.motivo_perda : null,
       proxima_acao: destino.aberta ? body.proxima_acao!.trim().slice(0, 300) : null,
       proxima_data: destino.aberta ? body.proxima_data : null,
+      ...(consultaEm ? { consulta_em: consultaEm.toISOString() } : {}),
     })
     .eq('id', id)
     .select()
@@ -49,5 +56,6 @@ export default defineEventHandler(async (event) => {
     console.error('[crm/andamento] Erro:', error)
     throw createError({ statusCode: 500, message: 'Erro interno ao registrar andamento.' })
   }
+  await auditar(event, 'registrou andamento', 'contato', id, { etapa: destino.id })
   return data
 })

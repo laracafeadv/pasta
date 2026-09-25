@@ -3,6 +3,7 @@ import { serverSupabaseUser, serverSupabaseServiceRole } from '#supabase/server'
 import { randomBytes } from 'node:crypto'
 import { useRuntimeConfig } from '#imports'
 import { assertActorRole } from '../../../utils/security'
+import { auditar } from '../../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
   const escapeHtml = (value: string) =>
@@ -150,5 +151,6 @@ export default defineEventHandler(async (event) => {
   }
 
   // Never return the password in the API response
+  await auditar(event, 'criou usuário', 'usuario', userId, { role })
   return { success: true, user: profile, emailSent }
 })

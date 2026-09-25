@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 import { serverSupabaseServiceRole } from '#supabase/server'
-import { CONTATO_CAMPOS_EDITAVEIS, ETAPAS, normalizarTelefone, pick, type ContatoInput } from '../../shared/types/crm'
+import { CLASSIFICACOES, CONTATO_CAMPOS_EDITAVEIS, ETAPAS, normalizarTelefone, pick, type ContatoInput } from '../../shared/types/crm'
 
 /** Data de hoje (AAAA-MM-DD) no horário de Brasília. */
 export function hojeBR(deslocamentoDias = 0): string {
@@ -28,6 +28,20 @@ export function limparContato(body: Record<string, any>): ContatoInput {
   }
   for (const [k, v] of Object.entries(data)) {
     if (v === '') data[k] = null
+  }
+  if (data.nps != null) {
+    const n = Number(data.nps)
+    if (!Number.isInteger(n) || n < 0 || n > 10) throw createError({ statusCode: 400, message: 'NPS deve ser de 0 a 10.' })
+    data.nps = n
+  }
+  if (data.classificacao != null && !(data.classificacao in CLASSIFICACOES)) {
+    throw createError({ statusCode: 400, message: 'Classificação inválida.' })
+  }
+  for (const k of ['proxima_data', 'data_nascimento']) {
+    if (data[k] != null && !/^\d{4}-\d{2}-\d{2}$/.test(String(data[k]))) throw createError({ statusCode: 400, message: 'Data inválida.' })
+  }
+  if (data.consulta_em != null && Number.isNaN(new Date(data.consulta_em).getTime())) {
+    throw createError({ statusCode: 400, message: 'Data da consulta inválida.' })
   }
   if (data.etapa && data.etapa !== 'perdido') data.motivo_perda = null
   if (data.etapa === 'perdido' && 'motivo_perda' in data && !data.motivo_perda) {

@@ -2,6 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import type { Contato } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { limparContato, registrarAtividade } from '../../../utils/crm'
+import { auditar } from '../../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'crm/create')
@@ -20,5 +21,6 @@ export default defineEventHandler(async (event) => {
   }
 
   await registrarAtividade(event, created.id, 'Sistema', `Contato cadastrado manualmente (${created.origem || 'origem não informada'}).`, userId)
+  await auditar(event, 'criou contato', 'contato', created.id)
   return created as Contato
 })

@@ -3,6 +3,7 @@ import { brlServidor } from '../../utils/formato'
 import { requireStaff } from '../../utils/security'
 import { registrarAtividade } from '../../utils/crm'
 import { limparHonorario } from '../../utils/honorarios'
+import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'honorarios/create')
@@ -16,5 +17,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: 'Erro interno ao registrar honorário.' })
   }
   await registrarAtividade(event, created.contato_id, 'Sistema', `Honorário registrado: ${brlServidor(created.valor)} (${created.tipo}, ${created.status}).`, userId)
+  await auditar(event, 'registrou honorário', 'honorario', created.id, { contato_id: created.contato_id })
   return created
 })

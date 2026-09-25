@@ -7,6 +7,13 @@
       <button v-for="c in agenda.transferidas" :key="c.id" class="underline underline-offset-2" @click="emit('abrir', c, 'conversa')">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
     </div>
 
+    <div v-if="agenda.aniversarios?.length" class="rounded-2xl border border-secondary/30 bg-secondary/10 p-4 text-sm flex flex-wrap items-center gap-2">
+      <Icon name="ph:cake-bold" class="text-secondary-dark" />
+      <b>Aniversário hoje:</b>
+      <a v-for="c in agenda.aniversarios" :key="c.id" :href="whatsappLink(c.telefone)" target="_blank" rel="noopener" class="underline underline-offset-2">{{ c.nome || telefoneFormatado(c.telefone) }}</a>
+      <span class="text-gray-600 dark:text-zinc-400">— use a mensagem pronta <code>/aniversario</code>.</span>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <section v-for="bloco in blocos" :key="bloco.id" class="painel">
         <header class="flex items-baseline gap-2 mb-1">
@@ -38,7 +45,7 @@ import { computed } from 'vue'
 import TarefaItem from './TarefaItem.vue'
 import type { Contato } from '../../../shared/types/crm'
 import type { Agenda } from '../../stores/crm'
-import { telefoneFormatado } from '../../utils/formatadores'
+import { telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 
 const props = defineProps<{ agenda: Agenda }>()
 const emit = defineEmits<{ abrir: [c: Contato, aba?: string]; andamento: [c: Contato]; adiar: [c: Contato] }>()

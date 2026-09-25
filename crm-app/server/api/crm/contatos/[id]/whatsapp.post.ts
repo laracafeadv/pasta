@@ -1,5 +1,6 @@
 import { requireStaff } from '../../../../utils/security'
 import { enviarPelaEquipe } from '../../../../utils/atendimento'
+import { auditar } from '../../../../utils/auditoria'
 
 // Equipe responde a cliente pelo WhatsApp do escritório, de dentro do CRM.
 export default defineEventHandler(async (event) => {
@@ -13,5 +14,6 @@ export default defineEventHandler(async (event) => {
   if (texto.length > 4000) throw createError({ statusCode: 400, message: 'Mensagem longa demais.' })
 
   await enviarPelaEquipe(event, id, texto, userId)
+  await auditar(event, 'enviou WhatsApp pela equipe', 'contato', id)
   return { success: true }
 })

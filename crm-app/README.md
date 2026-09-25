@@ -16,7 +16,16 @@ Adaptado do projeto [`loboczss/crm-advogada`](https://github.com/loboczss/crm-ad
 | **Honorários** | Propostas, contratos e recebimentos por cliente. |
 | **Painel / Relatórios** | Novos contatos, taxa de fechamento, origem dos clientes, áreas e motivos de perda. |
 | **Assistente IA** | Instruções da assistente, base de conhecimento (PDF, Word, planilhas, imagens) e aba **Testar** para conversar com ela antes de ligar no WhatsApp. |
+| **Mensagens** | Biblioteca de mensagens prontas (playbook "Scripts que Vendem"): triagem, agendamento, documentos, proposta, objeções, follow-up, financeiro, NPS. Na conversa, digite `/` para usar. |
+| **Equipe → Auditoria** | Quem fez o quê e quando. Registro imutável, sem conteúdo dos dados (LGPD). |
 | **Equipe** | Criação de usuários e níveis de acesso. |
+
+### Estratégias dos playbooks (Desafio Comercial Diamante)
+- **Etapas com comportamento próprio:** Novo contato → *Em qualificação* → Consulta agendada → Diagnóstico → Proposta enviada → Cliente ativo.
+- **Cadência sugerida:** ao registrar andamento, o sistema propõe o próximo passo da etapa (ex.: follow-up 24h → 7 dias → final) e a mensagem pronta correspondente.
+- **Caça aos gargalos** (Relatórios): contatos por etapa, tempo médio parado e a etapa prioritária da semana; contagem de quem "sumiu" (7+ dias sem responder).
+- **Checklist de documentos** por área, com cobrança dos pendentes em um clique.
+- **Classificação da carteira** (promotora, neutra, fria, detratora) — o NPS classifica sozinho; **aniversários** aparecem em "Hoje".
 
 ### Regras do método embutidas no sistema
 - Todo caso aberto precisa de **próxima ação com data**. Sem isso, ele aparece em "Sem próxima ação".
@@ -35,7 +44,7 @@ Não há autocadastro: os usuários são criados pela administração em **Equip
 
 ---
 
-## Assistente de IA no WhatsApp
+## Ana — assistente de IA no WhatsApp
 
 **Como funciona**
 1. Uma pessoa escreve para o WhatsApp do escritório. A Meta envia a mensagem para `/api/whatsapp/webhook`.
@@ -45,7 +54,7 @@ Não há autocadastro: os usuários são criados pela administração em **Equip
 5. Ela **transfere para a equipe** quando a pessoa pede, em caso de violência, risco, prisão ou prazo judicial, ou quando não sabe responder. Nesse caso a IA é pausada no contato, a equipe é notificada e o caso aparece em "Hoje".
 6. A equipe responde pela aba **Conversa** da ficha. Ao responder, a IA é pausada automaticamente. O botão "Devolver para a IA" reativa a assistente.
 
-**Regras fixas (não editáveis pela tela):** estão em `server/utils/agentePrompt.ts`. A assistente se identifica como virtual. Não dá parecer jurídico. Não promete resultado. Não informa honorários que não estejam na base de conhecimento. Não pede documentos nem dados sensíveis. Em caso de risco, orienta a ligar 190/180 e transfere para a equipe. Essas regras seguem o Código de Ética da OAB, o Provimento 205/2021 e a LGPD. **Revise o texto com a sua leitura profissional antes de ativar.**
+**Regras fixas (não editáveis pela tela):** estão em `server/utils/agentePrompt.ts`. Ela se apresenta como **Ana, do escritório**; nunca afirma ser humana e, se perguntarem diretamente, diz que é a assistente virtual. Não dá parecer jurídico. Não promete resultado. Não informa honorários que não estejam na base de conhecimento. Não pede documentos nem dados sensíveis. Em caso de risco, orienta a ligar 190/180 e transfere para a equipe. Essas regras seguem o Código de Ética da OAB, o Provimento 205/2021 e a LGPD. **Revise o texto com a sua leitura profissional antes de ativar.**
 
 **Limitações atuais**
 - **Áudio, imagem e documento:** a assistente não lê. Ela pede para a pessoa escrever, ou avisa que a equipe vai ver.
@@ -58,7 +67,7 @@ Não há autocadastro: os usuários são criados pela administração em **Equip
 
 ### 1. Supabase (banco de dados e login)
 1. Crie um projeto em [supabase.com](https://supabase.com). Para dados de clientes, escolha a região **São Paulo (sa-east-1)**.
-2. Em **SQL Editor**, execute o arquivo `supabase/migrations/20260925000000_schema_inicial.sql`.
+2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql` e `supabase/migrations/20260925010000_playbook_e_auditoria.sql`.
 3. Em **Authentication → Providers → Email**, **desative "Allow new users to sign up"**.
 4. Em **Authentication → Users → Add user**, crie o usuário da Lara (e-mail e senha).
 5. Entre uma vez no CRM com esse usuário. Depois, no **SQL Editor**, torne-o administrador:

@@ -5,7 +5,7 @@
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 class="text-3xl sm:text-4xl font-black tracking-tight mb-2 text-slate-900 dark:text-white">Gerenciar Usuários</h1>
-          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Quem tem acesso ao CRM do escritório e com qual nível.</p>
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Quem tem acesso ao CRM do escritório e com qual nível. <NuxtLink to="/admin/auditoria" class="underline underline-offset-2">Ver auditoria</NuxtLink></p>
         </div>
         <Button variant="primary" @click="openModal(null)" class="shrink-0 shadow-glow-primary/20">
           <div class="flex items-center gap-2">

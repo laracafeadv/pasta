@@ -2,6 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { etapa, type Contato } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { limparContato, registrarAtividade } from '../../../utils/crm'
+import { auditar, camposAlterados } from '../../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'crm/update')
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const data = limparContato(await readBody(event))
 
-  const { data: anterior } = await client.from('contatos').select('etapa, ia_ativa').eq('id', id).single()
+  const { data: anterior } = await client.from('contatos').select('*').eq('id', id).single()
 
   const { data: updated, error } = await client.from('contatos').update(data).eq('id', id).select().single()
   if (error) {
@@ -28,5 +29,7 @@ export default defineEventHandler(async (event) => {
     await registrarAtividade(event, id, 'Sistema', data.ia_ativa ? 'Assistente de IA reativada nesta conversa.' : 'Equipe assumiu a conversa (IA pausada).', userId)
   }
 
+  const alterados = camposAlterados(anterior, data as Record<string, any>)
+  if (alterados.length) await auditar(event, 'editou contato', 'contato', id, { campos: alterados })
   return updated as Contato
 })

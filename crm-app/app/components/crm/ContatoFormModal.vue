@@ -85,6 +85,23 @@
         </select>
       </label>
 
+      <p class="section-label">Relacionamento</p>
+      <label class="field">
+        <span>Data de nascimento</span>
+        <input v-model="form.data_nascimento" type="date" class="modal-input" />
+      </label>
+      <label class="field">
+        <span>Classificação (clientes)</span>
+        <select v-model="form.classificacao" class="modal-input">
+          <option value="">—</option>
+          <option v-for="(c, k) in CLASSIFICACOES" :key="k" :value="k">{{ c.nome }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>NPS (0 a 10)</span>
+        <input v-model="form.nps" type="number" min="0" max="10" class="modal-input" placeholder="Resposta da pesquisa /nps" />
+      </label>
+
       <div v-if="etapaAberta" class="md:col-span-2 grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3 rounded-lg bg-primary/5 border border-primary/10 p-3">
         <label class="field">
           <span>Próxima ação</span>
@@ -110,7 +127,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { AREAS, ETAPAS, MOTIVOS_PERDA, ORIGENS, URGENCIAS, etapa, type Contato, type ContatoInput } from '../../../shared/types/crm'
+import { AREAS, CLASSIFICACOES, ETAPAS, MOTIVOS_PERDA, ORIGENS, URGENCIAS, etapa, type Contato, type ContatoInput } from '../../../shared/types/crm'
 import { hojeISO } from '../../stores/crm'
 
 const props = defineProps<{ isOpen: boolean; contato?: Contato | null; loading?: boolean }>()
@@ -118,7 +135,8 @@ const emit = defineEmits<{ close: []; submit: [data: ContatoInput] }>()
 
 const vazio = () => ({
   nome: '', telefone: '', email: '', cidade: '', origem: '', area: '', demanda: '', parte_contraria: '',
-  resumo: '', urgencia: '', etapa: 'novo', motivo_perda: '', proxima_acao: 'Responder e agendar consulta', proxima_data: hojeISO(),
+  resumo: '', urgencia: '', etapa: 'novo', motivo_perda: '', proxima_acao: 'Responder pessoalmente — /boasvindas', proxima_data: hojeISO(),
+  data_nascimento: '', classificacao: '', nps: '',
 })
 const form = reactive<Record<string, any>>(vazio())
 const etapaAberta = computed(() => etapa(form.etapa).aberta)
@@ -159,6 +177,8 @@ watch(() => props.isOpen, (open) => {
 function handleSubmit() {
   const data: Record<string, any> = { ...form }
   if (!etapaAberta.value) { data.proxima_acao = null; data.proxima_data = null }
+  if (data.nps === '' || data.nps == null) data.nps = null
+  else data.nps = Number(data.nps)
   emit('submit', data as ContatoInput)
 }
 </script>

@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { createJob, completeJob, failJob } from '../../utils/ragJobStore'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { assertActorRole, throwSanitizedInternalError } from '../../utils/security'
+import { auditar } from '../../utils/auditoria'
 
 interface RagBody {
     source: string      // Nome do arquivo ou descrição
@@ -364,6 +365,7 @@ export default defineEventHandler(async (event) => {
         tipo === 'TXT' ? (body.conteudo || body.source) : undefined,
     ).catch(() => {})
 
+    await auditar(event, 'enviou documento para a base da Ana', 'assistente', documentGroupId, { tipo })
     setResponseStatus(event, 202)
     return { success: true, jobId: documentGroupId, status: 'processing' }
 })

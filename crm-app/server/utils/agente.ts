@@ -20,6 +20,7 @@ export interface FichaExtraida {
   interesses: string[]
   objecoes: string[]
   parte_contraria: string | null
+  periodo_preferido: 'manhã' | 'tarde' | null
 }
 
 export interface RespostaAgente {
@@ -39,7 +40,7 @@ const SCHEMA = {
     ficha: {
       type: 'object',
       additionalProperties: false,
-      required: ['nome', 'cidade', 'email', 'area', 'demanda', 'resumo', 'urgencia', 'sentimento', 'interesses', 'objecoes', 'parte_contraria'],
+      required: ['nome', 'cidade', 'email', 'area', 'demanda', 'resumo', 'urgencia', 'sentimento', 'interesses', 'objecoes', 'parte_contraria', 'periodo_preferido'],
       properties: {
         nome: texto,
         cidade: texto,
@@ -52,6 +53,7 @@ const SCHEMA = {
         interesses: { type: 'array', items: { type: 'string' } },
         objecoes: { type: 'array', items: { type: 'string' } },
         parte_contraria: texto,
+        periodo_preferido: { type: ['string', 'null'], enum: ['manhã', 'tarde', null] },
       },
     },
     transferir_para_humano: { type: 'boolean' },
@@ -115,7 +117,7 @@ export async function gerarResposta(params: {
     params.promptEditavel,
     params.conhecimento ? `# Base de conhecimento do escritório (use só se for relevante)\n${params.conhecimento}` : '',
     `# O que já sabemos deste contato\n${descreverFicha(params.contato)}`,
-    `# Hoje\n${new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' })}`,
+    `# Agora (horário de Brasília)\n${new Date().toLocaleString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}`,
     INSTRUCOES_SAIDA,
   ].filter(Boolean).join('\n\n')
 

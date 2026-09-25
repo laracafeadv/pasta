@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const desde = dias ? new Date(Date.now() - dias * 864e5).toISOString() : null
   const hoje = hojeBR()
 
-  const contatosQ = client.from('contatos').select('etapa, origem, area, motivo_perda, urgencia, proxima_acao, proxima_data, created_at')
+  const contatosQ = client.from('contatos').select('etapa, origem, area, motivo_perda, urgencia, proxima_acao, proxima_data, created_at, etapa_desde, ultima_mensagem_em, classificacao')
   let honorariosQ = client.from('honorarios').select('valor, status, created_at')
   if (desde) honorariosQ = honorariosQ.gte('created_at', desde)
 
@@ -43,7 +43,38 @@ export default defineEventHandler(async (event) => {
       return { chave: chave ?? 'Não informado', total: g.length, ganhos: w, decididos: w + g.filter(c => c.etapa === 'perdido').length }
     }).filter(l => l.total > 0).sort((a, b) => b.total - a.total)
 
+  // Caça aos gargalos (playbook "WhatsApp Otimizado", parte 3): por etapa aberta,
+  // quantos estão parados e há quanto tempo. Parado = dias desde a última
+  // movimentação (entrada na etapa ou última mensagem do cliente, o que for mais recente).
+  const agora = Date.now()
+  const diasParado = (c: { etapa_desde: string; ultima_mensagem_em: string | null }) => {
+    const ref = Math.max(new Date(c.etapa_desde).getTime(), c.ultima_mensagem_em ? new Date(c.ultima_mensagem_em).getTime() : 0)
+    return Math.max(0, Math.floor((agora - ref) / 864e5))
+  }
+  // Só o funil comercial: "Cliente ativo" já saiu do funil (processos duram meses).
+  const comerciais = ETAPAS.filter(e => e.aberta && e.id !== 'ativo')
+  const gargalos = comerciais.map((e) => {
+    const g = abertos.filter(c => c.etapa === e.id)
+    const dias = g.map(diasParado)
+    return {
+      etapa: e.id,
+      nome: e.nome,
+      total: g.length,
+      mediaDias: dias.length ? Math.round(dias.reduce((a, b) => a + b, 0) / dias.length) : 0,
+      maisAntigo: dias.length ? Math.max(...dias) : 0,
+    }
+  })
+  const pior = [...gargalos].sort((a, b) => b.total * Math.max(1, b.mediaDias) - a.total * Math.max(1, a.mediaDias))[0]
+  // "Sumiu / sem resposta": aberto, com conversa, e o cliente não escreve há 7+ dias.
+  const sumiram = abertos.filter(c => c.etapa !== 'ativo' && c.ultima_mensagem_em && (agora - new Date(c.ultima_mensagem_em).getTime()) / 864e5 >= 7).length
+
+  const carteira = (['promotora', 'neutra', 'fria', 'detratora'] as const).map(k => ({ chave: k, total: todos.filter(c => c.classificacao === k).length }))
+
   return {
+    gargalos,
+    gargalo: pior && pior.total ? pior.etapa : null,
+    sumiram,
+    carteira,
     novos: periodo.length,
     taxaFechamento: ganhos + perdidos ? Math.round((ganhos / (ganhos + perdidos)) * 100) : null,
     ganhos,

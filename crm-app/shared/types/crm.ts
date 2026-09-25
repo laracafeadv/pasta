@@ -6,8 +6,9 @@
 
 // Etapas espelham o "Como funciona" do site: contato → diagnóstico → acompanhamento → solução.
 export const ETAPAS = [
-  { id: 'novo', nome: 'Novo contato', hint: 'Responder em até 24h', aberta: true },
-  { id: 'agendado', nome: 'Consulta agendada', hint: 'Contato inicial', aberta: true },
+  { id: 'novo', nome: 'Novo contato', hint: 'Responder em minutos', aberta: true },
+  { id: 'qualificacao', nome: 'Em qualificação', hint: 'Entender e convidar p/ consulta', aberta: true },
+  { id: 'agendado', nome: 'Consulta agendada', hint: 'Confirmar e preparar', aberta: true },
   { id: 'diagnostico', nome: 'Diagnóstico', hint: 'Análise do caso', aberta: true },
   { id: 'proposta', nome: 'Proposta enviada', hint: 'Honorários', aberta: true },
   { id: 'ativo', nome: 'Cliente ativo', hint: 'Acompanhamento', aberta: true },
@@ -71,6 +72,11 @@ export interface Contato {
   proxima_acao: string | null
   proxima_data: string | null
   responsavel_id: string | null
+  etapa_desde: string
+  consulta_em: string | null
+  data_nascimento: string | null
+  classificacao: Classificacao | null
+  nps: number | null
   ia_ativa: boolean
   consentimento_em: string | null
   ultima_mensagem_em: string | null
@@ -82,7 +88,7 @@ export type ContatoInput = Partial<Omit<Contato, 'id' | 'created_at' | 'updated_
 export const CONTATO_CAMPOS_EDITAVEIS = [
   'telefone', 'nome', 'email', 'cidade', 'origem', 'area', 'demanda', 'parte_contraria', 'resumo',
   'sentimento', 'urgencia', 'interesses', 'objecoes', 'etapa', 'motivo_perda', 'proxima_acao',
-  'proxima_data', 'responsavel_id', 'ia_ativa',
+  'proxima_data', 'responsavel_id', 'ia_ativa', 'consulta_em', 'data_nascimento', 'classificacao', 'nps',
 ] as const
 
 export interface Honorario {
@@ -131,6 +137,91 @@ export interface Atividade {
 }
 
 export const TIPOS_ATIVIDADE = ['Anotação', 'Ligação', 'WhatsApp', 'E-mail', 'Reunião', 'Documento recebido']
+
+// ─── Classificação da carteira (playbook de Classificação de Clientes) ─────
+export const CLASSIFICACOES = {
+  promotora: { nome: 'Promotora', dica: 'Priorize resposta e cuidado: é quem indica e avalia.' },
+  neutra: { nome: 'Neutra', dica: 'Revise toda semana: são as conversas mais fáceis de esquecer.' },
+  fria: { nome: 'Fria', dica: 'Reserve um bloco fixo na semana para reaquecer, sem pressa.' },
+  detratora: { nome: 'Detratora', dica: 'Avalie caso a caso: reparar ou blindar, nunca ignorar.' },
+} as const
+export type Classificacao = keyof typeof CLASSIFICACOES
+
+/**
+ * Cadência sugerida ao entrar em cada etapa (playbooks "WhatsApp Otimizado" e
+ * "Scripts que Vendem"). Aparece pré-preenchida no "Registrar andamento".
+ * `modelo` aponta para o atalho da biblioteca de mensagens.
+ */
+export const CADENCIA: Record<string, { acao: string; dias: number; modelo?: string }> = {
+  novo: { acao: 'Responder pessoalmente', dias: 0, modelo: '/boasvindas' },
+  qualificacao: { acao: 'Convidar para a consulta estratégica', dias: 1, modelo: '/consulta' },
+  agendado: { acao: 'Lembrete da consulta (dia anterior)', dias: -1, modelo: '/lembrete' },
+  diagnostico: { acao: 'Enviar resumo, próximos passos e proposta', dias: 0, modelo: '/resumo' },
+  proposta: { acao: 'Follow-up 24h da proposta', dias: 1, modelo: '/followup-24h' },
+  ativo: { acao: 'Enviar checklist de documentos', dias: 1, modelo: '/documentos' },
+}
+
+/** Próximo passo depois de concluir um follow-up (24h → 7 dias → final). */
+export const SEQUENCIA_FOLLOWUP: { se: RegExp; acao: string; dias: number; modelo: string }[] = [
+  { se: /follow-up 24h/i, acao: 'Follow-up 7 dias da proposta', dias: 6, modelo: '/followup-7d' },
+  { se: /follow-up 7 dias/i, acao: 'Follow-up final (14 dias)', dias: 7, modelo: '/followup-final' },
+]
+
+// ─── Documentos por área (base: plataforma-adv + playbook) ─────────────────
+// [descrição, obrigatório]
+export const DOCUMENTOS_POR_AREA: Record<string, [string, boolean][]> = {
+  '*': [
+    ['Documento de identidade (RG ou CNH)', true],
+    ['CPF', true],
+    ['Comprovante de residência atualizado', true],
+  ],
+  'Direito de Família': [
+    ['Certidão de casamento ou declaração de união estável', true],
+    ['Certidão de nascimento dos filhos', false],
+    ['Comprovantes de renda', true],
+    ['Documentos dos bens (imóveis, veículos, extratos)', false],
+    ['Conversas ou provas relevantes', false],
+  ],
+  'Sucessões': [
+    ['Certidão de óbito', true],
+    ['Certidões de nascimento ou casamento dos herdeiros', true],
+    ['Documentos dos bens (matrículas, CRLV, extratos)', true],
+    ['Testamento', false],
+    ['Certidões negativas de débitos do falecido', false],
+  ],
+  'Planejamento Matrimonial': [
+    ['Certidão de nascimento (ou casamento anterior averbada)', true],
+    ['Relação dos bens de cada um', false],
+  ],
+  'Consultoria Jurídica': [
+    ['Documentos relacionados à consulta', false],
+  ],
+  fim: [
+    ['Procuração assinada', true],
+    ['Contrato de honorários assinado', true],
+  ],
+}
+
+export interface Documento {
+  id: number
+  contato_id: number
+  descricao: string
+  obrigatorio: boolean
+  status: 'pendente' | 'recebido' | 'dispensado'
+  observacao: string | null
+  ordem: number
+  atualizado_em: string
+}
+
+export interface ModeloMensagem {
+  id: number
+  categoria: string
+  titulo: string
+  atalho: string
+  texto: string
+  ordem: number
+  ativo: boolean
+}
 
 export function pick<T extends Record<string, any>>(obj: T, keys: readonly string[]): Partial<T> {
   const out: Record<string, any> = {}
