@@ -1,8 +1,9 @@
 import { ref } from 'vue'
-import type { ModeloMensagem } from '../../shared/types/crm'
+import type { Escritorio, ModeloMensagem } from '../../shared/types/crm'
 
 // Cache simples em memória: os modelos mudam pouco e são usados em várias telas.
 const modelos = ref<ModeloMensagem[]>([])
+const escritorio = ref<Escritorio>({})
 const carregando = ref(false)
 let carregado = false
 
@@ -11,17 +12,36 @@ export function useModelos() {
     if (carregado && !forcar) return
     carregando.value = true
     try {
-      modelos.value = await $fetch<ModeloMensagem[]>('/api/modelos')
+      const [m, e] = await Promise.all([$fetch<ModeloMensagem[]>('/api/modelos'), $fetch<Escritorio>('/api/escritorio').catch(() => ({}))])
+      modelos.value = m
+      escritorio.value = e
       carregado = true
     } finally {
       carregando.value = false
     }
   }
 
-  /** Troca [NOME] pelo primeiro nome; os demais [CAMPOS] ficam para completar. */
-  function preencher(texto: string, nome?: string | null) {
-    const primeiro = (nome ?? '').trim().split(/\s+/)[0]
-    return primeiro ? texto.replace(/\[NOME\]/g, primeiro) : texto
+  /**
+   * Preenche o que o CRM sabe: [NOME] (primeiro nome), [SAUDAÇÃO], dados do escritório
+   * ([DRA], [VALOR DA CONSULTA], [PLATAFORMA], [DURAÇÃO], [PIX], [DADOS BANCÁRIOS]) e,
+   * quando informados, os extras (ex.: [PARCELA], [VALOR DA PARCELA], [VENCIMENTO]).
+   * O que não estiver cadastrado continua entre colchetes, para completar à mão.
+   */
+  function preencher(texto: string, nome?: string | null, extras: Record<string, string | null | undefined> = {}) {
+    const e = escritorio.value
+    const h = Number(new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo' }))
+    const campos: Record<string, string | null | undefined> = {
+      'NOME': (nome ?? '').trim().split(/\s+/)[0] || null,
+      'SAUDAÇÃO': h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite',
+      'DRA': e.advogada_nome ? `Dra. ${e.advogada_nome}` : null,
+      'VALOR DA CONSULTA': e.valor_consulta,
+      'PLATAFORMA': e.plataforma_consulta,
+      'DURAÇÃO': e.duracao_consulta,
+      'PIX': e.chave_pix,
+      'DADOS BANCÁRIOS': e.dados_bancarios,
+      ...extras,
+    }
+    return texto.replace(/\[([A-ZÀ-Ú ]+)\]/g, (m, k) => campos[k]?.trim() || m)
   }
 
   return { modelos, carregando, carregar, preencher, invalidar: () => { carregado = false } }

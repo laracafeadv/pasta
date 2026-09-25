@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
     .order('vencimento', { ascending: true })
     .limit(1000)
   if (q.tipo === 'receber' || q.tipo === 'pagar') query = query.eq('tipo', q.tipo)
+  if (q.contato) query = query.eq('contato_id', Number(q.contato))
   if (typeof q.de === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(q.de)) query = query.gte('vencimento', q.de)
   if (typeof q.ate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(q.ate)) query = query.lte('vencimento', q.ate)
   const { data, error } = await query

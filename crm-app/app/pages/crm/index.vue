@@ -37,7 +37,7 @@ function carregarAba() {
   if (aba.value === 'contatos') crm.fetchRecords()
 }
 onMounted(() => {
-  if (route.query.abrir) abrir({ id: Number(route.query.abrir) } as Contato, 'casos')
+  if (route.query.abrir) abrir({ id: Number(route.query.abrir) } as Contato, String(route.query.ficha || 'casos'))
   carregarAba()
   if (aba.value !== 'hoje') crm.fetchAgenda() // alimenta o contador do menu
 })

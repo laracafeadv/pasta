@@ -27,7 +27,8 @@
               <button v-if="!l.pago_em" class="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border border-gray-300 dark:border-zinc-700 hover:border-primary" @click="baixar(l)">
                 {{ l.tipo === 'pagar' ? 'Pagar' : 'Receber' }}
               </button>
-              <span v-else class="text-xs text-success-dark">{{ l.tipo === 'pagar' ? 'pago' : 'recebido' }} {{ dataCurta(l.pago_em) }}</span>
+              <NuxtLink v-if="!l.pago_em && l.tipo === 'receber' && l.contato_id && l.vencimento < hoje" :to="`/crm?abrir=${l.contato_id}&ficha=honorarios`" class="ml-1 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-white">Cobrar</NuxtLink>
+              <span v-else-if="l.pago_em" class="text-xs text-success-dark">{{ l.tipo === 'pagar' ? 'pago' : 'recebido' }} {{ dataCurta(l.pago_em) }}</span>
             </td>
           </tr>
         </tbody>

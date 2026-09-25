@@ -262,6 +262,7 @@ export const ESCRITORIO_CAMPOS = [
   { chave: 'plataforma_consulta', rotulo: 'Plataforma da videochamada', grupo: 'Consulta (usado pela Ana)', exemplo: 'Google Meet' },
   { chave: 'horario_atendimento', rotulo: 'Horário de atendimento da equipe', grupo: 'Consulta (usado pela Ana)', exemplo: 'segunda a sexta, das 9h às 18h' },
   { chave: 'chave_pix', rotulo: 'Chave PIX (enviada só pela equipe)', grupo: 'Pagamento', exemplo: 'CNPJ ou e-mail' },
+  { chave: 'dados_bancarios', rotulo: 'Conta para depósito (enviada só pela equipe)', grupo: 'Pagamento', exemplo: 'Banco, agência, conta, titular' },
   { chave: 'link_avaliacao', rotulo: 'Link de avaliação no Google', grupo: 'Pagamento', exemplo: 'https://g.page/…' },
 ] as const
 export type ChaveEscritorio = typeof ESCRITORIO_CAMPOS[number]['chave']

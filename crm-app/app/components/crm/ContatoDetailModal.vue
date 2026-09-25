@@ -129,8 +129,8 @@
             <span class="text-gray-400">ou digite <b>/</b> para buscar</span>
             <button v-if="resposta.trim()" type="button" class="ml-auto text-gray-500 hover:underline" @click="copiar">{{ copiado ? 'Copiado!' : 'Copiar texto' }}</button>
           </div>
-          <form class="flex gap-2 p-4 pt-2" @submit.prevent="enviar">
-            <textarea v-model="resposta" rows="3" class="modal-input flex-1" placeholder="Responder pelo WhatsApp do escritório…" @keydown.enter.exact.prevent="enviar" @input="aoDigitar" />
+          <form class="flex items-end gap-2 p-4 pt-2" @submit.prevent="enviar">
+            <textarea v-model="resposta" :rows="Math.min(10, Math.max(3, resposta.split('\n').length + 1))" class="modal-input flex-1" placeholder="Responder pelo WhatsApp do escritório…" @keydown.enter.exact.prevent="enviar" @input="aoDigitar" />
             <Button type="submit" :loading="enviando" icon="ph:paper-plane-right-bold" :disabled="!resposta.trim() || resposta.startsWith('/')">Enviar</Button>
           </form>
         </div>
@@ -259,6 +259,17 @@
         <div class="flex justify-end">
           <NuxtLink :to="`/honorarios?contato=${dados.contato.id}`" class="text-sm font-semibold text-primary">+ Registrar honorário</NuxtLink>
         </div>
+        <div v-if="ehAdmin && parcelas.length" class="card">
+          <h3>Parcelas em aberto</h3>
+          <ul class="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
+            <li v-for="l in parcelas" :key="l.id" class="py-2 flex flex-wrap items-center gap-2">
+              <span class="w-24 font-medium tabular-nums" :class="l.vencimento < hojeIso ? 'text-danger' : ''">{{ dataCurta(l.vencimento) }}</span>
+              <span class="flex-1">{{ l.descricao }} · <b>{{ brl(l.valor) }}</b></span>
+              <button v-if="l.vencimento < hojeIso" type="button" class="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-white" @click="mensagemParcela(l, '/cobranca')">Cobrar</button>
+              <button type="button" class="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border border-gray-300 dark:border-zinc-700 hover:border-primary" @click="mensagemParcela(l, '/boleto')">Enviar boleto</button>
+            </li>
+          </ul>
+        </div>
         <p v-if="!dados.honorarios.length" class="text-sm text-gray-400">Nenhum honorário registrado para este contato.</p>
         <div v-for="h in dados.honorarios" :key="h.id" class="card flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -279,7 +290,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp, type PecaModelo } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp, type PecaModelo } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
 import DiagnosticoPanel from './DiagnosticoPanel.vue'
@@ -463,6 +474,27 @@ async function cobrarPendentes() {
   resposta.value = preencher(base, dados.value.contato.nome)
     .replace('[RECEBIDOS]', lista(recebidos.value))
     .replace('[PENDENTES]', lista(pendentes.value))
+  aba.value = 'conversa'
+}
+
+// ─── Parcelas (administração): cobrança e boleto já preenchidos ────────────
+const parcelas = ref<Lancamento[]>([])
+const hojeIso = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+watch(() => [aba.value, dados.value?.contato.id] as const, async ([a, id]) => {
+  if (a !== 'honorarios' || !id || !ehAdmin.value) return
+  const ls = await $fetch<Lancamento[]>('/api/financeiro/lancamentos', { params: { contato: id, tipo: 'receber' } }).catch(() => [])
+  parcelas.value = ls.filter(l => !l.pago_em)
+})
+async function mensagemParcela(l: Lancamento, atalho: string) {
+  if (!dados.value) return
+  await carregarModelos()
+  const base = modelos.value.find(m => m.atalho === atalho)?.texto
+  if (!base) return
+  resposta.value = preencher(base, dados.value.contato.nome, {
+    'PARCELA': l.descricao.match(/\((\d+\/\d+)\)/)?.[1] ?? null,
+    'VALOR DA PARCELA': brl(l.valor),
+    'VENCIMENTO': l.vencimento.split('-').reverse().slice(0, 2).join('/'),
+  })
   aba.value = 'conversa'
 }
 
