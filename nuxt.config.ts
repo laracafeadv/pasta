@@ -31,7 +31,6 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     // '@nuxt/image',
     '@nuxtjs/supabase',
-    '@pinia/nuxt',
     'nuxt-llms',
     '@nuxt/icon',
     '@vite-pwa/nuxt',
@@ -67,6 +66,11 @@ export default defineNuxtConfig({
     }
   },
   css: ['~/assets/css/main.css'],
+  vite: {
+    build: {
+      target: 'es2020',
+    },
+  },
   tailwindcss: {
     exposeConfig: true,
   },
