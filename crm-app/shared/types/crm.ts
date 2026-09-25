@@ -76,7 +76,12 @@ export interface Contato {
   consulta_em: string | null
   data_nascimento: string | null
   classificacao: Classificacao | null
+  classificacao_desde: string | null
   nps: number | null
+  ultimo_contato_em: string | null
+  obs_relacionamento: string | null
+  dor: string | null
+  objetivo: string | null
   ia_ativa: boolean
   consentimento_em: string | null
   ultima_mensagem_em: string | null
@@ -89,6 +94,7 @@ export const CONTATO_CAMPOS_EDITAVEIS = [
   'telefone', 'nome', 'email', 'cidade', 'origem', 'area', 'demanda', 'parte_contraria', 'resumo',
   'sentimento', 'urgencia', 'interesses', 'objecoes', 'etapa', 'motivo_perda', 'proxima_acao',
   'proxima_data', 'responsavel_id', 'ia_ativa', 'consulta_em', 'data_nascimento', 'classificacao', 'nps',
+  'obs_relacionamento', 'dor', 'objetivo',
 ] as const
 
 export interface Honorario {
@@ -137,10 +143,11 @@ export interface Atividade {
   autor_id: string | null
   tipo: string
   texto: string
+  minutos?: number | null
   autor?: { name: string } | null
 }
 
-export const TIPOS_ATIVIDADE = ['Anotação', 'Ligação', 'WhatsApp', 'E-mail', 'Reunião', 'Documento recebido']
+export const TIPOS_ATIVIDADE = ['Anotação', 'Ligação', 'WhatsApp', 'E-mail', 'Reunião', 'Documento recebido', 'Peça / pesquisa', 'Relacionamento']
 
 // ─── Classificação da carteira (playbook de Classificação de Clientes) ─────
 export const CLASSIFICACOES = {
@@ -245,7 +252,7 @@ export const ESCRITORIO_CAMPOS = [
   { chave: 'link_avaliacao', rotulo: 'Link de avaliação no Google', grupo: 'Pagamento', exemplo: 'https://g.page/…' },
 ] as const
 export type ChaveEscritorio = typeof ESCRITORIO_CAMPOS[number]['chave']
-export type Escritorio = Partial<Record<ChaveEscritorio, string>>
+export type Escritorio = Partial<Record<ChaveEscritorio, string>> & Record<string, string | undefined>
 
 // ─── Cliente, casos e agenda ──────────────────────────────────────────────
 export const ESTADOS_CIVIS = ['solteiro(a)', 'casado(a)', 'em união estável', 'divorciado(a)', 'separado(a) judicialmente', 'viúvo(a)']
@@ -288,9 +295,12 @@ export interface Caso {
   data_abertura: string
   data_encerramento: string | null
   observacoes: string | null
+  resultado?: keyof typeof RESULTADOS_CASO | null
   contato?: Pick<Contato, 'id' | 'nome'> | null
 }
-export const CASO_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'numero_processo', 'orgao', 'comarca', 'uf', 'parte_contraria', 'status', 'data_abertura', 'data_encerramento', 'observacoes'] as const
+export const CASO_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'numero_processo', 'orgao', 'comarca', 'uf', 'parte_contraria', 'status', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado'] as const
+/** Resultado do caso encerrado (base da taxa de êxito no painel de qualidade). */
+export const RESULTADOS_CASO = { exito: 'Êxito', acordo: 'Acordo', parcial: 'Êxito parcial', sem_exito: 'Sem êxito', desistencia: 'Desistência do cliente' } as const
 
 export const TIPOS_COMPROMISSO = {
   prazo: { nome: 'Prazo processual', icone: 'ph:hourglass-high-bold' },
@@ -340,3 +350,226 @@ export function normalizarTelefone(raw: string | null | undefined): string {
 export function normalizarNome(s: string | null | undefined): string {
   return String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
 }
+
+// ─── Carteira: plano de ação por classificação (playbook "Classificando seus clientes") ───
+export const PERGUNTA_CLASSIFICAR = 'Se essa pessoa precisasse de uma advogada amanhã, ela me procuraria, procuraria outra pessoa, ou nem lembraria de mim?'
+
+/** Dias sem contato a partir dos quais a cliente "pede um gesto". Detratora segue regra própria. */
+export const PLANO_CARTEIRA: Record<Classificacao, { meta: string; cadenciaDias: number | null; acoes: string[]; modelos: string[] }> = {
+  promotora: {
+    meta: 'Manter e ativar, sem "gastar" o relacionamento',
+    cadenciaDias: 60,
+    acoes: ['Reconhecimento sem pedir nada em troca', 'Tratar como VIP: prioridade, um pequeno mimo, convite exclusivo', 'Conectar promotoras entre si, quando fizer sentido', 'Guardar para o funil de avaliação/indicação'],
+    modelos: ['/reconhecimento', '/aniversario'],
+  },
+  neutra: {
+    meta: 'Dar um motivo para ela se aproximar',
+    cadenciaDias: 45,
+    acoes: ['Mensagem de reconexão não comercial ("lembrei de você")', 'Algo que só clientes recebem: conteúdo exclusivo, bastidor', 'Personalizar: citar algo específico do caso ou da conversa'],
+    modelos: ['/reconexao', '/bastidor'],
+  },
+  fria: {
+    meta: 'Reconstruir proximidade sem pressa e sem pressão comercial',
+    cadenciaDias: 30,
+    acoes: ['Contato humano, não institucional, sem gancho comercial', 'Nutrir com conteúdo de autoridade se a relação ainda está começando', 'Pequenos gestos de atenção; nunca aparecer só quando precisa de algo'],
+    modelos: ['/reaquecer'],
+  },
+  detratora: {
+    meta: 'Reparar ou blindar, nunca ignorar',
+    cadenciaDias: null,
+    acoes: ['Recente (até 90 dias): responder rápido, reconhecer com empatia, ser transparente e oferecer reparação concreta', 'Antiga ou já corrigida: não reabrir o assunto; registrar o motivo e garantir que não se repita com outras clientes'],
+    modelos: ['/reparacao'],
+  },
+}
+export const DETRATORA_RECENTE_DIAS = 90
+
+export interface ClienteCarteira extends Pick<Contato, 'id' | 'nome' | 'telefone' | 'etapa' | 'area' | 'demanda' | 'classificacao' | 'classificacao_desde' | 'nps' | 'obs_relacionamento' | 'data_nascimento'> {
+  ultimo_contato: string | null
+}
+
+/** O que a carteira pede para esta cliente agora (null = nada a fazer). */
+export function situacaoCarteira(c: Pick<ClienteCarteira, 'classificacao' | 'classificacao_desde' | 'ultimo_contato'>, agora = Date.now()): { tipo: 'classificar' | 'gesto' | 'reparar' | 'blindar'; texto: string } | null {
+  if (!c.classificacao) return { tipo: 'classificar', texto: 'Classificar' }
+  const dias = (iso: string | null) => (iso ? Math.floor((agora - new Date(iso).getTime()) / 864e5) : Infinity)
+  if (c.classificacao === 'detratora') {
+    return dias(c.classificacao_desde) <= DETRATORA_RECENTE_DIAS
+      ? { tipo: 'reparar', texto: 'Reparar agora' }
+      : { tipo: 'blindar', texto: 'Blindar: não reabrir' }
+  }
+  const limite = PLANO_CARTEIRA[c.classificacao].cadenciaDias!
+  const d = dias(c.ultimo_contato)
+  return d >= limite ? { tipo: 'gesto', texto: d === Infinity ? 'Sem contato registrado' : `${d} dias sem contato` } : null
+}
+
+// ─── Diagnóstico: roteiro da consulta, 5 porquês e viabilidade ───────────────
+export const ROTEIRO_CONSULTA: Record<string, string[]> = {
+  '*': [
+    'Me conta, com as suas palavras, o que está acontecendo.',
+    'O que fez você procurar ajuda justamente agora?',
+    'O que mais te preocupa nessa situação?',
+    'Se isso estivesse resolvido amanhã, o que mudaria na sua vida?',
+    'O que você já tentou fazer até aqui?',
+    'Existe algum prazo, audiência ou documento com data que você recebeu?',
+  ],
+  'Direito de Família': [
+    'Desde quando vocês estão juntos (e separados, se for o caso)? Casamento ou união estável? Qual o regime de bens?',
+    'Há filhos menores? Como está a rotina deles hoje (moradia, convivência, escola)?',
+    'Quais bens foram adquiridos durante a relação e em nome de quem estão?',
+    'Existe diálogo com a outra parte ou o caminho tende a ser litigioso?',
+    'Há alguma situação de violência, ameaça ou risco?',
+  ],
+  'Sucessões': [
+    'Quem faleceu, quando, e qual era o estado civil e o regime de bens?',
+    'Quem são os herdeiros? Todos são maiores e capazes? Estão de acordo?',
+    'Quais bens e dívidas existem? Há imóveis em outras cidades?',
+    'Existe testamento, doações em vida ou inventário já aberto?',
+    'Já passou o prazo de 60 dias do óbito (multa do ITCMD varia por estado)?',
+  ],
+  'Planejamento Matrimonial': [
+    'Qual a data prevista do casamento ou do início da união?',
+    'Quais bens e empresas cada um já tem, e o que pretendem construir juntos?',
+    'Há filhos de relações anteriores ou herança esperada?',
+    'O que é mais importante para vocês: proteger patrimônio, simplificar ou equilibrar?',
+  ],
+  'Consultoria Jurídica': [
+    'Qual decisão você precisa tomar e até quando?',
+    'Quais documentos ou contratos estão envolvidos?',
+  ],
+}
+
+export const VERIFICACOES_VIABILIDADE = [
+  { chave: 'area', rotulo: 'Está na área de atuação do escritório', grupo: 'Jurídica' },
+  { chave: 'prescricao', rotulo: 'Prescrição e decadência verificadas', grupo: 'Jurídica' },
+  { chave: 'competencia', rotulo: 'Foro/competência e via (judicial ou cartório) definidos', grupo: 'Jurídica' },
+  { chave: 'legitimidade', rotulo: 'Legitimidade das partes confirmada', grupo: 'Jurídica' },
+  { chave: 'provas', rotulo: 'Provas e documentos suficientes (ou obtêníveis)', grupo: 'Jurídica' },
+  { chave: 'conflito', rotulo: 'Sem conflito de interesses', grupo: 'Jurídica' },
+  { chave: 'expectativa', rotulo: 'Expectativa da cliente é realista e foi alinhada', grupo: 'Relação' },
+  { chave: 'decisora', rotulo: 'Falei com quem decide (e sobre quem paga)', grupo: 'Relação' },
+] as const
+
+export const CAPACIDADES_PAGAMENTO = {
+  confortavel: 'Paga à vista ou em poucas parcelas',
+  parcelado: 'Precisa de parcelamento',
+  restrita: 'Condição restrita (avaliar gratuidade/indicar Defensoria)',
+  nao_informado: 'Ainda não sei',
+} as const
+
+export const DECISOES_DIAGNOSTICO = {
+  viavel: { nome: 'Viável', dica: 'Seguir para a proposta.' },
+  ressalvas: { nome: 'Viável com ressalvas', dica: 'Deixe os riscos por escrito na proposta.' },
+  inviavel: { nome: 'Não viável', dica: 'Explique com transparência e encerre como "Não contratou" ou indique outro caminho.' },
+} as const
+
+export interface Diagnostico {
+  contato_id: number
+  problema_relatado: string | null
+  porques: string[]
+  causa_raiz: string | null
+  objetivo_cliente: string | null
+  verificacoes: Partial<Record<typeof VERIFICACOES_VIABILIDADE[number]['chave'], boolean>>
+  riscos: string | null
+  capacidade_pagamento: keyof typeof CAPACIDADES_PAGAMENTO | null
+  valor_em_jogo: number | null
+  descricao_em_jogo: string | null
+  decisao: keyof typeof DECISOES_DIAGNOSTICO | null
+  updated_at?: string
+  // calculados pela API
+  honorario_proposto?: number | null
+  preco_minimo?: number | null
+}
+export const DIAGNOSTICO_CAMPOS = ['problema_relatado', 'porques', 'causa_raiz', 'objetivo_cliente', 'verificacoes', 'riscos', 'capacidade_pagamento', 'valor_em_jogo', 'descricao_em_jogo', 'decisao'] as const
+
+// ─── Mapa da Empatia (playbook "Mapa da Empatia") ───────────────────────────
+export const MAPA_EMPATIA = [
+  { chave: 'mapa_quem', bloco: 'Quem ela é', pergunta: 'Idade, cidade, momento de vida (casada, com filhos, em separação…).' },
+  { chave: 'mapa_fala', bloco: 'O que ela fala', pergunta: 'Assuntos que comenta, conteúdos que consome, perguntas que faz antes de procurar uma advogada.' },
+  { chave: 'mapa_sente', bloco: 'O que ela sente', pergunta: 'Emoções predominantes; como se sente para resolver sozinha e para procurar ajuda.' },
+  { chave: 'mapa_pensa', bloco: 'O que ela pensa', pergunta: 'Medos e crenças sobre advogados e a Justiça; o que passa pela cabeça antes de contratar.' },
+  { chave: 'mapa_faz', bloco: 'O que ela faz', pergunta: 'Onde busca informação (Google, Instagram, amigas, grupos) e o que já tentou sozinha.' },
+  { chave: 'mapa_objetivos', bloco: 'Objetivos', pergunta: 'O que quer alcançar: recomeçar, proteger os filhos, fechar um capítulo…' },
+  { chave: 'mapa_dores', bloco: 'Dores', pergunta: 'O que mais dói além da questão jurídica: dinheiro, emoção, informação, tempo.' },
+] as const
+
+// ─── Gestão: fluxo da equipe, precificação e financeiro ─────────────────────
+export const CARGOS = ['Advogada titular', 'Advogada(o) associada(o)', 'Estagiária(o)', 'Atendimento / secretaria', 'Financeiro']
+/** Chave em "escritorio" com o responsável padrão (id do perfil) por etapa. */
+export const chaveResponsavelEtapa = (etapaId: string) => `resp_etapa_${etapaId}`
+export const CHAVES_GESTAO = ['horas_produtivas_mes', 'margem_desejada', 'saldo_caixa', 'horas_estimadas'] as const
+export const CHAVES_EXTRAS: string[] = [
+  ...MAPA_EMPATIA.map(m => m.chave),
+  ...CHAVES_GESTAO,
+  ...ETAPAS.filter(e => e.aberta).map(e => chaveResponsavelEtapa(e.id)),
+]
+
+export const CATEGORIAS_LANCAMENTO = {
+  receber: ['Honorários', 'Consulta', 'Êxito', 'Reembolso de custas', 'Outros'],
+  pagar: ['Aluguel e condomínio', 'Salários e pró-labore', 'Software e sistemas', 'Marketing', 'Impostos e OAB', 'Custas do cliente', 'Contador', 'Outros'],
+} as const
+
+export interface Lancamento {
+  id: number
+  tipo: 'receber' | 'pagar'
+  descricao: string
+  categoria: string
+  valor: number
+  vencimento: string
+  pago_em: string | null
+  recorrente: boolean
+  contato_id: number | null
+  caso_id: number | null
+  honorario_id: number | null
+  observacao: string | null
+  contato?: Pick<Contato, 'id' | 'nome'> | null
+}
+export const LANCAMENTO_CAMPOS = ['tipo', 'descricao', 'categoria', 'valor', 'vencimento', 'pago_em', 'recorrente', 'contato_id', 'caso_id', 'observacao'] as const
+
+/** Preço mínimo = horas estimadas × custo da hora × (1 + margem). */
+export function precoMinimo(horas: number, custoHora: number, margemPct: number) {
+  return Math.ceil((horas * custoHora * (1 + margemPct / 100)) / 10) * 10
+}
+
+// ─── Qualidade: revisão interna por amostragem ──────────────────────────────
+export const ITENS_REVISAO = [
+  { chave: 'prazos', rotulo: 'Prazos em dia e cadastrados na agenda' },
+  { chave: 'proxima_acao', rotulo: 'Próxima ação definida e com data' },
+  { chave: 'cliente_informado', rotulo: 'Cliente atualizada nos últimos 30 dias' },
+  { chave: 'documentos', rotulo: 'Documentos completos e organizados' },
+  { chave: 'pecas', rotulo: 'Última peça revisada por uma segunda pessoa' },
+  { chave: 'financeiro', rotulo: 'Honorários e custas em dia' },
+] as const
+export type ResultadoItem = 'ok' | 'falha' | 'na'
+export interface Revisao {
+  id: number
+  created_at: string
+  caso_id: number
+  revisor_id: string | null
+  itens: Record<string, ResultadoItem>
+  aprovado: boolean
+  observacao: string | null
+  plano_acao: string | null
+  caso?: Pick<Caso, 'id' | 'titulo'> & { contato?: Pick<Contato, 'id' | 'nome'> | null } | null
+  revisor?: { name: string } | null
+}
+
+export interface PecaModelo {
+  id: number
+  titulo: string
+  categoria: string
+  corpo: string
+  ativo: boolean
+}
+/** Campos aceitos nos modelos de peças. */
+export const CAMPOS_PECA = [
+  ['{{cliente.nome}}', 'Nome completo da cliente'],
+  ['{{cliente.qualificacao}}', 'Qualificação completa (nacionalidade, estado civil, RG, CPF, endereço)'],
+  ['{{cliente.cpf}}', 'CPF'],
+  ['{{parte_contraria}}', 'Parte contrária'],
+  ['{{caso.numero}}', 'Número do processo'],
+  ['{{caso.orgao}}', 'Vara / cartório'],
+  ['{{caso.titulo}}', 'Título do caso'],
+  ['{{advogada}}', 'Advogada com qualificação e OAB'],
+  ['{{advogada.nome}}', 'Nome da advogada'],
+  ['{{cidade}}', 'Cidade do foro'],
+  ['{{data}}', 'Data por extenso'],
+] as const

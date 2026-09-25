@@ -23,6 +23,13 @@ Adaptado do projeto [`loboczss/crm-advogada`](https://github.com/loboczss/crm-ad
 | **Mensagens** | Biblioteca de mensagens prontas (playbook "Scripts que Vendem"): triagem, agendamento, documentos, proposta, objeções, follow-up, financeiro, NPS. Na conversa, digite `/` para usar. |
 | **Equipe → Auditoria** | Quem fez o quê e quando. Registro imutável, sem conteúdo dos dados (LGPD). |
 | **Equipe** | Criação de usuários e níveis de acesso. |
+| **CRM → Carteira** | Clientes em 4 grupos (promotora, neutra, fria, detratora), cada um com o seu plano de ação, a mensagem certa e o aviso de quem "pede um gesto". Detratora recente (até 90 dias): reparar; antiga: não reabrir. |
+| **Ficha → Diagnóstico** | Roteiro da consulta por área, 5 porquês até a causa raiz, checagem de viabilidade (prescrição, competência, provas, conflito…), capacidade de pagamento, o que está em jogo × honorário (e o preço mínimo, para a administração) e a decisão: viável, com ressalvas ou não viável. |
+| **Financeiro** (administração) | Contas a pagar e a receber, parcelas geradas a partir do honorário, fluxo de caixa de 6 meses, custo da hora, preço mínimo por demanda e rentabilidade por cliente (com o tempo registrado no histórico). |
+| **Relatórios → Qualidade e equipe** | Tempo médio de solução, taxa de êxito, NPS, prazos cumpridos, casos por pessoa e revisão interna por amostragem (falha vira tarefa com responsável e data). |
+| **Ana (IA) → Cliente ideal** | Mapa da Empatia. A Ana usa o mapa para falar na língua da cliente e registra, com as palavras de cada pessoa, o que a preocupa e o que quer que mude; a IA compara o mapa com essas falas reais e sugere ajustes e frases. |
+| **Mensagens → Peças (Word)** | Modelos de peças com campos automáticos (`{{cliente.qualificacao}}`, `{{caso.numero}}`…), gerados pela ficha da cliente. |
+| **Equipe** | Cargo de cada pessoa e o fluxo de trabalho: responsável padrão por etapa. Ao mudar de etapa, o caso passa para essa pessoa (filtro "Só as minhas" na tela Hoje). |
 | **Equipe → Dados do escritório** | Nome, OAB, endereço, horários, valor da consulta e PIX. A Ana usa esses dados (menos o PIX) e as peças também. |
 
 ### Estratégias dos playbooks (Desafio Comercial Diamante)
@@ -72,7 +79,7 @@ Não há autocadastro: os usuários são criados pela administração em **Equip
 
 ### 1. Supabase (banco de dados e login)
 1. Crie um projeto em [supabase.com](https://supabase.com). Para dados de clientes, escolha a região **São Paulo (sa-east-1)**.
-2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql` `supabase/migrations/20260925010000_playbook_e_auditoria.sql` e `supabase/migrations/20260925020000_cliente_caso_agenda.sql`.
+2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql`, `supabase/migrations/20260925010000_playbook_e_auditoria.sql`, `supabase/migrations/20260925020000_cliente_caso_agenda.sql` e `supabase/migrations/20260925030000_gestao_do_escritorio.sql`.
 3. Em **Authentication → Providers → Email**, **desative "Allow new users to sign up"**.
 4. Em **Authentication → Users → Add user**, crie o usuário da Lara (e-mail e senha).
 5. Entre uma vez no CRM com esse usuário. Depois, no **SQL Editor**, torne-o administrador:
@@ -94,6 +101,9 @@ Crie uma chave em [platform.openai.com](https://platform.openai.com/api-keys) e 
    - URL: `https://SEU-DOMINIO/api/whatsapp/webhook` (também aparece na aba *Testar* da Assistente IA)
    - Token de verificação: o mesmo valor de `WHATSAPP_VERIFY_TOKEN`
    - Assine o campo **messages**.
+
+### Lembretes automáticos de prazos
+Ao abrir a tela Hoje, a equipe recebe notificação de prazos e audiências de hoje, amanhã e daqui a 3 dias (uma vez por dia). Para receber mesmo sem abrir o sistema, configure um agendador (ex.: Vercel Cron, às 7h) chamando `GET /api/cron/lembretes` com o cabeçalho `Authorization: Bearer <CRON_SECRET>` (mínimo de 16 caracteres).
 
 ### 4. Hospedagem
 Precisa de **Node.js 22.12 ou superior**.

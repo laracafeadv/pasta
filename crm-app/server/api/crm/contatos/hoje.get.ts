@@ -1,7 +1,9 @@
 import { serverSupabaseClient } from '#supabase/server'
-import { dataCompromisso, type Compromisso, type Contato } from '../../../../shared/types/crm'
+import { dataCompromisso, situacaoCarteira, type Compromisso, type Contato } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { hojeBR } from '../../../utils/crm'
+import { carregarCarteira } from '../../../utils/carteira'
+import { enviarLembretes } from '../../../utils/lembretes'
 
 // "O que precisa de você hoje": todo caso aberto deve ter uma próxima ação com data.
 export default defineEventHandler(async (event) => {
@@ -39,7 +41,14 @@ export default defineEventHandler(async (event) => {
     .filter(c => { const d = dataCompromisso(c); return d && d <= em3 })
     .sort((a, b) => dataCompromisso(a).localeCompare(dataCompromisso(b)))
 
+  // Carteira: quantas clientes pedem um gesto (ou uma reparação) agora.
+  const carteira = await carregarCarteira(client)
+  const relacionamento = carteira.filter((c) => { const s = situacaoCarteira(c); return s && (s.tipo === 'gesto' || s.tipo === 'reparar') }).length
+  // Lembretes automáticos de prazos (uma vez por dia, na primeira abertura).
+  await enviarLembretes(event).catch(e => console.error('[crm/hoje] Lembretes:', e))
+
   return {
+    relacionamento,
     compromissos,
     atrasadas: abertos.filter(c => !semAcao(c) && c.proxima_data! < hoje),
     hoje: abertos.filter(c => !semAcao(c) && c.proxima_data === hoje),

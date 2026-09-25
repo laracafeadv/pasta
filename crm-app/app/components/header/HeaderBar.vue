@@ -101,7 +101,7 @@ const navItems = computed(() => {
     { label: 'Agenda', path: '/agenda' },
     { label: 'Casos', path: '/casos' },
     { label: 'Mensagens', path: '/mensagens' },
-    { label: 'Honorários', path: '/honorarios' },
+    { label: role === 'admin' ? 'Financeiro' : 'Honorários', path: '/honorarios' },
     { label: 'Relatórios', path: '/relatorios' },
   ]
   if (role === 'admin') {

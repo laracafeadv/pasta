@@ -3,7 +3,7 @@ import { serverSupabaseUser, serverSupabaseServiceRole } from '#supabase/server'
 import type { Profile } from '../../../../shared/types/profile'
 import { assertActorRole } from '../../../utils/security'
 
-const PROFILE_SELECT = 'id, email, name, role, phone, company, avatar_url, created_at'
+const PROFILE_SELECT = 'id, email, name, role, cargo, phone, company, avatar_url, created_at'
 
 export default defineEventHandler(async (event) => {
   // 1. Verify Authentication and Admin Role

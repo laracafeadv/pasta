@@ -7,11 +7,23 @@ import KpiCard from '~/components/KpiCard.vue'
 import DataTable, { type ColumnDef } from '~/components/DataTable.vue'
 import { STATUS_HONORARIO, TIPOS_HONORARIO, type Contato, type Honorario } from '~~/shared/types/crm'
 import { brl, dataCurta, telefoneFormatado } from '~/utils/formatadores'
+import FinanceiroContas from '~/components/gestao/FinanceiroContas.vue'
+import FinanceiroPainel from '~/components/gestao/FinanceiroPainel.vue'
+import { useProfileStore } from '~/stores/profile'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
-useHead({ title: 'Honorários' })
+useHead({ title: 'Financeiro' })
 
 const route = useRoute()
+// Contas, caixa e preços são da administração; a equipe vê só os honorários.
+const ehAdmin = computed(() => useProfileStore().profile?.role === 'admin')
+const abas = [
+  { id: 'honorarios', label: 'Honorários' },
+  { id: 'contas', label: 'Contas a pagar e receber' },
+  { id: 'caixa', label: 'Fluxo de caixa' },
+  { id: 'precos', label: 'Preço e rentabilidade' },
+]
+const aba = ref('honorarios')
 const lista = ref<Honorario[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -134,6 +146,21 @@ async function salvar() {
   }
 }
 
+const gerandoParcelas = ref(false)
+async function gerarParcelas() {
+  if (!editando.value) return
+  gerandoParcelas.value = true
+  erro.value = null
+  try {
+    const r = await $fetch<{ parcelas: number }>('/api/financeiro/parcelas', { method: 'POST', body: { honorario_id: editando.value.id } })
+    alert(`${r.parcelas} parcela(s) lançadas em "Contas a receber".`)
+  } catch (e: any) {
+    erro.value = e?.data?.message || 'Não foi possível gerar as parcelas.'
+  } finally {
+    gerandoParcelas.value = false
+  }
+}
+
 async function excluir() {
   if (!editando.value || !confirm('Excluir este honorário?')) return
   await $fetch(`/api/honorarios/${editando.value.id}`, { method: 'DELETE' })
@@ -149,11 +176,24 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="eyebrow">Financeiro</p>
-        <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Honorários</h1>
-        <p class="text-sm text-gray-500 mt-2">Propostas, contratos e recebimentos por cliente.</p>
+        <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">{{ ehAdmin ? 'Gestão financeira' : 'Honorários' }}</h1>
+        <p class="text-sm text-gray-500 mt-2">{{ ehAdmin ? 'Honorários, contas, caixa projetado, preço mínimo e rentabilidade.' : 'Propostas, contratos e recebimentos por cliente.' }}</p>
       </div>
-      <Button icon="ph:plus-bold" @click="novo()">Registrar honorário</Button>
+      <Button v-if="aba === 'honorarios'" icon="ph:plus-bold" @click="novo()">Registrar honorário</Button>
     </div>
+
+    <div v-if="ehAdmin" class="flex flex-wrap gap-2">
+      <button v-for="a in abas" :key="a.id" class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.14em] border transition-colors"
+              :class="aba === a.id ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary'" @click="aba = a.id">
+        {{ a.label }}
+      </button>
+    </div>
+
+    <FinanceiroContas v-if="aba === 'contas'" />
+    <FinanceiroPainel v-else-if="aba === 'caixa'" :key="'caixa'" modo="caixa" />
+    <FinanceiroPainel v-else-if="aba === 'precos'" :key="'precos'" modo="precos" />
+
+    <template v-if="aba === 'honorarios'">
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <KpiCard title="Contratado" :value="brl(stats.contratado)" :sub-value="`${stats.quantidade} contrato(s)`" icon="ph:handshake-bold" color="primary" :loading="loading" />
@@ -197,6 +237,7 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
       </template>
       <template #cell-data="{ item }">{{ dataCurta(item.data_contratacao) || '—' }}</template>
     </DataTable>
+    </template>
 
     <Modal :is-open="aberto" :title="editando ? 'Editar honorário' : 'Registrar honorário'" max-width="2xl" :loading="salvando" @close="aberto = false">
       <form id="honorario-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4" @submit.prevent="salvar">
@@ -235,7 +276,10 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
       </form>
       <template #footer>
         <div class="flex flex-col-reverse sm:flex-row gap-3 justify-between">
-          <Button v-if="editando" variant="outline" icon="ph:trash-bold" @click="excluir">Excluir</Button>
+          <div class="flex gap-3">
+            <Button v-if="editando" variant="outline" icon="ph:trash-bold" @click="excluir">Excluir</Button>
+            <Button v-if="editando && ehAdmin && ['Contratado', 'Pago'].includes(editando.status)" variant="outline" icon="ph:calendar-plus-bold" :loading="gerandoParcelas" @click="gerarParcelas">Lançar parcelas</Button>
+          </div>
           <div class="flex gap-3 sm:ml-auto">
             <Button variant="outline" @click="aberto = false">Cancelar</Button>
             <Button form="honorario-form" type="submit" :loading="salvando" :disabled="!form.contato_id" icon="ph:check-bold">Salvar</Button>

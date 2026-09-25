@@ -5,6 +5,7 @@ import Button from '~/components/Button.vue'
 import HojePanel from '~/components/crm/HojePanel.vue'
 import FunilBoard from '~/components/crm/FunilBoard.vue'
 import ContatosTable from '~/components/crm/ContatosTable.vue'
+import CarteiraBoard from '~/components/crm/CarteiraBoard.vue'
 import ContatoFormModal from '~/components/crm/ContatoFormModal.vue'
 import ContatoDetailModal from '~/components/crm/ContatoDetailModal.vue'
 import AndamentoModal from '~/components/crm/AndamentoModal.vue'
@@ -22,6 +23,7 @@ const abas = [
   { id: 'hoje', label: 'Hoje' },
   { id: 'funil', label: 'Funil' },
   { id: 'contatos', label: 'Contatos' },
+  { id: 'carteira', label: 'Carteira' },
 ] as const
 const aba = computed(() => (abas.some(a => a.id === route.query.aba) ? String(route.query.aba) : 'hoje'))
 const mostrarEncerrados = ref(false)
@@ -61,10 +63,13 @@ async function salvar(data: ContatoInput) {
 const detalhe = ref<InstanceType<typeof ContatoDetailModal> | null>(null)
 const detalheAberto = ref(false)
 const detalheId = ref<number | null>(null)
-const detalheAba = ref('caso')
-function abrir(c: Contato, abaDetalhe = 'caso') {
+const detalheAba = ref('resumo')
+const detalheModelo = ref<string | null>(null)
+const carteira = ref<InstanceType<typeof CarteiraBoard> | null>(null)
+function abrir(c: Contato, abaDetalhe = 'resumo', modelo: string | null = null) {
   detalheId.value = c.id
   detalheAba.value = abaDetalhe
+  detalheModelo.value = modelo
   detalheAberto.value = true
 }
 
@@ -100,11 +105,12 @@ async function adiar(c: Contato) {
       <div>
         <p class="eyebrow capitalize">{{ aba === 'hoje' ? dataHoje : 'Jornada do cliente' }}</p>
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">
-          {{ aba === 'hoje' ? 'O que precisa de você hoje' : aba === 'funil' ? 'Funil de atendimento' : 'Contatos e clientes' }}
+          {{ aba === 'hoje' ? 'O que precisa de você hoje' : aba === 'funil' ? 'Funil de atendimento' : aba === 'carteira' ? 'Carteira de clientes' : 'Contatos e clientes' }}
         </h1>
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">
           <template v-if="aba === 'hoje'">Todo caso em andamento tem uma próxima ação com data. Se não tem, ele aparece aqui.</template>
           <template v-else-if="aba === 'funil'">Arraste os cartões entre as etapas. Borda vermelha: atrasado. Âmbar: sem próxima ação.</template>
+          <template v-else-if="aba === 'carteira'">Promotoras, neutras, frias e detratoras: cada grupo com o seu próximo passo, para mover gente para cima na régua.</template>
           <template v-else>Toda a base, com busca e filtros.</template>
         </p>
       </div>
@@ -131,6 +137,7 @@ async function adiar(c: Contato) {
 
     <HojePanel v-if="aba === 'hoje'" :agenda="crm.agenda" @abrir="abrir" @andamento="andamento" @adiar="adiar" />
     <FunilBoard v-else-if="aba === 'funil'" :contatos="crm.funil" :mostrar-encerrados="mostrarEncerrados" @abrir="abrir" @mover="andamento" />
+    <CarteiraBoard v-else-if="aba === 'carteira'" ref="carteira" @abrir="abrir" @mensagem="(c, m) => abrir(c, 'conversa', m)" />
     <ContatosTable v-else @abrir="abrir" />
 
     <ContatoFormModal :is-open="formAberto" :contato="emEdicao" :loading="crm.saving" @close="formAberto = false" @submit="salvar" />
@@ -139,7 +146,8 @@ async function adiar(c: Contato) {
       :is-open="detalheAberto"
       :contato-id="detalheId"
       :aba-inicial="detalheAba"
-      @close="detalheAberto = false"
+      :modelo-inicial="detalheModelo"
+      @close="detalheAberto = false; carteira?.recarregar()"
       @editar="editar"
       @andamento="andamento"
     />

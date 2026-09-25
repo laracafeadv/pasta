@@ -1,5 +1,13 @@
 <template>
   <div class="space-y-5">
+    <div class="flex flex-wrap items-center gap-3 text-sm">
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input v-model="soMinhas" type="checkbox" class="accent-[#3c2923]" /> Só as minhas
+      </label>
+      <NuxtLink v-if="agenda.relacionamento" :to="{ query: { aba: 'carteira' } }" class="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-secondary/15 text-secondary-dark dark:text-secondary-200 hover:bg-secondary/25">
+        <Icon name="ph:heart-bold" /> {{ agenda.relacionamento }} cliente(s) da carteira pedem um gesto
+      </NuxtLink>
+    </div>
     <div v-if="agenda.transferidas.length" class="rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm flex flex-wrap items-center gap-2">
       <Icon name="ph:user-switch-bold" class="text-warning-dark" />
       <b>{{ agenda.transferidas.length }} conversa(s) aguardam a equipe no WhatsApp</b>
@@ -44,19 +52,20 @@
     <section class="painel">
       <header class="flex items-baseline gap-2 mb-1">
         <h2 class="text-2xl text-primary dark:text-zinc-100">Próximos 7 dias</h2>
-        <span class="pill">{{ agenda.semana.length }}</span>
+        <span class="pill">{{ filtrar(agenda.semana).length }}</span>
       </header>
       <p class="text-xs text-gray-500 mb-3">Para planejar a semana, não para agir agora.</p>
-      <p v-if="!agenda.semana.length" class="text-sm italic text-gray-400 py-2">Semana livre por enquanto.</p>
+      <p v-if="!filtrar(agenda.semana).length" class="text-sm italic text-gray-400 py-2">Semana livre por enquanto.</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-        <TarefaItem v-for="c in agenda.semana" :key="c.id" :contato="c" @abrir="emit('abrir', c)" @feito="emit('andamento', c)" @adiar="emit('adiar', c)" />
+        <TarefaItem v-for="c in filtrar(agenda.semana)" :key="c.id" :contato="c" @abrir="emit('abrir', c)" @feito="emit('andamento', c)" @adiar="emit('adiar', c)" />
       </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useProfileStore } from '../../stores/profile'
 import TarefaItem from './TarefaItem.vue'
 import { TIPOS_COMPROMISSO, dataCompromisso, type Contato } from '../../../shared/types/crm'
 import type { Agenda } from '../../stores/crm'
@@ -68,10 +77,15 @@ const hoje = hojeISO()
 const props = defineProps<{ agenda: Agenda }>()
 const emit = defineEmits<{ abrir: [c: Contato, aba?: string]; andamento: [c: Contato]; adiar: [c: Contato] }>()
 
+// Delegação: cada pessoa vê o que é dela (contatos com ela como responsável).
+const soMinhas = ref(false)
+const meuId = computed(() => useProfileStore().profile?.id)
+const filtrar = (lista: Contato[]) => (soMinhas.value ? lista.filter(c => c.responsavel_id === meuId.value) : lista)
+
 const blocos = computed(() => [
-  { id: 'atrasadas', titulo: 'Atrasadas', sub: 'Próxima ação com data vencida.', vazio: 'Nada atrasado.', pill: 'bg-danger/15 text-danger-dark dark:text-danger-200', itens: props.agenda.atrasadas },
-  { id: 'hoje', titulo: 'Para hoje', sub: 'Compromissos com data de hoje.', vazio: 'Nenhum compromisso para hoje.', pill: '', itens: props.agenda.hoje },
-  { id: 'semAcao', titulo: 'Sem próxima ação', sub: 'Casos parados: decida o próximo passo ou encerre.', vazio: 'Todos os casos têm um próximo passo.', pill: 'bg-warning/15 text-warning-dark dark:text-warning-200', itens: props.agenda.semAcao },
+  { id: 'atrasadas', titulo: 'Atrasadas', sub: 'Próxima ação com data vencida.', vazio: 'Nada atrasado.', pill: 'bg-danger/15 text-danger-dark dark:text-danger-200', itens: filtrar(props.agenda.atrasadas) },
+  { id: 'hoje', titulo: 'Para hoje', sub: 'Compromissos com data de hoje.', vazio: 'Nenhum compromisso para hoje.', pill: '', itens: filtrar(props.agenda.hoje) },
+  { id: 'semAcao', titulo: 'Sem próxima ação', sub: 'Casos parados: decida o próximo passo ou encerre.', vazio: 'Todos os casos têm um próximo passo.', pill: 'bg-warning/15 text-warning-dark dark:text-warning-200', itens: filtrar(props.agenda.semAcao) },
 ])
 </script>
 

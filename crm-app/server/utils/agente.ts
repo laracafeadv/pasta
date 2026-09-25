@@ -2,7 +2,7 @@ import OpenAI from 'openai'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { AREAS, SENTIMENTOS, URGENCIAS, type Contato } from '../../shared/types/crm'
 import { INSTRUCOES_SAIDA, PROMPT_PADRAO, REGRAS_FIXAS } from './agentePrompt'
-import { blocoEscritorioParaAna } from './escritorio'
+import { blocoEscritorioParaAna, blocoMapaParaAna } from './escritorio'
 import type { Escritorio } from '../../shared/types/crm'
 
 export interface MensagemHistorico {
@@ -23,6 +23,8 @@ export interface FichaExtraida {
   objecoes: string[]
   parte_contraria: string | null
   periodo_preferido: 'manhã' | 'tarde' | null
+  dor: string | null
+  objetivo: string | null
 }
 
 export interface RespostaAgente {
@@ -42,7 +44,7 @@ const SCHEMA = {
     ficha: {
       type: 'object',
       additionalProperties: false,
-      required: ['nome', 'cidade', 'email', 'area', 'demanda', 'resumo', 'urgencia', 'sentimento', 'interesses', 'objecoes', 'parte_contraria', 'periodo_preferido'],
+      required: ['nome', 'cidade', 'email', 'area', 'demanda', 'resumo', 'urgencia', 'sentimento', 'interesses', 'objecoes', 'parte_contraria', 'periodo_preferido', 'dor', 'objetivo'],
       properties: {
         nome: texto,
         cidade: texto,
@@ -56,6 +58,8 @@ const SCHEMA = {
         objecoes: { type: 'array', items: { type: 'string' } },
         parte_contraria: texto,
         periodo_preferido: { type: ['string', 'null'], enum: ['manhã', 'tarde', null] },
+        dor: texto,
+        objetivo: texto,
       },
     },
     transferir_para_humano: { type: 'boolean' },
@@ -97,6 +101,7 @@ function descreverFicha(c: Partial<Contato> | null) {
   const campos: [string, unknown][] = [
     ['Nome', c.nome], ['Cidade', c.cidade], ['Área', c.area], ['Demanda', c.demanda],
     ['Parte contrária', c.parte_contraria], ['Resumo', c.resumo], ['Urgência', c.urgencia],
+    ['O que a preocupa', c.dor], ['O que ela quer que mude', c.objetivo],
   ]
   const linhas = campos.filter(([, v]) => v).map(([k, v]) => `- ${k}: ${v}`)
   return linhas.length ? linhas.join('\n') : 'Contato novo, nada registrado ainda.'
@@ -119,6 +124,7 @@ export async function gerarResposta(params: {
     REGRAS_FIXAS,
     params.promptEditavel,
     blocoEscritorioParaAna(params.escritorio ?? {}),
+    blocoMapaParaAna(params.escritorio ?? {}),
     params.conhecimento ? `# Base de conhecimento do escritório (use só se for relevante)\n${params.conhecimento}` : '',
     `# O que já sabemos deste contato\n${descreverFicha(params.contato)}`,
     `# Agora (horário de Brasília)\n${new Date().toLocaleString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}`,
@@ -155,6 +161,9 @@ export function mesclarFicha(atual: Partial<Contato>, ficha: FichaExtraida): Par
   }
   // Campos de leitura da conversa: a IA mantém atualizados.
   if (ficha.resumo?.trim()) upd.resumo = ficha.resumo.trim().slice(0, 1200)
+  // Voz da cliente (alimenta o Mapa da Empatia com dados reais).
+  if (ficha.dor?.trim()) upd.dor = ficha.dor.trim().slice(0, 300)
+  if (ficha.objetivo?.trim()) upd.objetivo = ficha.objetivo.trim().slice(0, 300)
   if (ficha.urgencia) upd.urgencia = ficha.urgencia
   if (ficha.sentimento) upd.sentimento = ficha.sentimento
   const unir = (a: string[] = [], b: string[] = []) => [...new Set([...a, ...b.map(s => s.trim()).filter(Boolean)])].slice(0, 12)

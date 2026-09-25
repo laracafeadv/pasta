@@ -19,6 +19,7 @@
             :tabs="[
               { label: 'Instruções', value: 'prompt', icon: 'ph:note-pencil-bold' },
               { label: 'Base de conhecimento', value: 'dados', icon: 'ph:books-bold' },
+              { label: 'Cliente ideal', value: 'mapa', icon: 'ph:heart-bold' },
               { label: 'Testar', value: 'testar', icon: 'ph:chat-circle-dots-bold' }
             ]"
           />
@@ -43,13 +44,14 @@ import Tabs from '../components/Tabs.vue'
 import EvaSystemPrompt from '../components/eva/EvaSystemPrompt.vue'
 import EvaDataTab from '../components/eva/EvaDataTab.vue'
 import EvaSimulador from '../components/eva/EvaSimulador.vue'
+import MapaEmpatia from '../components/eva/MapaEmpatia.vue'
 
 useHead({ title: 'Assistente de IA' })
 definePageMeta({ middleware: ['auth', 'eva-editor'] })
 
-const activeTab = ref<'prompt' | 'dados' | 'testar'>('prompt')
+const activeTab = ref<'prompt' | 'dados' | 'mapa' | 'testar'>('prompt')
 
 const currentTabComponent = computed(() => {
-  return { prompt: EvaSystemPrompt, dados: EvaDataTab, testar: EvaSimulador }[activeTab.value]
+  return { prompt: EvaSystemPrompt, dados: EvaDataTab, mapa: MapaEmpatia, testar: EvaSimulador }[activeTab.value]
 })
 </script>

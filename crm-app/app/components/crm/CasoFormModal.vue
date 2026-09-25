@@ -26,6 +26,13 @@
         <select v-model="form.status" class="modal-input"><option v-for="(n, k) in STATUS_CASO" :key="k" :value="k">{{ n }}</option></select>
       </label>
       <label class="field"><span>Abertura</span><input v-model="form.data_abertura" type="date" class="modal-input" /></label>
+      <template v-if="form.status === 'encerrado'">
+        <label class="field">
+          <span>Resultado</span>
+          <select v-model="form.resultado" class="modal-input"><option :value="null">—</option><option v-for="(n, k) in RESULTADOS_CASO" :key="k" :value="k">{{ n }}</option></select>
+        </label>
+        <label class="field"><span>Encerramento</span><input v-model="form.data_encerramento" type="date" class="modal-input" /></label>
+      </template>
       <label class="field sm:col-span-2"><span>Observações</span><textarea v-model="form.observacoes" rows="3" class="modal-input" /></label>
       <p v-if="erro" class="sm:col-span-2 text-sm text-danger">{{ erro }}</p>
     </form>
@@ -42,7 +49,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { AREAS, STATUS_CASO, TIPOS_CASO, UFS, type Caso, type Contato } from '../../../shared/types/crm'
+import { AREAS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, UFS, type Caso, type Contato } from '../../../shared/types/crm'
 import { numeroCnjValido } from '../../../shared/utils/juridico'
 import { hojeISO } from '../../stores/crm'
 
@@ -61,7 +68,7 @@ watch(() => props.isOpen, (open) => {
   Object.assign(form, props.caso ?? {
     titulo: c ? `${c.demanda || c.area || 'Caso'} — ${c.nome ?? ''}`.trim() : '',
     tipo: 'judicial', area: c?.area ?? '', numero_processo: '', orgao: '', comarca: '', uf: '',
-    parte_contraria: c?.parte_contraria ?? '', status: 'ativo', data_abertura: hojeISO(), observacoes: '',
+    parte_contraria: c?.parte_contraria ?? '', status: 'ativo', data_abertura: hojeISO(), observacoes: '', resultado: null, data_encerramento: null,
   })
 })
 

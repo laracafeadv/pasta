@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { definePageMeta, useHead } from '#imports'
 import KpiCard from '~/components/KpiCard.vue'
+import QualidadePanel from '~/components/gestao/QualidadePanel.vue'
 import { brl } from '~/utils/formatadores'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
@@ -16,6 +17,7 @@ interface Stats {
   porEtapa: Linha[]; porOrigem: Linha[]; porArea: Linha[]; motivosPerda: Linha[]
 }
 
+const aba = ref<'comercial' | 'qualidade'>('comercial')
 const dias = ref(90)
 const stats = ref<Stats | null>(null)
 const loading = ref(false)
@@ -43,7 +45,7 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Relatórios</h1>
         <p class="text-sm text-gray-500 mt-2">Onde os clientes nascem, onde o funil trava e por que se perdem. <NuxtLink to="/dashboard" class="underline underline-offset-2">Ver gráfico diário (Painel)</NuxtLink></p>
       </div>
-      <select v-model="dias" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm">
+      <select v-if="aba === 'comercial'" v-model="dias" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm">
         <option :value="30">Últimos 30 dias</option>
         <option :value="90">Últimos 90 dias</option>
         <option :value="365">Últimos 12 meses</option>
@@ -51,6 +53,16 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
       </select>
     </div>
 
+    <div class="flex flex-wrap gap-2">
+      <button v-for="a in [{ id: 'comercial', n: 'Comercial' }, { id: 'qualidade', n: 'Qualidade e equipe' }]" :key="a.id"
+              class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.14em] border transition-colors"
+              :class="aba === a.id ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary'"
+              @click="aba = a.id as 'comercial' | 'qualidade'">{{ a.n }}</button>
+    </div>
+
+    <QualidadePanel v-if="aba === 'qualidade'" />
+
+    <template v-else>
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
       <KpiCard title="Novos contatos" :value="stats?.novos ?? 0" icon="ph:user-plus-bold" color="primary" :loading="loading" />
       <KpiCard title="Taxa de fechamento" :value="stats?.taxaFechamento != null ? `${stats.taxaFechamento}%` : '—'" :sub-value="`${stats?.ganhos ?? 0} de ${stats?.decididos ?? 0} decididos`" icon="ph:target-bold" color="success" :loading="loading" />
@@ -118,5 +130,6 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
         </div>
       </section>
     </div>
+    </template>
   </div>
 </template>

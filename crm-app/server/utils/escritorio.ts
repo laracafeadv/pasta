@@ -1,11 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { ESCRITORIO_CAMPOS, type Escritorio } from '../../shared/types/crm'
+import { CHAVES_EXTRAS, ESCRITORIO_CAMPOS, MAPA_EMPATIA, type Escritorio } from '../../shared/types/crm'
+
+export const CHAVES_PERMITIDAS = new Set<string>([...ESCRITORIO_CAMPOS.map(c => c.chave), ...CHAVES_EXTRAS])
 
 export async function carregarEscritorio(client: SupabaseClient): Promise<Escritorio> {
   const { data, error } = await client.from('escritorio').select('chave, valor')
   if (error) console.error('[escritorio] Erro ao carregar:', error)
   const out: Escritorio = {}
-  for (const r of data ?? []) if (ESCRITORIO_CAMPOS.some(c => c.chave === r.chave)) (out as any)[r.chave] = r.valor
+  for (const r of data ?? []) if (CHAVES_PERMITIDAS.has(r.chave)) (out as any)[r.chave] = r.valor
   return out
 }
 
@@ -23,4 +25,17 @@ export function blocoEscritorioParaAna(e: Escritorio): string {
   return preenchidas.length
     ? `# Dados do escritório (informações oficiais; use quando perguntarem)\n${preenchidas.join('\n')}`
     : '# Dados do escritório\nAinda não configurados: para valores e horários, diga que a equipe envia as informações.'
+}
+
+/**
+ * Mapa da Empatia: como a cliente ideal fala, sente e pensa. Serve só para a Ana
+ * ajustar a linguagem (acolher o que ela sente, usar as palavras dela), nunca para
+ * supor fatos sobre a pessoa que está conversando.
+ */
+export function blocoMapaParaAna(e: Escritorio): string {
+  const blocos = MAPA_EMPATIA.filter(m => e[m.chave]?.trim()).map(m => `- ${m.bloco}: ${e[m.chave]!.trim()}`)
+  if (!blocos.length) return ''
+  return `# Quem costuma procurar o escritório (Mapa da Empatia)
+Use para falar na língua dela e acolher o que ela costuma sentir. Não presuma que a pessoa desta conversa é assim; confirme perguntando.
+${blocos.join('\n')}`
 }

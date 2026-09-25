@@ -12,6 +12,7 @@ export interface Agenda {
   transferidas: Contato[]
   compromissos: Compromisso[]
   aniversarios: Pick<Contato, 'id' | 'nome' | 'telefone' | 'data_nascimento' | 'classificacao'>[]
+  relacionamento?: number
 }
 
 export interface AndamentoPayload {
@@ -153,8 +154,8 @@ export const useCrmStore = defineStore('crm', () => {
   }
 })
 
-export function hojeISO() {
-  const d = new Date()
+export function hojeISO(deslocamentoDias = 0) {
+  const d = new Date(Date.now() + deslocamentoDias * 864e5)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 

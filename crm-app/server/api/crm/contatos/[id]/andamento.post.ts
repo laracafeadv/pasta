@@ -1,5 +1,5 @@
 import { serverSupabaseClient } from '#supabase/server'
-import { ETAPAS, MOTIVOS_PERDA, etapa } from '../../../../../shared/types/crm'
+import { ETAPAS, MOTIVOS_PERDA, chaveResponsavelEtapa, etapa } from '../../../../../shared/types/crm'
 import { requireStaff } from '../../../../utils/security'
 import { registrarAtividade } from '../../../../utils/crm'
 import { auditar } from '../../../../utils/auditoria'
@@ -42,9 +42,17 @@ export default defineEventHandler(async (event) => {
     await registrarAtividade(event, id, 'Sistema', `Etapa: ${etapa(atual.etapa).nome} → ${destino.nome}${destino.id === 'perdido' ? ` (${body.motivo_perda})` : ''}`, userId)
   }
 
+  // Fluxo da equipe: cada etapa pode ter uma pessoa responsável padrão (tela Equipe).
+  let responsavel: string | null = null
+  if (atual.etapa !== destino.id && destino.aberta) {
+    const { data: r } = await client.from('escritorio').select('valor').eq('chave', chaveResponsavelEtapa(destino.id)).maybeSingle()
+    responsavel = r?.valor || null
+  }
+
   const { data, error } = await client
     .from('contatos')
     .update({
+      ...(responsavel ? { responsavel_id: responsavel } : {}),
       etapa: destino.id,
       motivo_perda: destino.id === 'perdido' ? body.motivo_perda : null,
       proxima_acao: destino.aberta ? body.proxima_acao!.trim().slice(0, 300) : null,

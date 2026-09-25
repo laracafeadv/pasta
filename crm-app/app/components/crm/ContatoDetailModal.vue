@@ -27,7 +27,7 @@
       </div>
 
       <!-- Caso -->
-      <div v-if="aba === 'caso'" class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div v-if="aba === 'resumo'" class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div class="card">
           <h3>Contato</h3>
           <p><b>WhatsApp:</b> <a :href="whatsappLink(dados.contato.telefone)" target="_blank" rel="noopener" class="text-primary">{{ telefoneFormatado(dados.contato.telefone) }}</a></p>
@@ -59,6 +59,13 @@
             <template v-else>—</template>
           </p>
           <p><b>NPS:</b> {{ dados.contato.nps ?? '—' }}</p>
+          <p v-if="dados.contato.obs_relacionamento"><b>Observação:</b> {{ dados.contato.obs_relacionamento }}</p>
+          <p v-if="dados.contato.ultimo_contato_em"><b>Último gesto:</b> {{ dataCurta(dados.contato.ultimo_contato_em) }}</p>
+        </div>
+        <div v-if="dados.contato.dor || dados.contato.objetivo" class="card">
+          <h3>Com as palavras dela</h3>
+          <p v-if="dados.contato.dor"><b>O que preocupa:</b> “{{ dados.contato.dor }}”</p>
+          <p v-if="dados.contato.objetivo"><b>O que quer que mude:</b> “{{ dados.contato.objetivo }}”</p>
         </div>
         <div class="card md:col-span-2">
           <h3>Resumo do caso</h3>
@@ -138,23 +145,33 @@
             <option v-for="t in TIPOS_ATIVIDADE" :key="t">{{ t }}</option>
           </select>
           <input v-model="nota.texto" class="modal-input flex-1" placeholder="O que foi conversado ou decidido?" />
+          <input v-model="nota.minutos" type="number" min="0" max="1440" class="modal-input sm:w-28" placeholder="min" title="Tempo gasto (minutos) — alimenta a rentabilidade" />
           <Button type="submit" :loading="anotando" :disabled="!nota.texto.trim()">Registrar</Button>
         </form>
         <p v-if="!dados.atividades.length" class="text-sm text-gray-400">Sem registros ainda.</p>
         <ol class="border-l-2 border-gray-100 dark:border-zinc-800 ml-1">
           <li v-for="a in dados.atividades" :key="a.id" class="pl-4 pb-4 relative text-sm">
             <span class="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full" :class="a.tipo === 'Sistema' ? 'bg-gray-300' : 'bg-primary'" />
-            <p class="text-xs text-gray-400">{{ dataHora(a.created_at) }} · {{ a.tipo }}<span v-if="a.autor?.name"> · {{ a.autor.name }}</span></p>
+            <p class="text-xs text-gray-400">{{ dataHora(a.created_at) }} · {{ a.tipo }}<span v-if="a.autor?.name"> · {{ a.autor.name }}</span><span v-if="a.minutos"> · {{ a.minutos }} min</span></p>
             <p class="whitespace-pre-wrap" :class="a.tipo === 'Sistema' ? 'text-gray-500' : ''">{{ a.texto }}</p>
           </li>
         </ol>
       </div>
 
-      <!-- Qualificação -->
-      <QualificacaoForm v-else-if="aba === 'qualificacao'" :key="dados.contato.id" :contato-id="dados.contato.id" :nome-sugerido="dados.contato.nome" />
+      <!-- Diagnóstico -->
+      <DiagnosticoPanel v-else-if="aba === 'diagnostico'" :key="`d${dados.contato.id}`" :contato-id="dados.contato.id" :nome="dados.contato.nome" :area="dados.contato.area" :demanda="dados.contato.demanda" @mensagem="usarMensagem" />
 
-      <!-- Casos e prazos -->
-      <div v-else-if="aba === 'casos'" class="p-5 space-y-5">
+      <!-- Caso: processos e prazos, documentos, qualificação -->
+      <div v-else-if="aba === 'processo'">
+      <div class="flex flex-wrap gap-1 px-5 pt-4">
+        <button v-for="x in subAbas" :key="x.id" class="px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider border"
+                :class="sub === x.id ? 'border-primary text-primary dark:text-zinc-100 bg-primary/5' : 'border-transparent text-gray-500 hover:border-gray-200'" @click="sub = x.id">
+          {{ x.label }}<span v-if="x.badge" class="ml-1 opacity-70">{{ x.badge }}</span>
+        </button>
+      </div>
+      <QualificacaoForm v-if="sub === 'qualificacao'" :key="dados.contato.id" :contato-id="dados.contato.id" :nome-sugerido="dados.contato.nome" />
+
+      <div v-else-if="sub === 'casos'" class="p-5 space-y-5">
         <div v-if="dados.contato.etapa === 'ativo' && !dados.casos.length" class="rounded-2xl bg-secondary/10 border border-secondary/30 p-4 text-sm">
           Cliente ativo sem caso aberto. Abra o caso para registrar o processo, os prazos e gerar a procuração.
         </div>
@@ -162,6 +179,10 @@
           <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Abrir caso</Button>
           <NuxtLink :to="`/agenda?contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">+ Prazo ou compromisso</NuxtLink>
           <a v-if="ehAdmin" :href="`/api/pecas/procuracao?contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">Procuração (.docx)</a>
+          <select v-if="ehAdmin && pecas.length" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 bg-transparent text-primary dark:text-zinc-200" @change="gerarPeca(($event.target as HTMLSelectElement)); ">
+            <option value="">Outra peça (.docx)…</option>
+            <option v-for="p in pecas" :key="p.id" :value="p.id">{{ p.titulo }}</option>
+          </select>
         </div>
         <p v-if="!dados.casos.length" class="text-sm text-gray-400">Nenhum caso aberto.</p>
         <article v-for="k in dados.casos" :key="k.id" class="card">
@@ -192,7 +213,7 @@
       </div>
 
       <!-- Documentos -->
-      <div v-else-if="aba === 'documentos'" class="p-5 space-y-4">
+      <div v-else-if="sub === 'documentos'" class="p-5 space-y-4">
         <div class="flex flex-wrap gap-2 items-center">
           <Button size="sm" variant="outline" icon="ph:list-checks-bold" :loading="gerandoDocs" @click="gerarChecklist">
             {{ dados.documentos.length ? 'Completar com a lista da área' : 'Gerar checklist da área' }}
@@ -221,6 +242,7 @@
           <Button type="submit" size="sm" :disabled="!novoDoc.trim()">Adicionar</Button>
         </form>
       </div>
+      </div>
 
       <!-- Honorários -->
       <div v-else-if="aba === 'honorarios'" class="p-5 space-y-3">
@@ -247,9 +269,10 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp, type PecaModelo } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
+import DiagnosticoPanel from './DiagnosticoPanel.vue'
 import { useProfileStore } from '../../stores/profile'
 import ModeloPicker from './ModeloPicker.vue'
 import { useModelos } from '../../composables/useModelos'
@@ -258,24 +281,35 @@ import { useCrmStore } from '../../stores/crm'
 
 interface Detalhe { contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[] }
 
-const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string }>()
+const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string; modeloInicial?: string | null }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
 
 const crm = useCrmStore()
 const dados = ref<Detalhe | null>(null)
 const loading = ref(false)
-const aba = ref('caso')
+const aba = ref('resumo')
 const scrollBox = ref<HTMLElement | null>(null)
 
+// Seis abas na ordem do atendimento: quem é → conversa → diagnóstico → caso → financeiro → histórico.
 const abas = computed(() => [
-  { id: 'caso', label: 'Resumo' },
+  { id: 'resumo', label: 'Resumo' },
   { id: 'conversa', label: 'Conversa', badge: dados.value?.mensagens.length || undefined },
-  { id: 'atividades', label: 'Atividades', badge: dados.value?.atividades.length || undefined },
-  { id: 'documentos', label: 'Documentos', badge: pendentes.value.length ? `${pendentes.value.length} pend.` : undefined },
-  { id: 'honorarios', label: 'Honorários', badge: dados.value?.honorarios.length || undefined },
-  { id: 'qualificacao', label: 'Qualificação' },
-  { id: 'casos', label: 'Casos e prazos', badge: dados.value?.casos.length || undefined },
+  { id: 'diagnostico', label: 'Diagnóstico' },
+  { id: 'processo', label: 'Caso', badge: pendentes.value.length ? `${pendentes.value.length} doc.` : dados.value?.casos.length || undefined },
+  { id: 'honorarios', label: 'Financeiro', badge: dados.value?.honorarios.length || undefined },
+  { id: 'atividades', label: 'Histórico', badge: dados.value?.atividades.length || undefined },
 ])
+const subAbas = computed(() => [
+  { id: 'casos', label: 'Processos e prazos', badge: dados.value?.casos.length || undefined },
+  { id: 'documentos', label: 'Documentos', badge: pendentes.value.length ? `${pendentes.value.length} pend.` : undefined },
+  { id: 'qualificacao', label: 'Qualificação' },
+])
+const sub = ref('casos')
+// Nomes antigos de abas (links e atalhos) continuam funcionando.
+function irPara(destino: string) {
+  if (['casos', 'documentos', 'qualificacao'].includes(destino)) { sub.value = destino; aba.value = 'processo' }
+  else aba.value = destino === 'caso' ? 'resumo' : destino
+}
 
 async function carregar() {
   if (!props.contatoId) return
@@ -289,9 +323,19 @@ async function carregar() {
 
 watch(() => props.isOpen, (open) => {
   if (open) {
-    aba.value = props.abaInicial || 'caso'
+    sub.value = 'casos'
+    irPara(props.abaInicial || 'resumo')
     dados.value = null
-    carregar()
+    resposta.value = ''
+    carregar().then(async () => {
+      // Aberto a partir da carteira com uma mensagem sugerida (ex.: /reconexao).
+      if (props.modeloInicial && dados.value) {
+        await carregarModelos()
+        const m = modelos.value.find(x => x.atalho === props.modeloInicial)
+        if (m) resposta.value = preencher(m.texto, dados.value.contato.nome)
+        aba.value = 'conversa'
+      }
+    })
   }
 })
 
@@ -412,8 +456,26 @@ async function cobrarPendentes() {
   aba.value = 'conversa'
 }
 
+function usarMensagem(texto: string) {
+  resposta.value = texto
+  aba.value = 'conversa'
+}
+
+// ─── Modelos de peças (administração) ─────────────────────────────────────
+const pecas = ref<PecaModelo[]>([])
+watch(() => [props.isOpen, ehAdmin.value] as const, async ([open, admin]) => {
+  if (open && admin && !pecas.value.length) pecas.value = await $fetch<PecaModelo[]>('/api/pecas/modelos').catch(() => [])
+}, { immediate: true })
+function gerarPeca(sel: HTMLSelectElement) {
+  const id = sel.value
+  sel.value = ''
+  if (!id || !dados.value) return
+  const caso = dados.value.casos.find(k => k.status === 'ativo') ?? dados.value.casos[0]
+  window.location.href = `/api/pecas/gerar?modelo=${id}&contato=${dados.value.contato.id}${caso ? `&caso=${caso.id}` : ''}`
+}
+
 // ─── Atividades ───────────────────────────────────────────────────────────
-const nota = reactive({ tipo: 'Anotação', texto: '' })
+const nota = reactive<{ tipo: string; texto: string; minutos: number | '' }>({ tipo: 'Anotação', texto: '', minutos: '' })
 const anotando = ref(false)
 
 async function anotar() {
@@ -422,6 +484,7 @@ async function anotar() {
   try {
     await $fetch(`/api/crm/contatos/${dados.value.contato.id}/atividades`, { method: 'POST', body: { ...nota } })
     nota.texto = ''
+    nota.minutos = ''
     await carregar()
   } finally {
     anotando.value = false
