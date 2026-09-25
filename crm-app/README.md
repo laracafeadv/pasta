@@ -13,12 +13,17 @@ Adaptado do projeto [`loboczss/crm-advogada`](https://github.com/loboczss/crm-ad
 | **CRM → Hoje** | Tela inicial. Casos atrasados, compromissos do dia, casos **sem próxima ação** e conversas que aguardam a equipe. |
 | **CRM → Funil** | Novo contato → Consulta agendada → Diagnóstico → Proposta enviada → Cliente ativo → Concluído / Não contratou. Arrastar um cartão pede o próximo passo. |
 | **CRM → Contatos** | Base completa com busca e filtros. Ficha 360: caso, conversa de WhatsApp, atividades e honorários. |
+| **Agenda** | Prazos processuais, audiências, reuniões, consultas e tarefas. Calculadora de prazo em dias úteis (CPC art. 219/220/224: fins de semana, feriados nacionais e recesso de 20/12 a 20/01). |
+| **Casos** | Dossiê de cada cliente ativo: tipo, número CNJ (validado), vara/cartório, parte contrária e prazos ligados. |
+| **Ficha → Qualificação** | Dados para procuração e contrato. A equipe vê CPF/RG mascarados; só a administração vê completo. |
+| **Peças em Word** | Procuração e contrato de honorários gerados com os dados da qualificação e do escritório (só administração). **Revise o texto antes de usar.** |
 | **Honorários** | Propostas, contratos e recebimentos por cliente. |
-| **Painel / Relatórios** | Novos contatos, taxa de fechamento, origem dos clientes, áreas e motivos de perda. |
+| **Relatórios** (e Painel, pelo link) | Novos contatos, taxa de fechamento, origem dos clientes, áreas e motivos de perda. |
 | **Assistente IA** | Instruções da assistente, base de conhecimento (PDF, Word, planilhas, imagens) e aba **Testar** para conversar com ela antes de ligar no WhatsApp. |
 | **Mensagens** | Biblioteca de mensagens prontas (playbook "Scripts que Vendem"): triagem, agendamento, documentos, proposta, objeções, follow-up, financeiro, NPS. Na conversa, digite `/` para usar. |
 | **Equipe → Auditoria** | Quem fez o quê e quando. Registro imutável, sem conteúdo dos dados (LGPD). |
 | **Equipe** | Criação de usuários e níveis de acesso. |
+| **Equipe → Dados do escritório** | Nome, OAB, endereço, horários, valor da consulta e PIX. A Ana usa esses dados (menos o PIX) e as peças também. |
 
 ### Estratégias dos playbooks (Desafio Comercial Diamante)
 - **Etapas com comportamento próprio:** Novo contato → *Em qualificação* → Consulta agendada → Diagnóstico → Proposta enviada → Cliente ativo.
@@ -67,7 +72,7 @@ Não há autocadastro: os usuários são criados pela administração em **Equip
 
 ### 1. Supabase (banco de dados e login)
 1. Crie um projeto em [supabase.com](https://supabase.com). Para dados de clientes, escolha a região **São Paulo (sa-east-1)**.
-2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql` e `supabase/migrations/20260925010000_playbook_e_auditoria.sql`.
+2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql` `supabase/migrations/20260925010000_playbook_e_auditoria.sql` e `supabase/migrations/20260925020000_cliente_caso_agenda.sql`.
 3. Em **Authentication → Providers → Email**, **desative "Allow new users to sign up"**.
 4. Em **Authentication → Users → Add user**, crie o usuário da Lara (e-mail e senha).
 5. Entre uma vez no CRM com esse usuário. Depois, no **SQL Editor**, torne-o administrador:
@@ -78,7 +83,7 @@ Não há autocadastro: os usuários são criados pela administração em **Equip
 7. Copie de **Project Settings → API** a URL, a chave pública (*publishable*) e a chave secreta (*secret*).
 
 ### 2. OpenAI
-Crie uma chave em [platform.openai.com](https://platform.openai.com/api-keys) e defina um limite de gasto mensal. O modelo padrão é `gpt-4.1-mini` (variável `OPENAI_MODEL`).
+Crie uma chave em [platform.openai.com](https://platform.openai.com/api-keys) e defina um limite de gasto mensal. O modelo padrão é `gpt-4.1-mini` (variável `OPENAI_MODEL`). Os **áudios** das clientes são transcritos com `whisper-1` (variável `OPENAI_TRANSCRIBE_MODEL`): a Ana entende o áudio e a equipe ouve o original na conversa. Imagens e documentos são guardados em bucket privado e abertos por link temporário.
 
 ### 3. WhatsApp Cloud API (Meta)
 1. Em [developers.facebook.com](https://developers.facebook.com), crie um app do tipo **Business** e adicione o produto **WhatsApp**.
@@ -103,6 +108,7 @@ node .output/server/index.mjs
 - Use HTTPS (o login usa cookies seguros) e um subdomínio próprio, por exemplo `crm.laracafe.com.br`.
 
 ### 5. Antes de ligar a assistente
+0. Preencha **Equipe → Dados do escritório** (a Ana responde endereço, horários e valor da consulta a partir dali).
 1. Em **Assistente IA → Instruções**, revise o texto e salve.
 2. Em **Base de conhecimento**, envie o que ela pode informar: valor da consulta (se quiser divulgar), documentos que costumam ser pedidos, horários.
 3. Em **Testar**, simule conversas difíceis: pedido de preço, pergunta "eu tenho direito a…?", ameaça, pedido para falar com a advogada.

@@ -7,6 +7,21 @@
       <button v-for="c in agenda.transferidas" :key="c.id" class="underline underline-offset-2" @click="emit('abrir', c, 'conversa')">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
     </div>
 
+    <section v-if="agenda.compromissos?.length" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5">
+      <header class="flex items-baseline justify-between gap-2 mb-2">
+        <h2 class="text-2xl text-primary dark:text-zinc-100">Prazos e compromissos</h2>
+        <NuxtLink to="/agenda" class="text-xs underline underline-offset-2">Abrir agenda</NuxtLink>
+      </header>
+      <ul class="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
+        <li v-for="c in agenda.compromissos" :key="c.id" class="py-2 flex flex-wrap items-center gap-3">
+          <Icon :name="TIPOS_COMPROMISSO[c.tipo].icone" class="text-secondary" />
+          <span class="w-28 font-semibold" :class="dataCompromisso(c) < hoje ? 'text-danger' : ''">{{ dataCurta(dataCompromisso(c)) }} · {{ diaRelativo(dataCompromisso(c)) }}</span>
+          <span class="flex-1">{{ c.titulo }}<span v-if="c.contato && !c.titulo.includes(c.contato.nome ?? '—')" class="text-gray-500"> · {{ c.contato.nome }}</span><span v-if="c.caso?.numero_processo" class="text-gray-500 font-mono text-xs"> · {{ c.caso.numero_processo }}</span></span>
+          <span class="text-[10px] uppercase tracking-wider text-gray-500">{{ TIPOS_COMPROMISSO[c.tipo].nome }}</span>
+        </li>
+      </ul>
+    </section>
+
     <div v-if="agenda.aniversarios?.length" class="rounded-2xl border border-secondary/30 bg-secondary/10 p-4 text-sm flex flex-wrap items-center gap-2">
       <Icon name="ph:cake-bold" class="text-secondary-dark" />
       <b>Aniversário hoje:</b>
@@ -43,9 +58,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import TarefaItem from './TarefaItem.vue'
-import type { Contato } from '../../../shared/types/crm'
+import { TIPOS_COMPROMISSO, dataCompromisso, type Contato } from '../../../shared/types/crm'
 import type { Agenda } from '../../stores/crm'
-import { telefoneFormatado, whatsappLink } from '../../utils/formatadores'
+import { dataCurta, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
+import { hojeISO } from '../../stores/crm'
+
+const hoje = hojeISO()
 
 const props = defineProps<{ agenda: Agenda }>()
 const emit = defineEmits<{ abrir: [c: Contato, aba?: string]; andamento: [c: Contato]; adiar: [c: Contato] }>()

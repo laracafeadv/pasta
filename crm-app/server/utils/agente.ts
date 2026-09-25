@@ -2,6 +2,8 @@ import OpenAI from 'openai'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { AREAS, SENTIMENTOS, URGENCIAS, type Contato } from '../../shared/types/crm'
 import { INSTRUCOES_SAIDA, PROMPT_PADRAO, REGRAS_FIXAS } from './agentePrompt'
+import { blocoEscritorioParaAna } from './escritorio'
+import type { Escritorio } from '../../shared/types/crm'
 
 export interface MensagemHistorico {
   autor: 'cliente' | 'ia' | 'equipe'
@@ -111,10 +113,12 @@ export async function gerarResposta(params: {
   contato: Partial<Contato> | null
   historico: MensagemHistorico[]
   conhecimento: string
+  escritorio?: Escritorio
 }): Promise<RespostaAgente> {
   const sistema = [
     REGRAS_FIXAS,
     params.promptEditavel,
+    blocoEscritorioParaAna(params.escritorio ?? {}),
     params.conhecimento ? `# Base de conhecimento do escritório (use só se for relevante)\n${params.conhecimento}` : '',
     `# O que já sabemos deste contato\n${descreverFicha(params.contato)}`,
     `# Agora (horário de Brasília)\n${new Date().toLocaleString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}`,

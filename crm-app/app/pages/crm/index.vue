@@ -33,6 +33,7 @@ function carregarAba() {
   if (aba.value === 'contatos') crm.fetchRecords()
 }
 onMounted(() => {
+  if (route.query.abrir) abrir({ id: Number(route.query.abrir) } as Contato, 'casos')
   carregarAba()
   if (aba.value !== 'hoje') crm.fetchAgenda() // alimenta o contador do menu
 })
@@ -80,9 +81,11 @@ function andamento(c: Contato, destino: string | null = null) {
 async function concluirAndamento(data: AndamentoPayload) {
   if (!andamentoContato.value) return
   try {
-    await crm.registrarAndamento(andamentoContato.value.id, data)
+    const salvo = await crm.registrarAndamento(andamentoContato.value.id, data)
     andamentoAberto.value = false
-    if (detalheAberto.value) detalhe.value?.recarregar()
+    // Virou cliente: próximo passo natural é abrir o caso (dossiê, procuração, prazos).
+    if (data.etapa === 'ativo' && andamentoContato.value.etapa !== 'ativo') abrir(salvo, 'casos')
+    else if (detalheAberto.value) detalhe.value?.recarregar()
   } catch { /* mensagem exibida no modal via crm.error */ }
 }
 

@@ -124,6 +124,10 @@ export interface MensagemWhatsapp {
   conteudo: string
   tipo: string
   wa_message_id: string | null
+  midia_path: string | null
+  midia_tipo: string | null
+  midia_nome: string | null
+  transcricao: string | null
 }
 
 export interface Atividade {
@@ -221,6 +225,102 @@ export interface ModeloMensagem {
   texto: string
   ordem: number
   ativo: boolean
+}
+
+// ─── Dados do escritório (tela "Escritório"; alimentam a Ana e as peças) ─────
+export const ESCRITORIO_CAMPOS = [
+  { chave: 'advogada_nome', rotulo: 'Nome da advogada', grupo: 'Identificação', exemplo: 'Lara Café' },
+  { chave: 'oab', rotulo: 'OAB (número/UF)', grupo: 'Identificação', exemplo: '000.000/SP' },
+  { chave: 'advogada_qualificacao', rotulo: 'Qualificação (nacionalidade, estado civil)', grupo: 'Identificação', exemplo: 'brasileira, solteira' },
+  { chave: 'email', rotulo: 'E-mail profissional', grupo: 'Identificação', exemplo: 'laracafe.adv@gmail.com' },
+  { chave: 'telefone', rotulo: 'Telefone / WhatsApp', grupo: 'Identificação', exemplo: '(71) 99381-2266' },
+  { chave: 'endereco', rotulo: 'Endereço profissional completo', grupo: 'Identificação', exemplo: 'Rua…, nº…, bairro, cidade/UF, CEP' },
+  { chave: 'cidade_foro', rotulo: 'Cidade para foro e assinatura', grupo: 'Identificação', exemplo: 'Salvador/BA' },
+  { chave: 'valor_consulta', rotulo: 'Valor da consulta', grupo: 'Consulta (usado pela Ana)', exemplo: 'R$ 350,00' },
+  { chave: 'consulta_abatida', rotulo: 'Consulta abatida dos honorários?', grupo: 'Consulta (usado pela Ana)', exemplo: 'sim' },
+  { chave: 'duracao_consulta', rotulo: 'Duração média da consulta', grupo: 'Consulta (usado pela Ana)', exemplo: '60 minutos' },
+  { chave: 'plataforma_consulta', rotulo: 'Plataforma da videochamada', grupo: 'Consulta (usado pela Ana)', exemplo: 'Google Meet' },
+  { chave: 'horario_atendimento', rotulo: 'Horário de atendimento da equipe', grupo: 'Consulta (usado pela Ana)', exemplo: 'segunda a sexta, das 9h às 18h' },
+  { chave: 'chave_pix', rotulo: 'Chave PIX (enviada só pela equipe)', grupo: 'Pagamento', exemplo: 'CNPJ ou e-mail' },
+  { chave: 'link_avaliacao', rotulo: 'Link de avaliação no Google', grupo: 'Pagamento', exemplo: 'https://g.page/…' },
+] as const
+export type ChaveEscritorio = typeof ESCRITORIO_CAMPOS[number]['chave']
+export type Escritorio = Partial<Record<ChaveEscritorio, string>>
+
+// ─── Cliente, casos e agenda ──────────────────────────────────────────────
+export const ESTADOS_CIVIS = ['solteiro(a)', 'casado(a)', 'em união estável', 'divorciado(a)', 'separado(a) judicialmente', 'viúvo(a)']
+export const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
+
+export interface Qualificacao {
+  contato_id: number
+  nome_completo: string | null
+  cpf: string | null
+  rg: string | null
+  orgao_emissor: string | null
+  nacionalidade: string | null
+  estado_civil: string | null
+  profissao: string | null
+  endereco: string | null
+  bairro: string | null
+  cep: string | null
+  cidade: string | null
+  uf: string | null
+  mascarado?: boolean
+}
+export const QUALIFICACAO_CAMPOS = ['nome_completo', 'cpf', 'rg', 'orgao_emissor', 'nacionalidade', 'estado_civil', 'profissao', 'endereco', 'bairro', 'cep', 'cidade', 'uf'] as const
+export const CAMPOS_CONFIDENCIAIS = ['cpf', 'rg'] as const
+
+export const TIPOS_CASO = { judicial: 'Judicial', extrajudicial: 'Extrajudicial (cartório)', consultivo: 'Consultivo' } as const
+export const STATUS_CASO = { ativo: 'Ativo', suspenso: 'Suspenso', encerrado: 'Encerrado' } as const
+export interface Caso {
+  id: number
+  created_at: string
+  contato_id: number
+  titulo: string
+  area: string | null
+  tipo: keyof typeof TIPOS_CASO
+  numero_processo: string | null
+  orgao: string | null
+  comarca: string | null
+  uf: string | null
+  parte_contraria: string | null
+  status: keyof typeof STATUS_CASO
+  data_abertura: string
+  data_encerramento: string | null
+  observacoes: string | null
+  contato?: Pick<Contato, 'id' | 'nome'> | null
+}
+export const CASO_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'numero_processo', 'orgao', 'comarca', 'uf', 'parte_contraria', 'status', 'data_abertura', 'data_encerramento', 'observacoes'] as const
+
+export const TIPOS_COMPROMISSO = {
+  prazo: { nome: 'Prazo processual', icone: 'ph:hourglass-high-bold' },
+  audiencia: { nome: 'Audiência', icone: 'ph:gavel-bold' },
+  consulta: { nome: 'Consulta', icone: 'ph:video-camera-bold' },
+  reuniao: { nome: 'Reunião', icone: 'ph:users-bold' },
+  tarefa: { nome: 'Tarefa', icone: 'ph:check-square-bold' },
+} as const
+export interface Compromisso {
+  id: number
+  tipo: keyof typeof TIPOS_COMPROMISSO
+  titulo: string
+  contato_id: number | null
+  caso_id: number | null
+  inicio: string | null
+  data_limite: string | null
+  data_publicacao: string | null
+  dias_prazo: number | null
+  local: string | null
+  status: 'pendente' | 'concluido' | 'cancelado'
+  observacao: string | null
+  contato?: Pick<Contato, 'id' | 'nome'> | null
+  caso?: Pick<Caso, 'id' | 'titulo' | 'numero_processo'> | null
+}
+export const COMPROMISSO_CAMPOS = ['tipo', 'titulo', 'contato_id', 'caso_id', 'inicio', 'data_limite', 'data_publicacao', 'dias_prazo', 'local', 'status', 'observacao'] as const
+
+/** Data de referência do compromisso (AAAA-MM-DD). */
+export function dataCompromisso(c: Pick<Compromisso, 'inicio' | 'data_limite'>): string {
+  if (c.data_limite) return c.data_limite
+  return c.inicio ? new Date(c.inicio).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }) : ''
 }
 
 export function pick<T extends Record<string, any>>(obj: T, keys: readonly string[]): Partial<T> {

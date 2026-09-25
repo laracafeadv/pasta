@@ -5,6 +5,8 @@ import { normalizarNome, normalizarTelefone, type Contato } from '../../shared/t
 import { buscarConhecimento, carregarPrompt, criarOpenAI, gerarResposta, mesclarFicha, type MensagemHistorico } from './agente'
 import { AVISO_LGPD } from './agentePrompt'
 import { enviarTexto, type MensagemRecebida } from './whatsapp'
+import { processarMidia } from './midia'
+import { carregarEscritorio } from './escritorio'
 import { hojeBR as hoje, notificarEquipe, registrarAtividade } from './crm'
 
 // Espera antes de responder: se a cliente mandar várias mensagens seguidas,
@@ -84,8 +86,12 @@ export async function processarMensagem(event: H3Event, msg: MensagemRecebida) {
   }
   await admin.from('contatos').update({ ultima_mensagem_em: new Date().toISOString() }).eq('id', contato.id)
 
+  // Áudio, imagem ou documento: guarda (para a equipe ouvir/ver) e transcreve áudios.
+  let textoMensagem = msg.texto
+  if (msg.midia) textoMensagem = await processarMidia(admin, contato.id, gravada.id, msg)
+
   if (!contato.ia_ativa) {
-    await notificarEquipe(event, 'Nova mensagem no WhatsApp', `${contato.nome || contato.telefone}: ${msg.texto.slice(0, 120)}`, { contato_id: contato.id })
+    await notificarEquipe(event, 'Nova mensagem no WhatsApp', `${contato.nome || contato.telefone}: ${textoMensagem.slice(0, 120)}`, { contato_id: contato.id })
     return
   }
 
@@ -115,12 +121,13 @@ export async function processarMensagem(event: H3Event, msg: MensagemRecebida) {
 
     const { openai, modelo } = criarOpenAI()
     const ultimasDoCliente = historico.filter(m => m.autor === 'cliente').slice(-3).map(m => m.conteudo).join('\n')
-    const [promptEditavel, conhecimento] = await Promise.all([
+    const [promptEditavel, conhecimento, escritorio] = await Promise.all([
       carregarPrompt(admin),
       buscarConhecimento(openai, admin, ultimasDoCliente),
+      carregarEscritorio(admin),
     ])
 
-    const r = await gerarResposta({ openai, modelo, promptEditavel, contato: atual, historico, conhecimento })
+    const r = await gerarResposta({ openai, modelo, promptEditavel, contato: atual, historico, conhecimento, escritorio })
 
     const waId = await enviarTexto(atual.telefone, r.resposta)
     await gravarSaida(admin, atual.id, r.resposta, waId)

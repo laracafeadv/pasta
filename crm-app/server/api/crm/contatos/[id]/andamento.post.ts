@@ -33,6 +33,9 @@ export default defineEventHandler(async (event) => {
   if (atual.proxima_acao) await registrarAtividade(event, id, 'Andamento', `Concluído: ${atual.proxima_acao}${resultado ? `\n${resultado}` : ''}`, userId)
   else if (resultado) await registrarAtividade(event, id, 'Anotação', resultado, userId)
   if (consultaEm) {
+    // A consulta entra na agenda do escritório (uma agenda só).
+    const { data: c } = await client.from('contatos').select('nome').eq('id', id).single()
+    await client.from('compromissos').insert({ tipo: 'consulta', titulo: `Consulta — ${c?.nome ?? 'cliente'}`, contato_id: id, inicio: consultaEm.toISOString(), responsavel_id: userId })
     await registrarAtividade(event, id, 'Sistema', `Consulta marcada para ${consultaEm.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' })}.`, userId)
   }
   if (atual.etapa !== destino.id) {

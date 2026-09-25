@@ -91,7 +91,17 @@
             class="max-w-[80%] rounded-lg px-4 py-2 text-sm"
             :class="m.direcao === 'saida' ? 'self-end bg-primary text-white' : 'self-start bg-gray-100 dark:bg-zinc-800'"
           >
-            <p class="whitespace-pre-wrap break-words">{{ m.conteudo }}</p>
+            <template v-if="m.midia_path">
+              <audio v-if="m.midia_tipo?.startsWith('audio/')" controls preload="none" class="max-w-full my-1" :src="`/api/crm/mensagens/${m.id}/midia`" />
+              <a v-else-if="m.midia_tipo?.startsWith('image/')" :href="`/api/crm/mensagens/${m.id}/midia`" target="_blank" rel="noopener">
+                <img :src="`/api/crm/mensagens/${m.id}/midia`" alt="Imagem enviada" class="max-h-56 rounded-md my-1" loading="lazy" />
+              </a>
+              <a v-else :href="`/api/crm/mensagens/${m.id}/midia?baixar=1`" class="inline-flex items-center gap-1.5 underline underline-offset-2 my-1">
+                <Icon name="ph:file-arrow-down-bold" /> {{ m.midia_nome || 'Baixar arquivo' }}
+              </a>
+            </template>
+            <p v-if="m.transcricao" class="text-xs opacity-80 italic whitespace-pre-wrap break-words">Transcrição: {{ m.transcricao }}</p>
+            <p v-else class="whitespace-pre-wrap break-words">{{ m.conteudo }}</p>
             <p class="mt-1 text-[10px] opacity-70 text-right">{{ m.autor === 'ia' ? 'IA · ' : m.autor === 'equipe' ? 'Equipe · ' : '' }}{{ dataHora(m.created_at) }}</p>
           </div>
         </div>
@@ -140,6 +150,47 @@
         </ol>
       </div>
 
+      <!-- Qualificação -->
+      <QualificacaoForm v-else-if="aba === 'qualificacao'" :key="dados.contato.id" :contato-id="dados.contato.id" :nome-sugerido="dados.contato.nome" />
+
+      <!-- Casos e prazos -->
+      <div v-else-if="aba === 'casos'" class="p-5 space-y-5">
+        <div v-if="dados.contato.etapa === 'ativo' && !dados.casos.length" class="rounded-2xl bg-secondary/10 border border-secondary/30 p-4 text-sm">
+          Cliente ativo sem caso aberto. Abra o caso para registrar o processo, os prazos e gerar a procuração.
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Abrir caso</Button>
+          <NuxtLink :to="`/agenda?contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">+ Prazo ou compromisso</NuxtLink>
+          <a v-if="ehAdmin" :href="`/api/pecas/procuracao?contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">Procuração (.docx)</a>
+        </div>
+        <p v-if="!dados.casos.length" class="text-sm text-gray-400">Nenhum caso aberto.</p>
+        <article v-for="k in dados.casos" :key="k.id" class="card">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <p class="font-semibold">{{ k.titulo }}</p>
+            <span class="tag">{{ STATUS_CASO[k.status] }}</span>
+          </div>
+          <p class="text-xs text-gray-500">{{ TIPOS_CASO[k.tipo] }}<span v-if="k.numero_processo"> · <span class="font-mono">{{ k.numero_processo }}</span></span><span v-if="k.orgao"> · {{ k.orgao }}</span><span v-if="k.comarca"> · {{ k.comarca }}/{{ k.uf }}</span></p>
+          <p v-if="k.parte_contraria" class="text-xs">Parte contrária: {{ k.parte_contraria }}</p>
+          <div class="flex gap-3 pt-1 text-xs">
+            <button class="underline underline-offset-2" @click="editarCaso(k)">Editar</button>
+            <NuxtLink :to="`/agenda?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo</NuxtLink>
+            <a v-if="ehAdmin" :href="`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Procuração deste caso</a>
+          </div>
+        </article>
+        <div v-if="dados.compromissos.length">
+          <h3 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Próximos prazos e compromissos</h3>
+          <ul class="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
+            <li v-for="c in dados.compromissos" :key="c.id" class="py-2 flex gap-3 items-center">
+              <Icon :name="TIPOS_COMPROMISSO[c.tipo].icone" class="text-secondary" />
+              <span class="font-medium w-24 shrink-0">{{ dataCurta(dataCompromisso(c)) }}</span>
+              <span class="flex-1">{{ c.titulo }}</span>
+              <span class="text-xs text-gray-500">{{ diaRelativo(dataCompromisso(c)) }}</span>
+            </li>
+          </ul>
+        </div>
+        <CasoFormModal :is-open="casoAberto" :contato="dados.contato" :caso="casoEditando" @close="casoAberto = false" @salvo="casoAberto = false; carregar()" />
+      </div>
+
       <!-- Documentos -->
       <div v-else-if="aba === 'documentos'" class="p-5 space-y-4">
         <div class="flex flex-wrap gap-2 items-center">
@@ -182,7 +233,10 @@
             <p class="font-semibold">{{ brl(h.valor) }} <span class="text-xs text-gray-400">· {{ h.tipo }}<span v-if="h.parcelas > 1"> · {{ h.parcelas }}x</span></span></p>
             <p class="text-xs text-gray-500">{{ h.descricao || '—' }}</p>
           </div>
-          <span class="tag">{{ h.status }}</span>
+          <div class="flex items-center gap-2">
+            <a v-if="ehAdmin" :href="`/api/pecas/contrato?honorario=${h.id}`" class="text-xs underline underline-offset-2" title="Gerar contrato em Word">Contrato (.docx)</a>
+            <span class="tag">{{ h.status }}</span>
+          </div>
         </div>
       </div>
     </template>
@@ -193,13 +247,16 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { CADENCIA, CLASSIFICACOES, TIPOS_ATIVIDADE, etapa, type Atividade, type Contato, type Documento, type Honorario, type MensagemWhatsapp } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp } from '../../../shared/types/crm'
+import QualificacaoForm from './QualificacaoForm.vue'
+import CasoFormModal from './CasoFormModal.vue'
+import { useProfileStore } from '../../stores/profile'
 import ModeloPicker from './ModeloPicker.vue'
 import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[] }
+interface Detalhe { contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[] }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
@@ -211,11 +268,13 @@ const aba = ref('caso')
 const scrollBox = ref<HTMLElement | null>(null)
 
 const abas = computed(() => [
-  { id: 'caso', label: 'Caso' },
+  { id: 'caso', label: 'Resumo' },
   { id: 'conversa', label: 'Conversa', badge: dados.value?.mensagens.length || undefined },
   { id: 'atividades', label: 'Atividades', badge: dados.value?.atividades.length || undefined },
   { id: 'documentos', label: 'Documentos', badge: pendentes.value.length ? `${pendentes.value.length} pend.` : undefined },
   { id: 'honorarios', label: 'Honorários', badge: dados.value?.honorarios.length || undefined },
+  { id: 'qualificacao', label: 'Qualificação' },
+  { id: 'casos', label: 'Casos e prazos', badge: dados.value?.casos.length || undefined },
 ])
 
 async function carregar() {
@@ -299,6 +358,16 @@ async function copiar() {
   await navigator.clipboard?.writeText(resposta.value)
   copiado.value = true
   setTimeout(() => { copiado.value = false }, 1500)
+}
+
+const ehAdmin = computed(() => useProfileStore().profile?.role === 'admin')
+
+// ─── Casos ────────────────────────────────────────────────────────────────
+const casoAberto = ref(false)
+const casoEditando = ref<Caso | null>(null)
+function editarCaso(k: Caso | null) {
+  casoEditando.value = k
+  casoAberto.value = true
 }
 
 // ─── Documentos ───────────────────────────────────────────────────────────

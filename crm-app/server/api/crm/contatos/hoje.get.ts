@@ -1,5 +1,5 @@
 import { serverSupabaseClient } from '#supabase/server'
-import type { Contato } from '../../../../shared/types/crm'
+import { dataCompromisso, type Compromisso, type Contato } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { hojeBR } from '../../../utils/crm'
 
@@ -30,7 +30,17 @@ export default defineEventHandler(async (event) => {
   const aniversarios = (nascidos ?? []).filter(c => String(c.data_nascimento).slice(5) === mmdd)
   const semAcao = (c: Contato) => !c.proxima_acao || !c.proxima_data
 
+  // Prazos e compromissos: vencidos, de hoje e dos próximos 3 dias.
+  const em3 = hojeBR(3)
+  const { data: agenda } = await client.from('compromissos')
+    .select('*, contato:contatos(id, nome), caso:casos(id, titulo, numero_processo)')
+    .eq('status', 'pendente').limit(300)
+  const compromissos = ((agenda ?? []) as Compromisso[])
+    .filter(c => { const d = dataCompromisso(c); return d && d <= em3 })
+    .sort((a, b) => dataCompromisso(a).localeCompare(dataCompromisso(b)))
+
   return {
+    compromissos,
     atrasadas: abertos.filter(c => !semAcao(c) && c.proxima_data! < hoje),
     hoje: abertos.filter(c => !semAcao(c) && c.proxima_data === hoje),
     semAcao: abertos.filter(semAcao).sort((a, b) => a.updated_at.localeCompare(b.updated_at)),

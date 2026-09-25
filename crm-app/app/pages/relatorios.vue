@@ -41,7 +41,7 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
       <div>
         <p class="eyebrow">Indicadores</p>
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Relatórios</h1>
-        <p class="text-sm text-gray-500 mt-2">Onde os clientes nascem, onde o funil trava e por que se perdem.</p>
+        <p class="text-sm text-gray-500 mt-2">Onde os clientes nascem, onde o funil trava e por que se perdem. <NuxtLink to="/dashboard" class="underline underline-offset-2">Ver gráfico diário (Painel)</NuxtLink></p>
       </div>
       <select v-model="dias" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm">
         <option :value="30">Últimos 30 dias</option>

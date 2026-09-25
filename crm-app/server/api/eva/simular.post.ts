@@ -1,5 +1,6 @@
 import { serverSupabaseServiceRole } from '#supabase/server'
 import { requireAdmin, throwSanitizedInternalError } from '../../utils/security'
+import { carregarEscritorio } from '../../utils/escritorio'
 import { buscarConhecimento, carregarPrompt, criarOpenAI, gerarResposta, type MensagemHistorico } from '../../utils/agente'
 
 /**
@@ -23,10 +24,10 @@ export default defineEventHandler(async (event) => {
     const admin = serverSupabaseServiceRole(event)
     const { openai, modelo } = criarOpenAI()
     const ultimas = historico.filter(m => m.autor === 'cliente').slice(-3).map(m => m.conteudo).join('\n')
-    const [promptSalvo, conhecimento] = await Promise.all([carregarPrompt(admin), buscarConhecimento(openai, admin, ultimas)])
+    const [promptSalvo, conhecimento, escritorio] = await Promise.all([carregarPrompt(admin), buscarConhecimento(openai, admin, ultimas), carregarEscritorio(admin)])
     const prompt = body?.prompt?.trim() ? body.prompt.slice(0, 20000) : promptSalvo
 
-    return await gerarResposta({ openai, modelo, promptEditavel: prompt, contato: null, historico, conhecimento })
+    return await gerarResposta({ openai, modelo, promptEditavel: prompt, contato: null, historico, conhecimento, escritorio })
   } catch (e) {
     throwSanitizedInternalError('eva/simular', e, 'Não foi possível gerar a resposta. Verifique a chave da OpenAI.')
   }

@@ -64,6 +64,22 @@ export interface MensagemRecebida {
   tipo: string
   texto: string
   timestamp: number
+  midia?: { id: string; mime: string; nome: string | null; legenda: string | null }
+}
+
+const ROTULO_MIDIA: Record<string, string> = { audio: 'áudio', image: 'imagem', document: 'documento', video: 'vídeo', sticker: 'figurinha' }
+
+/** Baixa uma mídia recebida (a Meta exige duas chamadas: metadados e depois o arquivo). */
+export async function baixarMidia(mediaId: string): Promise<{ buffer: Buffer; mime: string }> {
+  const c = useRuntimeConfig()
+  const auth = { Authorization: `Bearer ${c.whatsappToken}` }
+  const meta = await fetch(`${GRAPH}/${mediaId}`, { headers: auth })
+  if (!meta.ok) throw new Error(`Falha ao consultar mídia (${meta.status}).`)
+  const info = await meta.json() as { url: string; mime_type: string; file_size?: number }
+  if (info.file_size && info.file_size > 20 * 1024 * 1024) throw new Error('Arquivo maior que 20 MB.')
+  const arq = await fetch(info.url, { headers: auth })
+  if (!arq.ok) throw new Error(`Falha ao baixar mídia (${arq.status}).`)
+  return { buffer: Buffer.from(await arq.arrayBuffer()), mime: info.mime_type }
 }
 
 /** Extrai as mensagens de um payload de webhook da Meta. */
@@ -81,7 +97,9 @@ export function extrairMensagens(payload: any): MensagemRecebida[] {
         else if (tipo === 'button') texto = m.button?.text ?? ''
         else if (tipo === 'interactive') texto = m.interactive?.button_reply?.title ?? m.interactive?.list_reply?.title ?? ''
         else texto = `[o cliente enviou ${({ audio: 'um áudio', image: 'uma imagem', document: 'um documento', video: 'um vídeo', sticker: 'uma figurinha', location: 'uma localização' } as Record<string, string>)[tipo] ?? 'uma mensagem que não é texto'}]`
+        const dadosMidia = ROTULO_MIDIA[tipo] ? m[tipo] : null
         out.push({
+          midia: dadosMidia?.id ? { id: dadosMidia.id, mime: dadosMidia.mime_type ?? '', nome: dadosMidia.filename ?? null, legenda: dadosMidia.caption ?? null } : undefined,
           waId: m.id,
           telefone: String(m.from),
           nomePerfil: nomes.get(m.from) ?? null,

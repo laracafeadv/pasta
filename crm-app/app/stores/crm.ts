@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Contato, ContatoInput } from '../../shared/types/crm'
+import type { Compromisso, Contato, ContatoInput } from '../../shared/types/crm'
 
 interface ListaResponse { records: Contato[]; total: number; page: number; pageSize: number }
 
@@ -10,6 +10,7 @@ export interface Agenda {
   semAcao: Contato[]
   semana: Contato[]
   transferidas: Contato[]
+  compromissos: Compromisso[]
   aniversarios: Pick<Contato, 'id' | 'nome' | 'telefone' | 'data_nascimento' | 'classificacao'>[]
 }
 
@@ -41,7 +42,7 @@ export const useCrmStore = defineStore('crm', () => {
   const funilLoading = ref(false)
 
   // ─── Agenda "Hoje" ───────────────────────────────────────────────────────
-  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], transferidas: [], aniversarios: [] })
+  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], transferidas: [], aniversarios: [], compromissos: [] })
   const agendaLoading = ref(false)
   const pendencias = computed(() => agenda.value.atrasadas.length + agenda.value.hoje.length + agenda.value.semAcao.length)
 
