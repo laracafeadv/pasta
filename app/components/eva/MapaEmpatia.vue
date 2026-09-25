@@ -69,7 +69,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import Button from '../Button.vue'
-import { MAPA_EMPATIA } from '../../../shared/types/crm'
+import { MAPA_EMPATIA } from '~~/shared/types/crm'
 
 interface Vozes { total: number; dores: { texto: string; area: string | null }[]; objetivos: { texto: string }[]; objecoes: [string, number][]; origens: [string, number][] }
 interface Analise { padroes: string[]; frases: string[]; sugestoes: Record<string, string | null> }
