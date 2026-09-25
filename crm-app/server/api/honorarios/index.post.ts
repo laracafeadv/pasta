@@ -1,0 +1,20 @@
+import { serverSupabaseClient } from '#supabase/server'
+import { brlServidor } from '../../utils/formato'
+import { requireStaff } from '../../utils/security'
+import { registrarAtividade } from '../../utils/crm'
+import { limparHonorario } from '../../utils/honorarios'
+
+export default defineEventHandler(async (event) => {
+  const { userId } = await requireStaff(event, 'honorarios/create')
+  const client = await serverSupabaseClient(event)
+  const data = limparHonorario(await readBody(event))
+  if (!data.contato_id) throw createError({ statusCode: 400, message: 'Escolha o contato.' })
+
+  const { data: created, error } = await client.from('honorarios').insert([{ responsavel_id: userId, ...data }]).select().single()
+  if (error) {
+    console.error('[honorarios] Erro ao criar:', error)
+    throw createError({ statusCode: 500, message: 'Erro interno ao registrar honorário.' })
+  }
+  await registrarAtividade(event, created.contato_id, 'Sistema', `Honorário registrado: ${brlServidor(created.valor)} (${created.tipo}, ${created.status}).`, userId)
+  return created
+})
