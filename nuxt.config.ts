@@ -31,7 +31,6 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     // '@nuxt/image',
     '@nuxtjs/supabase',
-    '@pinia/nuxt',
     'nuxt-llms',
     '@nuxt/icon',
     '@vite-pwa/nuxt',
