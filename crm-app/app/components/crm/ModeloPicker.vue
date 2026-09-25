@@ -26,7 +26,7 @@
           <span class="text-sm font-semibold">{{ m.titulo }}</span>
           <span class="ml-2 text-xs font-mono text-gray-400">{{ m.atalho }}</span>
           <span v-if="m.atalho === sugerido" class="ml-2 text-[10px] font-semibold uppercase text-primary">sugerida</span>
-          <span class="block text-xs text-gray-500 truncate">{{ preencher(m.texto, nomeContato) }}</span>
+          <span class="block text-xs text-gray-500 truncate">{{ preencher(m.texto, nomeContato, extras) }}</span>
         </button>
       </template>
     </div>
@@ -38,7 +38,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { ModeloMensagem } from '../../../shared/types/crm'
 import { useModelos } from '../../composables/useModelos'
 
-const props = defineProps<{ filtro?: string; nomeContato?: string | null; sugerido?: string | null }>()
+const props = defineProps<{ filtro?: string; nomeContato?: string | null; sugerido?: string | null; extras?: Record<string, string | null | undefined> }>()
 const emit = defineEmits<{ usar: [texto: string, modelo: ModeloMensagem]; fechar: [] }>()
 
 const { modelos, carregando, carregar, preencher } = useModelos()
@@ -67,6 +67,6 @@ const agrupados = computed(() => {
 })
 
 function usar(m: ModeloMensagem) {
-  emit('usar', preencher(m.texto, props.nomeContato), m)
+  emit('usar', preencher(m.texto, props.nomeContato, props.extras), m)
 }
 </script>

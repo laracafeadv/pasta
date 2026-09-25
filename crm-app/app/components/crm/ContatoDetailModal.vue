@@ -119,6 +119,7 @@
             :filtro="resposta.startsWith('/') ? resposta : undefined"
             :nome-contato="dados.contato.nome"
             :sugerido="modeloSugerido"
+            :extras="extrasContato"
             @usar="(t) => { resposta = t; pickerAberto = false }"
             @fechar="pickerAberto = false"
           />
@@ -353,7 +354,7 @@ watch(() => props.isOpen, (open) => {
       if (props.modeloInicial && dados.value) {
         await carregarModelos()
         const m = modelos.value.find(x => x.atalho === props.modeloInicial)
-        if (m) resposta.value = preencher(m.texto, dados.value.contato.nome)
+        if (m) resposta.value = preencher(m.texto, dados.value.contato.nome, extrasContato.value)
         aba.value = 'conversa'
       }
     })
@@ -415,6 +416,15 @@ const modeloSugerido = computed(() => {
   const c = dados.value?.contato
   if (!c) return null
   return c.proxima_acao?.match(/\/[a-z0-9-]+/)?.[0] ?? CADENCIA[c.etapa]?.modelo ?? null
+})
+// Dados desta cliente que as mensagens podem usar ([DATA DA PROPOSTA], [DEMANDA]).
+const extrasContato = computed<Record<string, string | null>>(() => {
+  const d = dados.value
+  const prop = d?.honorarios.filter(h => h.tipo !== 'Consulta').sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+  return {
+    'DATA DA PROPOSTA': prop ? new Date(prop.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : null,
+    'DEMANDA': d?.contato.demanda?.toLowerCase() ?? null,
+  }
 })
 function aoDigitar() {
   pickerAberto.value = resposta.value.startsWith('/') && !resposta.value.includes(' ')

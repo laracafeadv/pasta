@@ -35,7 +35,8 @@
             </div>
             <div v-if="!c.nao_contatar" class="flex flex-wrap items-center gap-2">
               <button class="chip" @click="emit('mensagem', c, '/remarketing')">/remarketing</button>
-              <button class="chip" @click="emit('mensagem', c, '/remarketing-retomar')">/remarketing-retomar</button>
+              <button v-if="c.proposta" class="chip" @click="emit('mensagem', c, '/remarketing-proposta')">/remarketing-proposta</button>
+              <button v-else class="chip" @click="emit('mensagem', c, '/remarketing-retomar')">/remarketing-retomar</button>
               <button class="chip chip-escuro" @click="registrarEnvio(c)">Registrar envio</button>
               <button class="chip" @click="emit('reabrir', c)">Reabrir</button>
               <button class="ml-auto text-xs text-gray-400 hover:text-danger underline underline-offset-2" @click="naoContatar(c, true)">pediu para não receber</button>

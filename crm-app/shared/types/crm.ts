@@ -177,7 +177,8 @@ export const CADENCIA: Record<string, { acao: string; dias: number; modelo?: str
   novo: { acao: 'Responder pessoalmente', dias: 0, modelo: '/boasvindas' },
   qualificacao: { acao: 'Convidar para a consulta estratégica', dias: 1, modelo: '/consulta' },
   agendado: { acao: 'Lembrete da consulta (dia anterior)', dias: -1, modelo: '/lembrete' },
-  diagnostico: { acao: 'Mensagem de feedback pós-consulta', dias: 0, modelo: '/pos-consulta' },
+  // Quadro antigo: feedback no dia seguinte à consulta ("até amanhã enviaremos a proposta").
+  diagnostico: { acao: 'Mensagem de feedback pós-consulta', dias: 1, modelo: '/feedback' },
   proposta: { acao: 'Follow-up 24h da proposta', dias: 1, modelo: '/followup-24h' },
   ativo: { acao: 'Enviar checklist de documentos', dias: 1, modelo: '/documentos' },
 }

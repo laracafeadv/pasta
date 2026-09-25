@@ -4,6 +4,7 @@ import { requireAdmin } from '../../utils/security'
 import { carregarEscritorio } from '../../utils/escritorio'
 import { advogadaTexto, dataExtenso, entregarPeca, gerarDocx, qualificacaoTexto, v } from '../../utils/pecas'
 import { brlServidor } from '../../utils/formato'
+import { valorPorExtenso } from '../../../shared/utils/extenso'
 import { auditar } from '../../utils/auditoria'
 
 // Contrato de prestação de serviços advocatícios a partir de um honorário registrado.
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     carregarEscritorio(admin),
   ])
   const qq = (qual ?? {}) as Partial<Qualificacao>
-  const valor = brlServidor(h.valor)
+  const valor = `${brlServidor(h.valor)} (${valorPorExtenso(h.valor)})`
   const parcelas = Number(h.parcelas) || 1
   const pagamento = parcelas > 1
     ? `em ${parcelas} parcelas mensais de ${brlServidor(Number(h.valor) / parcelas)}`

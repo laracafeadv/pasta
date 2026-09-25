@@ -9,7 +9,7 @@ insert into public.modelos_mensagem (categoria, titulo, atalho, texto, ordem) va
 ('2. Agendamento', 'Orientação de consulta', '/orientacao-consulta', $t$Perfeito, vamos dar seguimento então.
 Vou te enviar agora algumas orientações sobre o nosso procedimento para agendamento de consultas e, caso ainda reste alguma dúvida, estou por aqui à disposição!
 
-O valor da consulta importa em [VALOR DA CONSULTA], que será abatido em caso de fechamento de contrato.
+O valor da consulta importa em [VALOR DA CONSULTA] ([VALOR POR EXTENSO]), que será abatido em caso de fechamento de contrato.
 
 O atendimento é por videoconferência, via [PLATAFORMA], ou presencial, com duração de até [DURAÇÃO].
 
@@ -30,9 +30,17 @@ Atenciosamente, equipe Lara Café$t$, 25),
 ('8. Financeiro', 'Envio de boleto da parcela', '/boleto', $t$[SAUDAÇÃO], [NOME]! Tudo bem?
 Segue anexo o boleto referente à parcela [PARCELA], com vencimento em [VENCIMENTO], relativo ao contrato de honorários de prestação de serviços advocatícios.
 
-Caso tenha algum problema com o acesso ao boleto, basta nos chamar por aqui.
+Caso tenha algum problema com o acesso ao boleto, basta nos sinalizar por aqui, estamos à disposição! Tenha um ótimo dia!$t$, 15),
+('3. Depois da consulta', 'Feedback da consulta', '/feedback', $t$[SAUDAÇÃO], [NOME]! Tudo bem? 🌻
+Me chamo [MEU NOME], faço parte da equipe do escritório da [DRA] e estou entrando em contato para pedir um feedback sobre suas percepções acerca da consulta realizada ontem com a [DRA], e saber se surgiu alguma dúvida sobre os assuntos tratados que queira esclarecer.
 
-Atenciosamente, equipe Lara Café$t$, 15)
+Fico à disposição, e até amanhã enviaremos a proposta de honorários!$t$, 5),
+('7. Follow-up', 'Remarketing — proposta sem resposta', '/remarketing-proposta', $t$[SAUDAÇÃO], [NOME]! Tudo bem?
+Me chamo [MEU NOME], faço parte da equipe do escritório e estou passando para perguntar como está a situação [DESENVOLVER PARA O CASO ESPECÍFICO] e se restou alguma dúvida que gostaria de esclarecer sobre o caso.
+
+Gostaríamos também de confirmar se você recebeu a proposta de honorários enviada no dia [DATA DA PROPOSTA]. Caso não tenha recebido, podemos enviar novamente.
+
+Entramos em contato porque nos preocupamos com a sua demanda e sabemos da importância que ela tem para você. Estamos à disposição para iniciarmos os trabalhos necessários. Tenha uma ótima semana!$t$, 45)
 on conflict (atalho) do nothing;
 
 -- As versões do playbook que cobrem a mesma situação ficam desativadas (não apagadas).
