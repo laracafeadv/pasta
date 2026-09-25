@@ -6,24 +6,24 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
       <div>
-        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Desempenho de Leads vs Vendas</h3>
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Novos contatos e contratos</h3>
         <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
-          {{ chartData.length }} dias · {{ totalLeads.toLocaleString('pt-BR') }} leads ·
-          {{ totalVendas }} vendas no período
+          {{ chartData.length }} dias · {{ totalLeads.toLocaleString('pt-BR') }} contatos ·
+          {{ totalVendas }} contratos no período
         </p>
       </div>
       <div class="flex items-center gap-5 text-xs font-medium flex-shrink-0">
         <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"></span>
-          <span class="text-slate-500 dark:text-slate-400">Novos Leads</span>
+          <span class="w-3 h-3 rounded-full bg-primary ring-2 ring-primary/20"></span>
+          <span class="text-slate-500 dark:text-slate-400">Novos contatos</span>
         </div>
         <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-blue-500 ring-2 ring-blue-500/20"></span>
-          <span class="text-slate-500 dark:text-slate-400">Recorrentes</span>
+          <span class="w-3 h-3 rounded-full bg-secondary ring-2 ring-secondary/20"></span>
+          <span class="text-slate-500 dark:text-slate-400">Voltaram a escrever</span>
         </div>
         <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-orange-400 ring-2 ring-orange-400/20"></span>
-          <span class="text-slate-500 dark:text-slate-400">Vendas</span>
+          <span class="w-3 h-3 rounded-full bg-success ring-2 ring-success/20"></span>
+          <span class="text-slate-500 dark:text-slate-400">Contratos</span>
         </div>
       </div>
     </div>
@@ -46,16 +46,16 @@
           <!-- Defs: gradients -->
           <defs>
             <linearGradient id="gradLeads" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#10b981" stop-opacity="0.25" />
-              <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+              <stop offset="0%" stop-color="#3c2923" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="#3c2923" stop-opacity="0" />
             </linearGradient>
             <linearGradient id="gradRecorrentes" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2" />
-              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+              <stop offset="0%" stop-color="#8b6f47" stop-opacity="0.2" />
+              <stop offset="100%" stop-color="#8b6f47" stop-opacity="0" />
             </linearGradient>
             <linearGradient id="gradVendas" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#fb923c" stop-opacity="0.22" />
-              <stop offset="100%" stop-color="#fb923c" stop-opacity="0" />
+              <stop offset="0%" stop-color="#4f6b45" stop-opacity="0.22" />
+              <stop offset="100%" stop-color="#4f6b45" stop-opacity="0" />
             </linearGradient>
           </defs>
 
@@ -86,9 +86,9 @@
           <path :d="areaPath('vendas')"      fill="url(#gradVendas)"      class="transition-all duration-700" />
 
           <!-- Stroke lines -->
-          <path :d="linePath('leads')"       fill="none" stroke="#10b981" stroke-width="2"   stroke-linejoin="round" stroke-linecap="round" class="transition-all duration-700" />
-          <path :d="linePath('recorrentes')" fill="none" stroke="#3b82f6" stroke-width="2"   stroke-linejoin="round" stroke-linecap="round" class="transition-all duration-700" />
-          <path :d="linePath('vendas')"      fill="none" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round" stroke-linecap="round" class="transition-all duration-700" />
+          <path :d="linePath('leads')"       fill="none" stroke="#3c2923" stroke-width="2"   stroke-linejoin="round" stroke-linecap="round" class="transition-all duration-700" />
+          <path :d="linePath('recorrentes')" fill="none" stroke="#8b6f47" stroke-width="2"   stroke-linejoin="round" stroke-linecap="round" class="transition-all duration-700" />
+          <path :d="linePath('vendas')"      fill="none" stroke="#4f6b45" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round" stroke-linecap="round" class="transition-all duration-700" />
 
           <!-- Dots on each data point (vendas line) -->
           <circle
@@ -97,7 +97,7 @@
             :cx="xPos(i)"
             :cy="yPos(pt.vendas)"
             r="3"
-            fill="#fb923c"
+            fill="#4f6b45"
             stroke="white"
             stroke-width="1.5"
             class="dark:stroke-slate-900"
@@ -129,9 +129,9 @@
 
           <!-- Hover dots highlight -->
           <template v-if="tooltip.visible && tooltip.point">
-            <circle :cx="tooltip.x" :cy="yPos(tooltip.point.leads)"       r="5" fill="#10b981" stroke="white" stroke-width="2" class="dark:stroke-slate-900" />
-            <circle :cx="tooltip.x" :cy="yPos(tooltip.point.recorrentes)" r="5" fill="#3b82f6" stroke="white" stroke-width="2" class="dark:stroke-slate-900" />
-            <circle :cx="tooltip.x" :cy="yPos(tooltip.point.vendas)"      r="5" fill="#fb923c" stroke="white" stroke-width="2" class="dark:stroke-slate-900" />
+            <circle :cx="tooltip.x" :cy="yPos(tooltip.point.leads)"       r="5" fill="#3c2923" stroke="white" stroke-width="2" class="dark:stroke-slate-900" />
+            <circle :cx="tooltip.x" :cy="yPos(tooltip.point.recorrentes)" r="5" fill="#8b6f47" stroke="white" stroke-width="2" class="dark:stroke-slate-900" />
+            <circle :cx="tooltip.x" :cy="yPos(tooltip.point.vendas)"      r="5" fill="#4f6b45" stroke="white" stroke-width="2" class="dark:stroke-slate-900" />
           </template>
         </svg>
 
@@ -149,21 +149,21 @@
               <div class="space-y-1.5 text-xs">
                 <div class="flex items-center justify-between gap-8">
                   <span class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>Novos
+                    <span class="w-2 h-2 rounded-full bg-primary inline-block"></span>Novos
                   </span>
                   <span class="font-bold text-slate-800 dark:text-white">{{ tooltip.point.leads }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-8">
                   <span class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                    <span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>Recorrentes
+                    <span class="w-2 h-2 rounded-full bg-secondary inline-block"></span>Voltaram a escrever
                   </span>
                   <span class="font-bold text-slate-800 dark:text-white">{{ tooltip.point.recorrentes }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-8 pt-1 border-t border-slate-100 dark:border-white/10">
                   <span class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                    <span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>Vendas
+                    <span class="w-2 h-2 rounded-full bg-success inline-block"></span>Contratos
                   </span>
-                  <span class="font-bold text-orange-500">{{ tooltip.point.vendas }}</span>
+                  <span class="font-bold text-success">{{ tooltip.point.vendas }}</span>
                 </div>
               </div>
             </div>

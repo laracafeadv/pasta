@@ -61,7 +61,7 @@
     <div v-if="isCritical" class="px-5 pb-4">
       <div class="flex items-center gap-2 text-[10px] font-bold text-red-500/80 uppercase">
         <Icon name="ph:warning-circle-bold" class="w-3.5 h-3.5" />
-        Atenção: Mudanças aqui alteram o núcleo da EVA.
+        Atenção: esta seção muda o comportamento central da assistente. Teste na aba “Testar” antes de salvar.
       </div>
     </div>
   </div>

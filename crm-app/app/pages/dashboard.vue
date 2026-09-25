@@ -6,13 +6,10 @@
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
       >
         <div>
-          <h1
-            class="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3"
-          >
-            Dashboard
-          </h1>
+          <p class="eyebrow">Visão geral</p>
+          <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Painel</h1>
           <p class="text-slate-500 dark:text-slate-400 mt-1">
-            Visão geral de performance e métricas comerciais
+            Entrada de contatos e contratos do escritório
           </p>
         </div>
 
@@ -47,14 +44,14 @@
           class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
         >
           <KpiCard
-            title="Novos Leads"
+            title="Novos contatos"
             :value="novosLeads"
             color="success"
             icon="ph:user-plus-bold"
             :loading="loading"
           />
           <KpiCard
-            title="Recorrentes"
+            title="Voltaram a escrever"
             :value="recorrentes"
             color="info"
             icon="ph:users-three-bold"
@@ -129,7 +126,7 @@
                     class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden"
                   >
                     <div
-                      class="h-full bg-gradient-to-r from-primary to-green-500"
+                      class="h-full bg-gradient-to-r from-primary to-secondary"
                       :style="{ width: `${maxConversion}%` }"
                     ></div>
                   </div>
@@ -137,11 +134,11 @@
                   <div
                     class="opacity-0 invisible group-hover:opacity-100 group-hover:visible absolute z-20 w-[95%] p-3 mt-2 text-xs text-white bg-slate-800 dark:bg-slate-700 rounded-md shadow-xl transition-all duration-200 bottom-full left-1/2 -translate-x-1/2 mb-2"
                   >
-                    Registra o percentual de contatos que se transformaram em
-                    atendimentos.<br /><span
+                    Percentual de contatos que se tornaram
+                    contratos.<br /><span
                       class="text-slate-300 mt-1 block font-mono"
-                      >{{ totalVendasPeriodo }} atendimentos /
-                      {{ totalLeadsPeriodo }} leads</span
+                      >{{ totalVendasPeriodo }} contratos /
+                      {{ totalLeadsPeriodo }} contatos</span
                     >
                     <!-- Arrow -->
                     <div
@@ -181,7 +178,7 @@
                     class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden"
                   >
                     <div
-                      class="h-full bg-gradient-to-r from-orange-400 to-orange-600"
+                      class="h-full bg-gradient-to-r from-secondary to-primary"
                       :style="{ width: `${recorrenciaPercentual}%` }"
                     ></div>
                   </div>
@@ -192,8 +189,8 @@
                     Mede a fidelidade: percentual de contatos do período que já
                     haviam contratado anteriormente.<br /><span
                       class="text-slate-300 mt-1 block font-mono"
-                      >{{ totalRecorrentesPeriodo }} recorrentes /
-                      {{ totalLeadsPeriodo }} leads</span
+                      >{{ totalRecorrentesPeriodo }} retornos /
+                      {{ totalLeadsPeriodo }} contatos</span
                     >
                     <!-- Arrow -->
                     <div
@@ -213,7 +210,7 @@
                     <p
                       class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 flex items-center gap-1 cursor-help"
                     >
-                      Total Leads
+                      Total de contatos
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -253,7 +250,7 @@
                     <p
                       class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 flex items-center gap-1 cursor-help justify-end"
                     >
-                      Total Atendimentos
+                      Total de contratos
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -351,7 +348,7 @@
                       <strong>Faturamento Bruto:</strong> Soma financeira de
                       todos os atendimentos.<br />
                       <strong class="mt-1.5 block">Ticket Médio:</strong>
-                      Faturamento dividido pela Quantidade de Atendimentos.
+                      Honorários contratados divididos pelo número de contratos.
                       <!-- Arrow -->
                       <div
                         class="absolute w-2 h-2 bg-slate-800 dark:bg-slate-700 rotate-45 -top-1 left-1/2 -translate-x-1/2"
@@ -403,7 +400,7 @@ const {
   fetchDashboardData,
 } = useDashboardData();
 
-useHead({ title: "Dashboard | Andréa Rosa" });
+useHead({ title: "Painel" });
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat("pt-BR", {
@@ -413,11 +410,11 @@ const formatCurrency = (val: number) => {
 };
 
 const leadsLabel = computed(() => {
-  return selectedPeriod.value === 0 ? "Leads Hoje" : "Leads no Período";
+  return selectedPeriod.value === 0 ? "Contatos hoje" : "Contatos no período";
 });
 
 const vendasLabel = computed(() => {
-  return selectedPeriod.value === 0 ? "Atendimentos Hoje" : "Atendimentos no Período";
+  return selectedPeriod.value === 0 ? "Contratos hoje" : "Contratos no período";
 });
 
 const conversaoPercentual = computed(() => {

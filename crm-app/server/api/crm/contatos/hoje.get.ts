@@ -1,13 +1,14 @@
 import { serverSupabaseClient } from '#supabase/server'
 import type { Contato } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
+import { hojeBR } from '../../../utils/crm'
 
 // "O que precisa de você hoje": todo caso aberto deve ter uma próxima ação com data.
 export default defineEventHandler(async (event) => {
   await requireStaff(event, 'crm/hoje')
   const client = await serverSupabaseClient(event)
-  const hoje = new Date().toISOString().slice(0, 10)
-  const em7 = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10)
+  const hoje = hojeBR()
+  const em7 = hojeBR(7)
 
   const { data, error } = await client
     .from('contatos')

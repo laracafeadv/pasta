@@ -7,7 +7,7 @@ import { defineEventHandler, getRequestURL, getRequestHeader, setResponseHeader,
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
 
 const RATE_LIMITED_PATHS = [
-  '/api/eva/chat',
+  '/api/eva/simular',
   '/api/eva/rag',
   '/api/email/send',
   '/api/admin/users',

@@ -1,16 +1,15 @@
 <template>
   <NuxtLayout>
-    <div id="eva-page" class="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div id="eva-page">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
         
         <!-- Header & Tabs -->
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div>
-            <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-              Assistente <span class="text-secondary">de IA</span>
-            </h1>
+            <p class="eyebrow">WhatsApp</p>
+            <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Assistente de IA</h1>
             <p class="text-slate-500 dark:text-slate-400 mt-1">
-              Personalize o comportamento e a base de conhecimento da sua assistente virtual.
+              Ela faz a triagem no WhatsApp, preenche a ficha no CRM e passa para a equipe quando precisa. As regras de ética da OAB e da LGPD ficam fixas e não podem ser apagadas aqui.
             </p>
           </div>
 
@@ -18,8 +17,9 @@
           <Tabs 
             v-model="activeTab"
             :tabs="[
-              { label: 'System Prompt', value: 'prompt', icon: 'ph:terminal-window-bold' },
-              { label: 'Dados', value: 'dados', icon: 'ph:database-bold' }
+              { label: 'Instruções', value: 'prompt', icon: 'ph:note-pencil-bold' },
+              { label: 'Base de conhecimento', value: 'dados', icon: 'ph:books-bold' },
+              { label: 'Testar', value: 'testar', icon: 'ph:chat-circle-dots-bold' }
             ]"
           />
         </div>
@@ -42,13 +42,14 @@ import { useHead } from '#imports'
 import Tabs from '../components/Tabs.vue'
 import EvaSystemPrompt from '../components/eva/EvaSystemPrompt.vue'
 import EvaDataTab from '../components/eva/EvaDataTab.vue'
+import EvaSimulador from '../components/eva/EvaSimulador.vue'
 
 useHead({ title: 'Assistente de IA' })
 definePageMeta({ middleware: ['auth', 'eva-editor'] })
 
-const activeTab = ref<'prompt' | 'dados'>('prompt')
+const activeTab = ref<'prompt' | 'dados' | 'testar'>('prompt')
 
 const currentTabComponent = computed(() => {
-  return activeTab.value === 'prompt' ? EvaSystemPrompt : EvaDataTab
+  return { prompt: EvaSystemPrompt, dados: EvaDataTab, testar: EvaSimulador }[activeTab.value]
 })
 </script>

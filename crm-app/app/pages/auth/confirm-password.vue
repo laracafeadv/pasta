@@ -23,7 +23,7 @@ import { useHead, definePageMeta } from '#imports'
 import Card from '../../components/Card.vue'
 import ConfirmPasswordForm from '../../components/auth/ConfirmPasswordForm.vue'
 
-useHead({ title: 'Confirmar Senha | Andréa Rosa' })
+useHead({ title: 'Confirmar Senha' })
 
 definePageMeta({
   layout: false,

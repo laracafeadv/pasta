@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const [contato, honorarios, mensagens, atividades] = await Promise.all([
     client.from('contatos').select('*').eq('id', id).single(),
     client.from('honorarios').select('*').eq('contato_id', id).order('created_at', { ascending: false }),
-    client.from('mensagens_whatsapp').select('*').eq('contato_id', id).order('created_at', { ascending: false }).limit(300),
+    client.from('mensagens_whatsapp').select('*').eq('contato_id', id).order('id', { ascending: false }).limit(300),
     client.from('atividades').select('*, autor:profiles(name)').eq('contato_id', id).order('created_at', { ascending: false }).limit(200),
   ])
 

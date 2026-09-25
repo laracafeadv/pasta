@@ -50,6 +50,7 @@ O Coolify/Nixpacks precisa saber como iniciar a aplicação.
 4. **Variáveis de Ambiente**:
    - `NODE_ENV=production`
    - `NIXPACKS_NODE_VERSION=22.12.0`
+   - Todas as variáveis de `.env.example` (Supabase, OpenAI, WhatsApp, Resend). Marque-as como disponíveis **no build**. Se não for possível, use os nomes com prefixo `NUXT_` listados no `README.md`.
 
 ## 5. Troubleshooting (Resolução de Problemas)
 

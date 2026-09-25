@@ -7,6 +7,8 @@ export const useEvaPromptStore = defineStore('evaPrompt', () => {
     // ─── State ────────────────────────────────────────────────────────────────
     const currentAgent = ref<string>('master')
     const content = ref('')
+    // Texto em edição (ainda não salvo), usado pelo simulador
+    const rascunho = ref('')
     const version = ref<number>(1)
     const updatedBy = ref<string | null>(null)
     const loading = ref(false)
@@ -100,6 +102,7 @@ export const useEvaPromptStore = defineStore('evaPrompt', () => {
     }
 
     return {
+        rascunho,
         currentAgent,
         content,
         version,

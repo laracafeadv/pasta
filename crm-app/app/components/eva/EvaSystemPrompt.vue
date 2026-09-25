@@ -5,13 +5,14 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-100 dark:border-[#30363d] bg-slate-50/50 dark:bg-[#161b22] gap-3">
       <div class="flex flex-wrap items-center gap-2 sm:gap-4">
         <h2 class="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2 truncate">
-          {{ store.currentAgent }}.md
+          Instruções da assistente
           <span v-if="hasUnsavedChanges" class="w-2 h-2 rounded-full bg-orange-500 animate-pulse shrink-0"></span>
         </h2>
 
         <div class="h-4 w-[1px] bg-slate-200 dark:bg-[#30363d] mx-1 hidden sm:block"></div>
         
-        <div class="flex items-center gap-2">
+        <!-- Só existe uma assistente (agente "master"); o seletor de agentes fica oculto. -->
+        <div v-if="false" class="flex items-center gap-2">
           <!-- Normal Mode -->
           <div v-if="!isCreatingAgent" class="flex items-center gap-1.5 h-[26px]">
             <select 
@@ -225,6 +226,7 @@ import { parsePrompt, generatePrompt, type PromptSection } from '../../utils/pro
 
 const store = useEvaPromptStore()
 const localContent = ref('')
+watch(localContent, (v) => { if (store.currentAgent === 'master') store.rascunho = v })
 const sections = ref<PromptSection[]>([])
 const isModularView = ref(true)
 const agentNameInput = ref(store.currentAgent)
@@ -339,6 +341,8 @@ watch(localContent, (newVal) => {
   if (JSON.stringify(parsed) !== JSON.stringify(sections.value)) {
     sections.value = parsed
   }
+  // Texto livre sem seções: mostra o editor de texto em vez de uma tela vazia.
+  if (newVal.trim() && !parsed.length) isModularView.value = false
 }, { immediate: true })
 
 function updateHighlight() {

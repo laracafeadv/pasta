@@ -41,7 +41,7 @@ import Button from '../components/Button.vue'
 import Card from '../components/Card.vue'
 import ConfirmPasswordForm from '../components/auth/ConfirmPasswordForm.vue'
 
-useHead({ title: 'Confirmando... | Andréa Rosa' })
+useHead({ title: 'Confirmando...' })
 
 const error = ref('')
 const user = useSupabaseUser()

@@ -7,23 +7,20 @@ export interface PromptSection {
 
 export const STRATEGIC_SECTIONS = [
   'identidade',
-  'ferramentas',
-  'proibicoes',
-  'comunicacao'
+  'comunicacao',
+  'objetivo',
 ]
 
 const SECTION_TITLES: Record<string, string> = {
-  'identidade': 'Identidade & Personalidade',
-  'comunicacao': 'Estilo de Comunicação',
-  'long-memory': 'Memória de Longo Prazo',
-  'ferramentas': 'Capacidades e Ferramentas',
-  'ferramenta-dados': 'Base de Dados (RAG)',
-  'protocolo-transferencia': 'Escalonamento Humano',
-  'fluxo-voos': 'Processo de Voos',
-  'fluxo-hotel': 'Processo de Hotéis',
-  'respostas-padrao': 'Respostas Pré-definidas',
-  'proibicoes': 'Restrições Críticas',
-  'seguranca': 'Segurança e Dados'
+  'identidade': 'Quem é a assistente',
+  'areas': 'Áreas de atuação',
+  'comunicacao': 'Tom de voz',
+  'objetivo': 'Roteiro da conversa',
+  'atendimento': 'Como funciona o atendimento',
+  'valores': 'Valores e formas de pagamento',
+  'horarios': 'Horários e agenda',
+  'documentos': 'Documentos que costumamos pedir',
+  'respostas-padrao': 'Respostas prontas',
 }
 
 export function parsePrompt(content: string): PromptSection[] {

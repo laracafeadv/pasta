@@ -1,6 +1,7 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import type { EvaSystemPrompt } from '../../../shared/types/EvaSystemPromptDTO'
 import { assertActorRole, normalizeEvaAgentName } from '../../utils/security'
+import { PROMPT_PADRAO } from '../../utils/agentePrompt'
 
 const PROMPT_SELECT = 'id, agent_name, content, version, updated_at, updated_by'
 
@@ -30,7 +31,8 @@ export default defineEventHandler(async (event) => {
         return {
             id: 0,
             agent_name: agentName,
-            content: '',
+            // Nenhuma versão salva ainda: mostra o texto padrão da assistente.
+            content: agentName === 'master' ? PROMPT_PADRAO : '',
             version: 1,
             updated_at: new Date().toISOString(),
             updated_by: null

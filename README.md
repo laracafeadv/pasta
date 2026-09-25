@@ -1,6 +1,10 @@
 # pasta
 
-## CRM — Lara Café Advocacia
+## CRM completo (recomendado) — `crm-app/`
+
+Sistema com login, banco de dados (Supabase), assistente de IA no WhatsApp, honorários e relatórios. Veja `crm-app/README.md` para implantar.
+
+## CRM simples (offline) — `crm/`
 
 `crm/index.html` é um CRM de arquivo único para o escritório. Para usar, abra o arquivo no navegador. Não precisa de servidor nem de instalação.
 

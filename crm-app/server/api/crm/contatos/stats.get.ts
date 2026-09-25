@@ -1,6 +1,7 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { AREAS, ETAPAS, ETAPAS_GANHAS, MOTIVOS_PERDA, ORIGENS, STATUS_RECEITA } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
+import { hojeBR } from '../../../utils/crm'
 
 interface Linha { chave: string; total: number; ganhos: number; decididos: number }
 
@@ -10,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient(event)
   const dias = Math.max(0, Number(getQuery(event).dias ?? 90) || 0)
   const desde = dias ? new Date(Date.now() - dias * 864e5).toISOString() : null
-  const hoje = new Date().toISOString().slice(0, 10)
+  const hoje = hojeBR()
 
   const contatosQ = client.from('contatos').select('etapa, origem, area, motivo_perda, urgencia, proxima_acao, proxima_data, created_at')
   let honorariosQ = client.from('honorarios').select('valor, status, created_at')

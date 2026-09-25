@@ -2,6 +2,11 @@ import type { H3Event } from 'h3'
 import { serverSupabaseServiceRole } from '#supabase/server'
 import { CONTATO_CAMPOS_EDITAVEIS, ETAPAS, normalizarTelefone, pick, type ContatoInput } from '../../shared/types/crm'
 
+/** Data de hoje (AAAA-MM-DD) no horário de Brasília. */
+export function hojeBR(deslocamentoDias = 0): string {
+  return new Date(Date.now() + deslocamentoDias * 864e5).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+}
+
 /** Remove caracteres que alteram a sintaxe de filtros do PostgREST (.or / ilike). */
 export function sanitizarBusca(raw: unknown): string {
   return String(raw ?? '').replace(/[,()*%\\:"']/g, ' ').trim().slice(0, 80)
