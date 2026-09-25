@@ -36,6 +36,16 @@
           Adicionar ao Google Agenda
         </a>
       </label>
+      <div v-if="pedeValor" class="rounded-lg border border-secondary/30 bg-secondary/5 p-3 space-y-3">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-secondary-dark">{{ form.etapa === 'proposta' ? 'Proposta enviada hoje' : 'Contrato fechado' }}</p>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="field"><span>Valor (R$) *</span><input v-model="hon.valor" type="number" min="1" step="0.01" class="modal-input" required /></label>
+          <label class="field"><span>Tipo</span><select v-model="hon.tipo" class="modal-input"><option v-for="t in TIPOS_HONORARIO" :key="t">{{ t }}</option></select></label>
+          <label class="field"><span>Parcelas</span><input v-model="hon.parcelas" type="number" min="1" max="120" class="modal-input" /></label>
+          <label class="field"><span>Pagamento</span><input v-model="hon.forma_pagamento" class="modal-input" placeholder="Pix, cartão…" /></label>
+        </div>
+        <p v-if="form.etapa === 'ativo' && propostaAnterior" class="text-xs text-gray-500">Preenchido com a proposta de {{ brl(propostaAnterior.valor) }}; ajuste se o fechamento foi diferente.</p>
+      </div>
       <label v-if="form.etapa === 'perdido'" class="field">
         <span>Motivo da perda *</span>
         <select v-model="form.motivo_perda" class="modal-input" required>
@@ -76,16 +86,29 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { CADENCIA, ETAPAS, MOTIVOS_PERDA, SEQUENCIA_FOLLOWUP, etapa, type Contato } from '../../../shared/types/crm'
+import { CADENCIA, ETAPAS, MOTIVOS_PERDA, SEQUENCIA_FOLLOWUP, TIPOS_HONORARIO, etapa, type Contato, type Honorario } from '../../../shared/types/crm'
 import { hojeISO, somarDias, type AndamentoPayload } from '../../stores/crm'
 import { calcularPrazo } from '../../../shared/utils/juridico'
-import { linkGoogleAgenda } from '../../utils/formatadores'
+import { brl, linkGoogleAgenda } from '../../utils/formatadores'
 
 const props = defineProps<{ isOpen: boolean; contato: Contato | null; etapaDestino?: string | null; loading?: boolean; erro?: string | null }>()
 const emit = defineEmits<{ close: []; submit: [data: AndamentoPayload & { consulta_em?: string | null }] }>()
 
 const acaoInput = ref<HTMLInputElement | null>(null)
 const form = reactive({ resultado: '', etapa: 'novo', motivo_perda: '', proxima_acao: '', proxima_data: '', consulta_em: '', pagamento_confirmado: false })
+
+// Valor da proposta (ao enviar) e do contrato (ao fechar): o que o quadro antigo anotava no cartão.
+const hon = reactive<{ valor: number | string; tipo: string; parcelas: number | string; forma_pagamento: string }>({ valor: '', tipo: 'Contrato fixo', parcelas: 1, forma_pagamento: '' })
+const propostaAnterior = ref<Honorario | null>(null)
+const pedeValor = computed(() => !!props.contato && props.contato.etapa !== form.etapa && (form.etapa === 'proposta' || form.etapa === 'ativo'))
+async function carregarProposta() {
+  if (form.etapa !== 'ativo' || !props.contato) return
+  const d = await $fetch<{ honorarios: Honorario[] }>(`/api/crm/contatos/${props.contato.id}`).catch(() => null)
+  const p = d?.honorarios.find(h => h.status === 'Proposta') ?? null
+  propostaAnterior.value = p
+  if (p && !hon.valor) Object.assign(hon, { valor: p.valor, tipo: p.tipo, parcelas: p.parcelas, forma_pagamento: p.forma_pagamento ?? '' })
+}
+watch(() => form.etapa, carregarProposta)
 
 /**
  * Próximo passo sugerido: continua a sequência de follow-up se a ação concluída
@@ -125,6 +148,9 @@ watch(() => props.isOpen, async (open) => {
     consulta_em: '',
     pagamento_confirmado: false,
   })
+  Object.assign(hon, { valor: '', tipo: 'Contrato fixo', parcelas: 1, forma_pagamento: '' })
+  propostaAnterior.value = null
+  carregarProposta()
   aplicarSugestao()
   await nextTick()
   acaoInput.value?.select()
@@ -142,7 +168,7 @@ watch(sugestao, (s, antiga) => {
 })
 
 function handleSubmit() {
-  emit('submit', { ...form, consulta_em: form.consulta_em ? new Date(form.consulta_em).toISOString() : null })
+  emit('submit', { ...form, consulta_em: form.consulta_em ? new Date(form.consulta_em).toISOString() : null, honorario: pedeValor.value ? { ...hon } : null })
 }
 </script>
 

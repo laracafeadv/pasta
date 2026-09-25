@@ -21,3 +21,11 @@ insert into public.modelos_mensagem (categoria, titulo, atalho, texto, ordem) va
 ('7. Follow-up', 'Remarketing — conteúdo do interesse dela', '/remarketing', $t$Oi, [NOME]! Tudo bem? Lembrei de você quando vi este conteúdo sobre [TEMA DA DEMANDA]: [LINK]. Achei que poderia ser útil. Se um dia quiser retomar a conversa, estou por aqui. (Se preferir não receber mais mensagens, é só me avisar.)$t$, 40),
 ('7. Follow-up', 'Remarketing — retomar a conversa', '/remarketing-retomar', $t$Oi, [NOME]! Há alguns meses conversamos sobre [DEMANDA]. Como estão as coisas por aí? Se fizer sentido agora, posso te explicar como seria o caminho, sem compromisso.$t$, 50)
 on conflict (atalho) do nothing;
+
+insert into public.modelos_mensagem (categoria, titulo, atalho, texto, ordem) values
+('10. Relacionamento', 'Relatório semanal do caso', '/relatorio-semanal', $t$Oi, [NOME]! Passando com a atualização da semana sobre o seu caso:
+📌 O que aconteceu: [ANDAMENTO DA SEMANA]
+📌 Próximo passo: [PRÓXIMO PASSO E PRAZO]
+📌 Precisamos de você? [O QUE A CLIENTE PRECISA FAZER, OU "Por enquanto, nada."]
+Qualquer dúvida, estou por aqui.$t$, 15)
+on conflict (atalho) do nothing;

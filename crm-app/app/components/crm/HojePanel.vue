@@ -15,6 +15,13 @@
       <button v-for="c in agenda.transferidas" :key="c.id" class="underline underline-offset-2" @click="emit('abrir', c, 'conversa')">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
     </div>
 
+    <div v-if="agenda.semRelatorio?.length" class="rounded-2xl border border-gray-200/70 dark:border-zinc-700 bg-white/60 dark:bg-zinc-900/50 p-4 text-sm flex flex-wrap items-center gap-2">
+      <Icon name="ph:newspaper-bold" class="text-secondary-dark" />
+      <b>Relatório semanal:</b>
+      <span class="text-gray-600 dark:text-zinc-400">{{ agenda.semRelatorio.length }} cliente(s) sem notícia do caso há 7+ dias —</span>
+      <button v-for="c in agenda.semRelatorio" :key="c.id" class="underline underline-offset-2" @click="emit('abrir', c, 'conversa', '/relatorio-semanal')">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
+    </div>
+
     <section v-if="agenda.compromissos?.length" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5">
       <header class="flex items-baseline justify-between gap-2 mb-2">
         <h2 class="text-2xl text-primary dark:text-zinc-100">Prazos e compromissos</h2>
@@ -75,7 +82,7 @@ import { hojeISO } from '../../stores/crm'
 const hoje = hojeISO()
 
 const props = defineProps<{ agenda: Agenda }>()
-const emit = defineEmits<{ abrir: [c: Contato, aba?: string]; andamento: [c: Contato]; adiar: [c: Contato] }>()
+const emit = defineEmits<{ abrir: [c: Contato, aba?: string, modelo?: string]; andamento: [c: Contato]; adiar: [c: Contato] }>()
 
 // Delegação: cada pessoa vê o que é dela (contatos com ela como responsável).
 const soMinhas = ref(false)

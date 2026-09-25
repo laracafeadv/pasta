@@ -3,6 +3,8 @@ import { ETAPAS, MOTIVOS_PERDA, chaveResponsavelEtapa, etapa } from '../../../..
 import { requireStaff } from '../../../../utils/security'
 import { registrarAtividade } from '../../../../utils/crm'
 import { auditar } from '../../../../utils/auditoria'
+import { limparHonorario } from '../../../../utils/honorarios'
+import { brlServidor } from '../../../../utils/formato'
 
 /**
  * Registrar andamento: conclui a próxima ação atual e obriga a decidir a seguinte
@@ -14,7 +16,7 @@ export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) throw createError({ statusCode: 400, message: 'ID inválido.' })
 
-  const body = await readBody<{ resultado?: string; etapa: string; proxima_acao?: string; proxima_data?: string; motivo_perda?: string; consulta_em?: string | null; pagamento_confirmado?: boolean }>(event)
+  const body = await readBody<{ resultado?: string; etapa: string; proxima_acao?: string; proxima_data?: string; motivo_perda?: string; consulta_em?: string | null; pagamento_confirmado?: boolean; honorario?: Record<string, any> | null }>(event)
   const destino = ETAPAS.find(e => e.id === body?.etapa)
   if (!destino) throw createError({ statusCode: 400, message: 'Etapa inválida.' })
   if (destino.aberta && (!body.proxima_acao?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(body.proxima_data ?? ''))) {
@@ -26,6 +28,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Informe o motivo da perda.' })
   }
 
+  if (body.honorario && ['proposta', 'ativo'].includes(destino.id) && !(Number(body.honorario.valor) > 0)) {
+    throw createError({ statusCode: 400, message: destino.id === 'proposta' ? 'Informe o valor da proposta.' : 'Informe o valor do contrato.' })
+  }
   const { data: atual, error: e1 } = await client.from('contatos').select('etapa, proxima_acao').eq('id', id).single()
   if (e1 || !atual) throw createError({ statusCode: 404, message: 'Contato não encontrado.' })
 
@@ -48,6 +53,25 @@ export default defineEventHandler(async (event) => {
       if (eh) console.error('[crm/andamento] Erro ao lançar a consulta:', eh)
     }
     await registrarAtividade(event, id, 'Sistema', 'Pagamento da consulta confirmado.', userId)
+  }
+  // Quadro antigo: "Proposta enviada dia X, valor R$ Y" e, ao fechar, "valor do contrato e forma de pagamento".
+  if (body.honorario && atual.etapa !== destino.id && (destino.id === 'proposta' || destino.id === 'ativo')) {
+    const h = limparHonorario({ ...body.honorario, contato_id: id })
+    if (!(h.valor > 0)) throw createError({ statusCode: 400, message: 'Informe o valor.' })
+    const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+    const campos = { valor: h.valor, tipo: h.tipo ?? 'Contrato fixo', forma_pagamento: h.forma_pagamento ?? null, parcelas: h.parcelas ?? 1, descricao: h.descricao ?? null }
+    if (destino.id === 'proposta') {
+      await client.from('honorarios').insert({ ...campos, contato_id: id, status: 'Proposta', responsavel_id: userId })
+      await registrarAtividade(event, id, 'Sistema', `Proposta enviada: ${brlServidor(h.valor)}${h.forma_pagamento ? ` (${h.forma_pagamento})` : ''}.`, userId)
+    } else {
+      const { data: prop } = await client.from('honorarios').select('id').eq('contato_id', id).eq('status', 'Proposta').order('created_at', { ascending: false }).limit(1)
+      const contrato = { ...campos, status: 'Contratado', data_contratacao: hoje }
+      const r = prop?.[0]
+        ? await client.from('honorarios').update(contrato).eq('id', prop[0].id)
+        : await client.from('honorarios').insert({ ...contrato, contato_id: id, responsavel_id: userId })
+      if (r.error) console.error('[crm/andamento] Erro no contrato:', r.error)
+      await registrarAtividade(event, id, 'Sistema', `Contrato fechado: ${brlServidor(h.valor)}${h.parcelas > 1 ? ` em ${h.parcelas}x` : ''}${h.forma_pagamento ? ` (${h.forma_pagamento})` : ''}.`, userId)
+    }
   }
   if (atual.etapa !== destino.id) {
     await registrarAtividade(event, id, 'Sistema', `Etapa: ${etapa(atual.etapa).nome} → ${destino.nome}${destino.id === 'perdido' ? ` (${body.motivo_perda})` : ''}`, userId)

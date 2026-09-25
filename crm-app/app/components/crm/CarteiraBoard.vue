@@ -8,6 +8,26 @@
       </p>
     </div>
 
+    <!-- Aniversários do mês (quadro antigo: uma coluna por mês; encerrados continuam aqui) -->
+    <section class="painel">
+      <header class="flex flex-wrap items-baseline gap-3 mb-3">
+        <h2 class="text-2xl text-primary dark:text-zinc-100">Aniversários</h2>
+        <div class="flex flex-wrap gap-1">
+          <button v-for="(m, i) in MESES" :key="m" class="px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider border"
+                  :class="mes === i + 1 ? 'bg-primary text-white border-primary' : 'border-gray-200 dark:border-zinc-700 text-gray-500 hover:border-primary'" @click="mes = i + 1">{{ m }}</button>
+        </div>
+      </header>
+      <p v-if="!aniversarios.length" class="text-sm italic text-gray-400">Ninguém faz aniversário neste mês (ou a data não foi cadastrada na ficha).</p>
+      <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+        <li v-for="c in aniversarios" :key="c.id" class="flex flex-wrap items-center gap-2 py-2 border-b border-gray-100 dark:border-zinc-800 text-sm">
+          <span class="w-10 font-semibold tabular-nums" :class="ehHoje(c.data_nascimento) ? 'text-secondary-dark' : ''">{{ String(c.data_nascimento).slice(8, 10) }}</span>
+          <button class="font-semibold hover:underline" @click="emit('abrir', c as Contato)">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
+          <span class="text-xs text-gray-500">{{ c.etapa === 'concluido' ? 'encerrado' : c.etapa === 'ativo' ? 'cliente' : '' }}</span>
+          <button v-if="!c.nao_contatar" class="chip ml-auto" @click="emit('mensagem', c as Contato, '/aniversario')">/aniversario</button>
+        </li>
+      </ul>
+    </section>
+
     <p v-if="carregando && !lista.length" class="text-sm text-gray-400">Carregando carteira…</p>
 
     <!-- Sem classificação -->
@@ -70,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { CLASSIFICACOES, PERGUNTA_CLASSIFICAR, PLANO_CARTEIRA, situacaoCarteira, type Classificacao, type ClienteCarteira, type Contato } from '../../../shared/types/crm'
 import { diaRelativo, telefoneFormatado } from '../../utils/formatadores'
 
@@ -87,8 +107,17 @@ async function carregar() {
     carregando.value = false
   }
 }
-onMounted(carregar)
+onMounted(() => { carregar(); carregarAniversarios() })
 defineExpose({ recarregar: carregar })
+
+const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+const mes = ref(new Date().getMonth() + 1)
+const aniversarios = ref<(Pick<Contato, 'id' | 'nome' | 'telefone' | 'etapa' | 'data_nascimento' | 'nao_contatar'>)[]>([])
+async function carregarAniversarios() {
+  aniversarios.value = await $fetch('/api/crm/aniversarios', { params: { mes: mes.value } })
+}
+watch(mes, carregarAniversarios)
+const ehHoje = (d: string | null) => !!d && d.slice(5) === new Date().toLocaleDateString('sv-SE').slice(5)
 
 const situacao = (c: ClienteCarteira) => situacaoCarteira(c)
 const ordem = { reparar: 0, gesto: 1, classificar: 2, blindar: 3 }

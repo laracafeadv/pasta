@@ -13,6 +13,7 @@ export interface Agenda {
   compromissos: Compromisso[]
   aniversarios: Pick<Contato, 'id' | 'nome' | 'telefone' | 'data_nascimento' | 'classificacao'>[]
   relacionamento?: number
+  semRelatorio?: Contato[]
 }
 
 export interface AndamentoPayload {
@@ -23,6 +24,7 @@ export interface AndamentoPayload {
   motivo_perda?: string
   consulta_em?: string | null
   pagamento_confirmado?: boolean
+  honorario?: Record<string, unknown> | null
 }
 
 const erro = (e: any, fallback: string) => e?.data?.message || e?.message || fallback

@@ -30,6 +30,7 @@
               <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300">{{ c.motivo_perda || 'Sem motivo' }}</span>
               <span v-if="c.nao_contatar" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-danger/15 text-danger-dark">Não contatar</span>
               <span v-else-if="pronto(c)" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/15 text-success-dark">Pode receber</span>
+              <span v-if="c.proposta" class="text-xs text-gray-500">proposta de {{ brl(c.proposta.valor) }} em {{ dataCurta(c.proposta.created_at) }}</span>
               <span class="ml-auto text-xs text-gray-400">procurou em {{ mesAno(c.created_at) }} · último contato {{ c.ultimo_contato ? diaRelativo(c.ultimo_contato.slice(0, 10)) : '—' }}</span>
             </div>
             <div v-if="!c.nao_contatar" class="flex flex-wrap items-center gap-2">
@@ -50,9 +51,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { REMARKETING_INTERVALO_DIAS, type Contato } from '../../../shared/types/crm'
-import { diaRelativo, telefoneFormatado } from '../../utils/formatadores'
+import { brl, dataCurta, diaRelativo, telefoneFormatado } from '../../utils/formatadores'
 
-type Item = Pick<Contato, 'id' | 'nome' | 'telefone' | 'area' | 'demanda' | 'origem' | 'motivo_perda' | 'created_at' | 'nao_contatar'> & { ultimo_contato: string | null }
+type Item = Pick<Contato, 'id' | 'nome' | 'telefone' | 'area' | 'demanda' | 'origem' | 'motivo_perda' | 'created_at' | 'nao_contatar'> & { ultimo_contato: string | null; proposta: { valor: number; created_at: string } | null }
 const emit = defineEmits<{ abrir: [c: Contato]; mensagem: [c: Contato, modelo: string]; reabrir: [c: Contato] }>()
 
 const lista = ref<Item[]>([])

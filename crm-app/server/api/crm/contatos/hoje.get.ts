@@ -47,8 +47,17 @@ export default defineEventHandler(async (event) => {
   // Lembretes automáticos de prazos (uma vez por dia, na primeira abertura).
   await enviarLembretes(event).catch(e => console.error('[crm/hoje] Lembretes:', e))
 
+  // Relatório semanal (quadro antigo, "Mensagens de WhatsApp"): cliente ativo sem notícia há 7+ dias.
+  const seteDias = Date.now() - 7 * 864e5
+  const semRelatorio = abertos.filter((c) => {
+    if (c.etapa !== 'ativo' || c.nao_contatar) return false
+    const ultimo = [c.ultimo_contato_em, c.ultima_mensagem_em].filter(Boolean).sort().at(-1)
+    return !ultimo || new Date(ultimo).getTime() < seteDias
+  })
+
   return {
     relacionamento,
+    semRelatorio,
     compromissos,
     atrasadas: abertos.filter(c => !semAcao(c) && c.proxima_data! < hoje),
     hoje: abertos.filter(c => !semAcao(c) && c.proxima_data === hoje),
