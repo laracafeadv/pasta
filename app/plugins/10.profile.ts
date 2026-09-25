@@ -1,3 +1,5 @@
+import { useProfileStore } from '../stores/profile'
+
 export default defineNuxtPlugin(async () => {
     const user = useSupabaseUser()
     const profileStore = useProfileStore()

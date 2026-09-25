@@ -11,7 +11,7 @@ export function numeroCnjValido(numero: string): boolean {
   if (!m) return false
   const [, seq, dv, ano, j, tr, origem] = m
   const base = BigInt(`${seq}${ano}${j}${tr}${origem}00`)
-  const calculado = 98n - (base % 97n)
+  const calculado = BigInt(98) - (base % BigInt(97))
   return calculado === BigInt(dv!)
 }
 

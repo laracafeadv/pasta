@@ -35,7 +35,7 @@ O CRM tem duas partes, hospedadas separadamente:
 ## 2. Vercel
 
 1. Em vercel.com, entre com o GitHub e clique em **Add New → Project** → repositório `pasta`.
-2. **Root Directory:** `crm-app`. O framework é detectado como Nuxt.
+2. **Root Directory:** deixe em branco (o app está na raiz do repositório). O framework é detectado como Nuxt.
 3. Em **Settings → General → Node.js Version**, escolha 22.x.
 4. **Environment Variables** (Production). Os nomes estão em `.env.example`:
    - `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SECRET_KEY`

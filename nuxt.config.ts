@@ -28,7 +28,6 @@ export default defineNuxtConfig({
     },
   },
   modules: [
-    '@pinia/nuxt',
     '@nuxtjs/tailwindcss',
     // '@nuxt/image',
     '@nuxtjs/supabase',
@@ -67,12 +66,20 @@ export default defineNuxtConfig({
     }
   },
   css: ['~/assets/css/main.css'],
+  vite: {
+    build: {
+      target: 'es2020',
+      chunkSizeWarningLimit: 1000,
+    },
+  },
   tailwindcss: {
     exposeConfig: true,
   },
   // image,
   llms,
   supabase: {
+    url: process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL,
+    key: process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     types: '@@/shared/types/database.types.ts',
     useSsrCookies: true,
     redirect: true,
@@ -105,8 +112,8 @@ export default defineNuxtConfig({
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
       originalSiteUrl: process.env.NUXT_PUBLIC_ORIGINAL_SITE_URL ?? '',
-      supabaseUrl: process.env.SUPABASE_URL ?? '',
-      supabaseKey: process.env.SUPABASE_KEY ?? '',
+      supabaseUrl: process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+      supabaseKey: process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
     },
   },
   nitro: {
