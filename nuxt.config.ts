@@ -69,6 +69,7 @@ export default defineNuxtConfig({
   vite: {
     build: {
       target: 'es2020',
+      chunkSizeWarningLimit: 1000,
     },
   },
   tailwindcss: {
