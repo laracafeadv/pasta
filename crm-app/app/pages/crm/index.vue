@@ -6,6 +6,7 @@ import HojePanel from '~/components/crm/HojePanel.vue'
 import FunilBoard from '~/components/crm/FunilBoard.vue'
 import ContatosTable from '~/components/crm/ContatosTable.vue'
 import CarteiraBoard from '~/components/crm/CarteiraBoard.vue'
+import RemarketingBoard from '~/components/crm/RemarketingBoard.vue'
 import ContatoFormModal from '~/components/crm/ContatoFormModal.vue'
 import ContatoDetailModal from '~/components/crm/ContatoDetailModal.vue'
 import AndamentoModal from '~/components/crm/AndamentoModal.vue'
@@ -24,6 +25,7 @@ const abas = [
   { id: 'funil', label: 'Funil' },
   { id: 'contatos', label: 'Contatos' },
   { id: 'carteira', label: 'Carteira' },
+  { id: 'remarketing', label: 'Remarketing' },
 ] as const
 const aba = computed(() => (abas.some(a => a.id === route.query.aba) ? String(route.query.aba) : 'hoje'))
 const mostrarEncerrados = ref(false)
@@ -66,6 +68,7 @@ const detalheId = ref<number | null>(null)
 const detalheAba = ref('resumo')
 const detalheModelo = ref<string | null>(null)
 const carteira = ref<InstanceType<typeof CarteiraBoard> | null>(null)
+const remarketing = ref<InstanceType<typeof RemarketingBoard> | null>(null)
 function abrir(c: Contato, abaDetalhe = 'resumo', modelo: string | null = null) {
   detalheId.value = c.id
   detalheAba.value = abaDetalhe
@@ -89,6 +92,7 @@ async function concluirAndamento(data: AndamentoPayload) {
     const salvo = await crm.registrarAndamento(andamentoContato.value.id, data)
     andamentoAberto.value = false
     // Virou cliente: próximo passo natural é abrir o caso (dossiê, procuração, prazos).
+    remarketing.value?.recarregar()
     if (data.etapa === 'ativo' && andamentoContato.value.etapa !== 'ativo') abrir(salvo, 'casos')
     else if (detalheAberto.value) detalhe.value?.recarregar()
   } catch { /* mensagem exibida no modal via crm.error */ }
@@ -105,12 +109,13 @@ async function adiar(c: Contato) {
       <div>
         <p class="eyebrow capitalize">{{ aba === 'hoje' ? dataHoje : 'Jornada do cliente' }}</p>
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">
-          {{ aba === 'hoje' ? 'O que precisa de você hoje' : aba === 'funil' ? 'Funil de atendimento' : aba === 'carteira' ? 'Carteira de clientes' : 'Contatos e clientes' }}
+          {{ aba === 'hoje' ? 'O que precisa de você hoje' : aba === 'funil' ? 'Funil de atendimento' : aba === 'carteira' ? 'Carteira de clientes' : aba === 'remarketing' ? 'Remarketing' : 'Contatos e clientes' }}
         </h1>
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">
           <template v-if="aba === 'hoje'">Todo caso em andamento tem uma próxima ação com data. Se não tem, ele aparece aqui.</template>
           <template v-else-if="aba === 'funil'">Arraste os cartões entre as etapas. Borda vermelha: atrasado. Âmbar: sem próxima ação.</template>
           <template v-else-if="aba === 'carteira'">Promotoras, neutras, frias e detratoras: cada grupo com o seu próximo passo, para mover gente para cima na régua.</template>
+          <template v-else-if="aba === 'remarketing'">Quem procurou e não fechou, por demanda, para receber conteúdo do interesse dela e, quando fizer sentido, retomar a conversa.</template>
           <template v-else>Toda a base, com busca e filtros.</template>
         </p>
       </div>
@@ -138,6 +143,7 @@ async function adiar(c: Contato) {
     <HojePanel v-if="aba === 'hoje'" :agenda="crm.agenda" @abrir="abrir" @andamento="andamento" @adiar="adiar" />
     <FunilBoard v-else-if="aba === 'funil'" :contatos="crm.funil" :mostrar-encerrados="mostrarEncerrados" @abrir="abrir" @mover="andamento" />
     <CarteiraBoard v-else-if="aba === 'carteira'" ref="carteira" @abrir="abrir" @mensagem="(c, m) => abrir(c, 'conversa', m)" />
+    <RemarketingBoard v-else-if="aba === 'remarketing'" ref="remarketing" @abrir="abrir" @mensagem="(c, m) => abrir(c, 'conversa', m)" @reabrir="(c) => andamento(c, 'qualificacao')" />
     <ContatosTable v-else @abrir="abrir" />
 
     <ContatoFormModal :is-open="formAberto" :contato="emEdicao" :loading="crm.saving" @close="formAberto = false" @submit="salvar" />
@@ -147,7 +153,7 @@ async function adiar(c: Contato) {
       :contato-id="detalheId"
       :aba-inicial="detalheAba"
       :modelo-inicial="detalheModelo"
-      @close="detalheAberto = false; carteira?.recarregar()"
+      @close="detalheAberto = false; carteira?.recarregar(); remarketing?.recarregar()"
       @editar="editar"
       @andamento="andamento"
     />

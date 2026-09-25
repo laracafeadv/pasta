@@ -14,7 +14,7 @@ interface Stats {
   gargalos: Gargalo[]; gargalo: string | null; sumiram: number; carteira: { chave: string; total: number }[]
   novos: number; taxaFechamento: number | null; ganhos: number; decididos: number
   urgentesAbertos: number; travados: number; receita: number; emProposta: number
-  porEtapa: Linha[]; porOrigem: Linha[]; porArea: Linha[]; motivosPerda: Linha[]
+  porEtapa: Linha[]; porOrigem: Linha[]; porArea: Linha[]; motivosPerda: Linha[]; perdasPorMes: Linha[]
 }
 
 const aba = ref<'comercial' | 'qualidade'>('comercial')
@@ -115,7 +115,8 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
         { titulo: 'Funil por etapa', sub: 'Casos atualmente em cada etapa.', linhas: stats.porEtapa, conv: false },
         { titulo: 'Origem dos contatos', sub: 'Contatos · taxa de fechamento.', linhas: stats.porOrigem, conv: true },
         { titulo: 'Áreas de atuação', sub: 'Contatos · taxa de fechamento.', linhas: stats.porArea, conv: true },
-        { titulo: 'Motivos de perda', sub: 'O que ajustar na captação ou na proposta.', linhas: stats.motivosPerda, conv: false },
+        { titulo: 'Motivos de não fechamento', sub: 'O que ajustar na captação ou na proposta.', linhas: stats.motivosPerda, conv: false },
+        { titulo: 'Não fecharam, por mês da procura', sub: 'Mês em que a pessoa procurou o escritório e não fechou.', linhas: stats.perdasPorMes ?? [], conv: false },
         { titulo: 'Carteira de clientes', sub: 'Promotora, neutra, fria, detratora (NPS define automaticamente).', linhas: stats.carteira.filter(c => c.total).map(c => ({ chave: c.chave.charAt(0).toUpperCase() + c.chave.slice(1), total: c.total })), conv: false },
       ]" :key="bloco.titulo" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-6">
         <h2 class="text-2xl text-primary dark:text-zinc-100">{{ bloco.titulo }}</h2>

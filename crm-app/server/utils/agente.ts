@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { AREAS, SENTIMENTOS, URGENCIAS, type Contato } from '../../shared/types/crm'
+import { AREAS, ORIGENS, SENTIMENTOS, URGENCIAS, type Contato } from '../../shared/types/crm'
 import { INSTRUCOES_SAIDA, PROMPT_PADRAO, REGRAS_FIXAS } from './agentePrompt'
 import { blocoEscritorioParaAna, blocoMapaParaAna } from './escritorio'
 import type { Escritorio } from '../../shared/types/crm'
@@ -25,6 +25,8 @@ export interface FichaExtraida {
   periodo_preferido: 'manhã' | 'tarde' | null
   dor: string | null
   objetivo: string | null
+  origem: string | null
+  nao_contatar: boolean
 }
 
 export interface RespostaAgente {
@@ -44,7 +46,7 @@ const SCHEMA = {
     ficha: {
       type: 'object',
       additionalProperties: false,
-      required: ['nome', 'cidade', 'email', 'area', 'demanda', 'resumo', 'urgencia', 'sentimento', 'interesses', 'objecoes', 'parte_contraria', 'periodo_preferido', 'dor', 'objetivo'],
+      required: ['nome', 'cidade', 'email', 'area', 'demanda', 'resumo', 'urgencia', 'sentimento', 'interesses', 'objecoes', 'parte_contraria', 'periodo_preferido', 'dor', 'objetivo', 'origem', 'nao_contatar'],
       properties: {
         nome: texto,
         cidade: texto,
@@ -60,6 +62,8 @@ const SCHEMA = {
         periodo_preferido: { type: ['string', 'null'], enum: ['manhã', 'tarde', null] },
         dor: texto,
         objetivo: texto,
+        origem: { type: ['string', 'null'], enum: [...ORIGENS, null] },
+        nao_contatar: { type: 'boolean' },
       },
     },
     transferir_para_humano: { type: 'boolean' },
@@ -164,6 +168,9 @@ export function mesclarFicha(atual: Partial<Contato>, ficha: FichaExtraida): Par
   // Voz da cliente (alimenta o Mapa da Empatia com dados reais).
   if (ficha.dor?.trim()) upd.dor = ficha.dor.trim().slice(0, 300)
   if (ficha.objetivo?.trim()) upd.objetivo = ficha.objetivo.trim().slice(0, 300)
+  // Como conheceu o escritório: substitui o canal genérico "WhatsApp" pela origem real.
+  if (ficha.origem && (!atual.origem || atual.origem === 'WhatsApp')) upd.origem = ficha.origem
+  if (ficha.nao_contatar) upd.nao_contatar = true
   if (ficha.urgencia) upd.urgencia = ficha.urgencia
   if (ficha.sentimento) upd.sentimento = ficha.sentimento
   const unir = (a: string[] = [], b: string[] = []) => [...new Set([...a, ...b.map(s => s.trim()).filter(Boolean)])].slice(0, 12)

@@ -24,6 +24,7 @@ Adaptado do projeto [`loboczss/crm-advogada`](https://github.com/loboczss/crm-ad
 | **Equipe → Auditoria** | Quem fez o quê e quando. Registro imutável, sem conteúdo dos dados (LGPD). |
 | **Equipe** | Criação de usuários e níveis de acesso. |
 | **CRM → Carteira** | Clientes em 4 grupos (promotora, neutra, fria, detratora), cada um com o seu plano de ação, a mensagem certa e o aviso de quem "pede um gesto". Detratora recente (até 90 dias): reparar; antiga: não reabrir. |
+| **CRM → Remarketing** | Quem não fechou, agrupado por demanda, com o motivo (etiquetas do antigo quadro do Trello), o mês da procura e quem já pode receber conteúdo (a cada 45 dias). "Reabrir" devolve para Em qualificação; "pediu para não receber" tira da lista. |
 | **Ficha → Diagnóstico** | Roteiro da consulta por área, 5 porquês até a causa raiz, checagem de viabilidade (prescrição, competência, provas, conflito…), capacidade de pagamento, o que está em jogo × honorário (e o preço mínimo, para a administração) e a decisão: viável, com ressalvas ou não viável. |
 | **Financeiro** (administração) | Contas a pagar e a receber, parcelas geradas a partir do honorário, fluxo de caixa de 6 meses, custo da hora, preço mínimo por demanda e rentabilidade por cliente (com o tempo registrado no histórico). |
 | **Relatórios → Qualidade e equipe** | Tempo médio de solução, taxa de êxito, NPS, prazos cumpridos, casos por pessoa e revisão interna por amostragem (falha vira tarefa com responsável e data). |
@@ -79,7 +80,7 @@ Não há autocadastro: os usuários são criados pela administração em **Equip
 
 ### 1. Supabase (banco de dados e login)
 1. Crie um projeto em [supabase.com](https://supabase.com). Para dados de clientes, escolha a região **São Paulo (sa-east-1)**.
-2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql`, `supabase/migrations/20260925010000_playbook_e_auditoria.sql`, `supabase/migrations/20260925020000_cliente_caso_agenda.sql` e `supabase/migrations/20260925030000_gestao_do_escritorio.sql` e `supabase/migrations/20260925040000_drive.sql`.
+2. Em **SQL Editor**, execute, nesta ordem, `supabase/migrations/20260925000000_schema_inicial.sql`, `supabase/migrations/20260925010000_playbook_e_auditoria.sql`, `supabase/migrations/20260925020000_cliente_caso_agenda.sql` e `supabase/migrations/20260925030000_gestao_do_escritorio.sql` e `supabase/migrations/20260925040000_drive.sql` e `supabase/migrations/20260925050000_quadro_relacionamento.sql`.
 3. Em **Authentication → Providers → Email**, **desative "Allow new users to sign up"**.
 4. Em **Authentication → Users → Add user**, crie o usuário da Lara (e-mail e senha).
 5. Entre uma vez no CRM com esse usuário. Depois, no **SQL Editor**, torne-o administrador:

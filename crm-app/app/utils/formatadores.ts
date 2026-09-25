@@ -30,3 +30,18 @@ export const whatsappLink = (t: string | null | undefined) => {
   const d = String(t ?? '').replace(/\D/g, '')
   return d ? `https://wa.me/${d}` : ''
 }
+
+/**
+ * Link "Adicionar ao Google Agenda" (sem integração nem permissão: abre o Google
+ * Agenda de quem clicar, já preenchido). Datas no formato UTC que o Google espera.
+ */
+export function linkGoogleAgenda(o: { titulo: string; inicio: string; duracaoMin?: number; local?: string | null; detalhes?: string | null }) {
+  const ini = new Date(o.inicio)
+  if (Number.isNaN(ini.getTime())) return ''
+  const fim = new Date(ini.getTime() + (o.duracaoMin ?? 60) * 60000)
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const p = new URLSearchParams({ action: 'TEMPLATE', text: o.titulo, dates: `${fmt(ini)}/${fmt(fim)}`, ctz: 'America/Sao_Paulo' })
+  if (o.local) p.set('location', o.local)
+  if (o.detalhes) p.set('details', o.detalhes)
+  return `https://calendar.google.com/calendar/render?${p.toString()}`
+}

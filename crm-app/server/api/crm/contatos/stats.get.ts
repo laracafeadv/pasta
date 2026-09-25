@@ -86,6 +86,10 @@ export default defineEventHandler(async (event) => {
     porEtapa: ETAPAS.filter(e => e.aberta).map(e => ({ chave: e.nome, total: todos.filter(c => c.etapa === e.id).length })),
     porOrigem: agrupar('origem', ORIGENS),
     porArea: agrupar('area', Object.keys(AREAS)),
+    // "Mês que o prospect procurou e não fechou" (métrica do quadro antigo).
+    perdasPorMes: Object.entries(periodo.filter(c => c.etapa === 'perdido').reduce<Record<string, number>>((a, c) => { const m = String(c.created_at).slice(0, 7); a[m] = (a[m] ?? 0) + 1; return a }, {}))
+      .sort(([a], [b]) => a.localeCompare(b)).slice(-12)
+      .map(([m, total]) => ({ chave: new Date(`${m}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }), total })),
     motivosPerda: MOTIVOS_PERDA
       .map(m => ({ chave: m, total: periodo.filter(c => c.etapa === 'perdido' && c.motivo_perda === m).length }))
       .filter(l => l.total > 0)

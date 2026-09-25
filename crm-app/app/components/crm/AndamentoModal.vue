@@ -22,9 +22,19 @@
           <option v-for="e in ETAPAS" :key="e.id" :value="e.id">{{ e.nome }}</option>
         </select>
       </label>
+      <template v-if="form.etapa === 'agendado' && contato?.etapa !== 'agendado'">
+        <label class="flex items-start gap-2 text-sm cursor-pointer">
+          <input v-model="form.pagamento_confirmado" type="checkbox" class="mt-1 accent-[#3c2923]" />
+          <span>Pagamento da consulta confirmado <span class="text-xs text-gray-500">(lança a consulta como paga em Honorários)</span></span>
+        </label>
+        <p v-if="!form.pagamento_confirmado" class="text-xs text-warning-dark -mt-2">O método pede pagamento confirmado antes de agendar.</p>
+      </template>
       <label v-if="form.etapa === 'agendado'" class="field">
         <span>Data e hora da consulta</span>
         <input v-model="form.consulta_em" type="datetime-local" class="modal-input" />
+        <a v-if="form.consulta_em" :href="linkGoogleAgenda({ titulo: `Consulta — ${contato?.nome ?? 'cliente'}`, inicio: new Date(form.consulta_em).toISOString(), detalhes: contato?.demanda ?? '' })" target="_blank" rel="noopener" class="text-xs underline underline-offset-2 self-start">
+          Adicionar ao Google Agenda
+        </a>
       </label>
       <label v-if="form.etapa === 'perdido'" class="field">
         <span>Motivo da perda *</span>
@@ -68,12 +78,14 @@ import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import { CADENCIA, ETAPAS, MOTIVOS_PERDA, SEQUENCIA_FOLLOWUP, etapa, type Contato } from '../../../shared/types/crm'
 import { hojeISO, somarDias, type AndamentoPayload } from '../../stores/crm'
+import { calcularPrazo } from '../../../shared/utils/juridico'
+import { linkGoogleAgenda } from '../../utils/formatadores'
 
 const props = defineProps<{ isOpen: boolean; contato: Contato | null; etapaDestino?: string | null; loading?: boolean; erro?: string | null }>()
 const emit = defineEmits<{ close: []; submit: [data: AndamentoPayload & { consulta_em?: string | null }] }>()
 
 const acaoInput = ref<HTMLInputElement | null>(null)
-const form = reactive({ resultado: '', etapa: 'novo', motivo_perda: '', proxima_acao: '', proxima_data: '', consulta_em: '' })
+const form = reactive({ resultado: '', etapa: 'novo', motivo_perda: '', proxima_acao: '', proxima_data: '', consulta_em: '', pagamento_confirmado: false })
 
 /**
  * Próximo passo sugerido: continua a sequência de follow-up se a ação concluída
@@ -86,6 +98,8 @@ const sugestao = computed(() => {
   const base = seq ?? CADENCIA[form.etapa]
   if (!base) return null
   let data = somarDias(hojeISO(), Math.max(0, base.dias))
+  // Prazos em dias úteis (ex.: proposta até 2 dias úteis); urgência alta: no mesmo dia.
+  if ('diasUteis' in base && base.diasUteis) data = props.contato?.urgencia === 'Alta' ? hojeISO() : calcularPrazo(hojeISO(), base.dias).vencimento
   // Lembrete da consulta: dia anterior à data marcada.
   if (form.etapa === 'agendado' && form.consulta_em) {
     const anterior = somarDias(form.consulta_em.slice(0, 10), -1)
@@ -109,6 +123,7 @@ watch(() => props.isOpen, async (open) => {
     proxima_acao: '',
     proxima_data: somarDias(hojeISO(), 2),
     consulta_em: '',
+    pagamento_confirmado: false,
   })
   aplicarSugestao()
   await nextTick()

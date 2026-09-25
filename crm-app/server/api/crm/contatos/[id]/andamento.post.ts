@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) throw createError({ statusCode: 400, message: 'ID inválido.' })
 
-  const body = await readBody<{ resultado?: string; etapa: string; proxima_acao?: string; proxima_data?: string; motivo_perda?: string; consulta_em?: string | null }>(event)
+  const body = await readBody<{ resultado?: string; etapa: string; proxima_acao?: string; proxima_data?: string; motivo_perda?: string; consulta_em?: string | null; pagamento_confirmado?: boolean }>(event)
   const destino = ETAPAS.find(e => e.id === body?.etapa)
   if (!destino) throw createError({ statusCode: 400, message: 'Etapa inválida.' })
   if (destino.aberta && (!body.proxima_acao?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(body.proxima_data ?? ''))) {
@@ -37,6 +37,17 @@ export default defineEventHandler(async (event) => {
     const { data: c } = await client.from('contatos').select('nome').eq('id', id).single()
     await client.from('compromissos').insert({ tipo: 'consulta', titulo: `Consulta — ${c?.nome ?? 'cliente'}`, contato_id: id, inicio: consultaEm.toISOString(), responsavel_id: userId })
     await registrarAtividade(event, id, 'Sistema', `Consulta marcada para ${consultaEm.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' })}.`, userId)
+  }
+  // Checklist do quadro: pagamento confirmado antes de agendar → consulta lançada como paga.
+  if (body.pagamento_confirmado && destino.id === 'agendado' && atual.etapa !== 'agendado') {
+    const { data: ja } = await client.from('honorarios').select('id').eq('contato_id', id).eq('tipo', 'Consulta').limit(1)
+    if (!ja?.length) {
+      const { data: v } = await client.from('escritorio').select('valor').eq('chave', 'valor_consulta').maybeSingle()
+      const valor = Number(String(v?.valor ?? '').replace(/[^\d,]/g, '').replace(',', '.')) || 0
+      const { error: eh } = await client.from('honorarios').insert({ contato_id: id, tipo: 'Consulta', status: 'Pago', valor, descricao: 'Consulta estratégica', data_contratacao: new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }), responsavel_id: userId })
+      if (eh) console.error('[crm/andamento] Erro ao lançar a consulta:', eh)
+    }
+    await registrarAtividade(event, id, 'Sistema', 'Pagamento da consulta confirmado.', userId)
   }
   if (atual.etapa !== destino.id) {
     await registrarAtividade(event, id, 'Sistema', `Etapa: ${etapa(atual.etapa).nome} → ${destino.nome}${destino.id === 'perdido' ? ` (${body.motivo_perda})` : ''}`, userId)

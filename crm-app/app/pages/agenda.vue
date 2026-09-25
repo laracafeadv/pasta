@@ -5,7 +5,7 @@ import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
 import { TIPOS_COMPROMISSO, dataCompromisso, type Caso, type Compromisso, type Contato } from '~~/shared/types/crm'
 import { calcularPrazo } from '~~/shared/utils/juridico'
-import { dataCurta, diaRelativo } from '~/utils/formatadores'
+import { dataCurta, diaRelativo, linkGoogleAgenda } from '~/utils/formatadores'
 import { hojeISO, somarDias } from '~/stores/crm'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
@@ -164,6 +164,7 @@ async function excluir() {
               <template v-if="c.local"> · {{ c.local }}</template>
             </p>
           </button>
+          <a v-if="c.inicio" :href="linkGoogleAgenda({ titulo: c.titulo, inicio: c.inicio, local: c.local })" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border border-gray-300 dark:border-zinc-700 hover:border-primary" title="Adicionar ao Google Agenda">Google Agenda</a>
           <button class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-primary text-white" @click="concluir(c)">Concluído</button>
         </li>
       </ul>

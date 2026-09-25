@@ -22,6 +22,7 @@ export interface AndamentoPayload {
   proxima_data?: string
   motivo_perda?: string
   consulta_em?: string | null
+  pagamento_confirmado?: boolean
 }
 
 const erro = (e: any, fallback: string) => e?.data?.message || e?.message || fallback

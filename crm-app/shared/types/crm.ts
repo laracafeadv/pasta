@@ -26,17 +26,25 @@ export const AREAS: Record<string, string[]> = {
   'Consultoria Jurídica': ['Parecer', 'Consultoria contínua', 'Outro'],
 }
 
-export const ORIGENS = ['WhatsApp', 'Formulário do site', 'Instagram', 'Indicação de cliente', 'Indicação de colega', 'Blog', 'Outro']
+// Etiquetas de origem do quadro "Controle de relacionamento" (Trello) + o WhatsApp direto.
+export const ORIGENS = ['Instagram', 'Google', 'Site', 'LinkedIn', 'Indicação de cliente', 'Indicação de parceiro/conhecido', 'WhatsApp', 'Outros']
 
+// Etiquetas de "Prospects finalizados" (Trello) + casos que o escritório recusa.
 export const MOTIVOS_PERDA = [
-  'Honorários acima do orçamento',
-  'Não respondeu mais',
-  'Escolheu outro escritório',
+  'Achou caro',
+  'Fechou com outro profissional',
+  'Motivo pessoal (reconciliação, adiou, etc.)',
+  'Não teve interesse',
+  'Não respondeu',
   'Resolveu sem advogado',
   'Fora da área de atuação',
   'Conflito de interesses',
   'Outro',
 ]
+/** Quem não fechou por estes motivos não entra no remarketing (não faz sentido ou não é ético insistir). */
+export const MOTIVOS_SEM_REMARKETING = ['Fora da área de atuação', 'Conflito de interesses']
+/** Intervalo mínimo entre conteúdos de remarketing para a mesma pessoa. */
+export const REMARKETING_INTERVALO_DIAS = 45
 
 export const URGENCIAS = ['Alta', 'Média', 'Baixa'] as const
 export const SENTIMENTOS = ['Positivo', 'Neutro', 'Negativo'] as const
@@ -83,6 +91,7 @@ export interface Contato {
   dor: string | null
   objetivo: string | null
   drive_pasta_url?: string | null
+  nao_contatar?: boolean
   ia_ativa: boolean
   consentimento_em: string | null
   ultima_mensagem_em: string | null
@@ -95,7 +104,7 @@ export const CONTATO_CAMPOS_EDITAVEIS = [
   'telefone', 'nome', 'email', 'cidade', 'origem', 'area', 'demanda', 'parte_contraria', 'resumo',
   'sentimento', 'urgencia', 'interesses', 'objecoes', 'etapa', 'motivo_perda', 'proxima_acao',
   'proxima_data', 'responsavel_id', 'ia_ativa', 'consulta_em', 'data_nascimento', 'classificacao', 'nps',
-  'obs_relacionamento', 'dor', 'objetivo',
+  'obs_relacionamento', 'dor', 'objetivo', 'nao_contatar',
 ] as const
 
 export interface Honorario {
@@ -168,13 +177,16 @@ export const CADENCIA: Record<string, { acao: string; dias: number; modelo?: str
   novo: { acao: 'Responder pessoalmente', dias: 0, modelo: '/boasvindas' },
   qualificacao: { acao: 'Convidar para a consulta estratégica', dias: 1, modelo: '/consulta' },
   agendado: { acao: 'Lembrete da consulta (dia anterior)', dias: -1, modelo: '/lembrete' },
-  diagnostico: { acao: 'Enviar resumo, próximos passos e proposta', dias: 0, modelo: '/resumo' },
+  diagnostico: { acao: 'Mensagem de feedback pós-consulta', dias: 0, modelo: '/pos-consulta' },
   proposta: { acao: 'Follow-up 24h da proposta', dias: 1, modelo: '/followup-24h' },
   ativo: { acao: 'Enviar checklist de documentos', dias: 1, modelo: '/documentos' },
 }
 
 /** Próximo passo depois de concluir um follow-up (24h → 7 dias → final). */
-export const SEQUENCIA_FOLLOWUP: { se: RegExp; acao: string; dias: number; modelo: string }[] = [
+export const SEQUENCIA_FOLLOWUP: { se: RegExp; acao: string; dias: number; modelo: string; diasUteis?: boolean }[] = [
+  // Checklist do quadro: proposta em até 2 dias úteis depois do atendimento (urgência alta: no mesmo dia).
+  { se: /Convidar para a consulta/i, acao: 'Confirmar pagamento e agendar a consulta', dias: 1, modelo: '/opcoes' },
+  { se: /feedback pós-consulta/i, acao: 'Enviar proposta (até 2 dias úteis após a consulta)', dias: 2, modelo: '/proposta', diasUteis: true },
   { se: /follow-up 24h/i, acao: 'Follow-up 7 dias da proposta', dias: 6, modelo: '/followup-7d' },
   { se: /follow-up 7 dias/i, acao: 'Follow-up final (14 dias)', dias: 7, modelo: '/followup-final' },
 ]
