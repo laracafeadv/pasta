@@ -80,6 +80,8 @@ export default defineNuxtConfig({
   supabase: {
     url: process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL,
     key: process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    // A integração Supabase ↔ Vercel cria SUPABASE_SERVICE_ROLE_KEY; aceitamos os dois nomes.
+    secretKey: process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY,
     types: '@@/shared/types/database.types.ts',
     useSsrCookies: true,
     redirect: true,
@@ -101,7 +103,7 @@ export default defineNuxtConfig({
     openaiApiKey: process.env.OPENAI_API_KEY ?? '',
     resendApiKey: process.env.RESEND_API_KEY ?? '',
     mailerSenderEmail: process.env.MAILER_SENDER_EMAIL ?? '',
-    supabaseSecretKey: process.env.SUPABASE_SECRET_KEY ?? '',
+    supabaseSecretKey: process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
     // WhatsApp Cloud API (Meta)
     whatsappToken: process.env.WHATSAPP_TOKEN ?? '',
     whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? '',
