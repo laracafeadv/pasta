@@ -64,6 +64,7 @@ export default defineEventHandler(async (event) => {
     semAcao: abertos.filter(semAcao).sort((a, b) => a.updated_at.localeCompare(b.updated_at)),
     semana: abertos.filter(c => !semAcao(c) && c.proxima_data! > hoje && c.proxima_data! <= em7),
     transferidas: abertos.filter(c => !c.ia_ativa),
+    sugestoes: abertos.filter(c => c.sugestao_resposta),
     aniversarios,
   }
 })

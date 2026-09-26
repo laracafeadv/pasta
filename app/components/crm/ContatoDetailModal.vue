@@ -123,6 +123,16 @@
             <p class="mt-1 text-[10px] opacity-70 text-right">{{ m.autor === 'ia' ? 'IA · ' : m.autor === 'equipe' ? 'Equipe · ' : '' }}{{ dataHora(m.created_at) }}</p>
           </div>
         </div>
+        <div v-if="dados.contato.sugestao_resposta" id="sugestao-claude" class="mx-4 mb-2 rounded-2xl border border-secondary/40 bg-secondary/10 p-3 text-sm">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-secondary-dark mb-1">
+            <Icon name="ph:sparkle-bold" class="align-middle" /> Sugestão de resposta<template v-if="dados.contato.sugestao_em"> · {{ dataHora(dados.contato.sugestao_em) }}</template>
+          </p>
+          <p class="whitespace-pre-wrap break-words">{{ dados.contato.sugestao_resposta }}</p>
+          <div class="flex gap-2 mt-2">
+            <button type="button" class="px-3 py-1 rounded-full bg-primary text-white text-[11px] font-semibold uppercase tracking-wider" @click="resposta = dados.contato.sugestao_resposta || ''">Usar (revisar antes)</button>
+            <button type="button" class="px-3 py-1 rounded-full border border-gray-300 dark:border-zinc-700 text-[11px] font-semibold uppercase tracking-wider" @click="descartarSugestao">Descartar</button>
+          </div>
+        </div>
         <div class="relative border-t border-gray-100 dark:border-zinc-800">
           <ModeloPicker
             v-if="pickerAberto"
@@ -558,6 +568,11 @@ async function criarPastaDrive() {
   } finally {
     criandoPasta.value = false
   }
+}
+async function descartarSugestao() {
+  if (!dados.value) return
+  await $fetch(`/api/crm/contatos/${dados.value.contato.id}`, { method: 'PUT', body: { sugestao_resposta: null } })
+  dados.value.contato.sugestao_resposta = null
 }
 // Formulário da cliente (Módulo 1: depois de contratar, não antes da consulta).
 async function enviarFormulario() {

@@ -10,6 +10,7 @@ export interface Agenda {
   semAcao: Contato[]
   semana: Contato[]
   transferidas: Contato[]
+  sugestoes?: Contato[]
   compromissos: Compromisso[]
   aniversarios: Pick<Contato, 'id' | 'nome' | 'telefone' | 'data_nascimento' | 'classificacao'>[]
   relacionamento?: number

@@ -12,6 +12,13 @@
       <button v-for="c in agenda.transferidas" :key="c.id" class="underline underline-offset-2" @click="emit('abrir', c, 'conversa')">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
     </div>
 
+    <div v-if="agenda.sugestoes?.length" class="rounded-2xl border border-secondary/40 bg-secondary/10 p-4 text-sm flex flex-wrap items-center gap-2">
+      <Icon name="ph:sparkle-bold" class="text-secondary-dark" />
+      <b>{{ agenda.sugestoes.length }} resposta(s) sugerida(s) pelo Claude</b>
+      <span class="text-gray-600 dark:text-zinc-400">— revise e envie:</span>
+      <button v-for="c in agenda.sugestoes" :key="c.id" class="underline underline-offset-2" @click="emit('abrir', c, 'conversa')">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
+    </div>
+
     <div v-if="agenda.semRelatorio?.length" class="rounded-2xl border border-gray-200/70 dark:border-zinc-700 bg-white/60 dark:bg-zinc-900/50 p-4 text-sm flex flex-wrap items-center gap-2">
       <Icon name="ph:newspaper-bold" class="text-secondary-dark" />
       <b>Relatório semanal:</b>

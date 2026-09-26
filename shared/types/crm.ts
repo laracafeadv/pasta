@@ -95,6 +95,9 @@ export interface Contato {
   nao_contatar?: boolean
   tem_filhos?: boolean | null
   form_respondido_em?: string | null
+  /** Rascunho de resposta deixado pela rotina do Claude (some quando você responde). */
+  sugestao_resposta?: string | null
+  sugestao_em?: string | null
   ia_ativa: boolean
   consentimento_em: string | null
   ultima_mensagem_em: string | null
@@ -107,7 +110,7 @@ export const CONTATO_CAMPOS_EDITAVEIS = [
   'telefone', 'nome', 'email', 'cidade', 'origem', 'area', 'demanda', 'parte_contraria', 'resumo',
   'sentimento', 'urgencia', 'interesses', 'objecoes', 'etapa', 'motivo_perda', 'proxima_acao',
   'proxima_data', 'responsavel_id', 'ia_ativa', 'consulta_em', 'data_nascimento', 'classificacao', 'nps',
-  'obs_relacionamento', 'dor', 'objetivo', 'nao_contatar',
+  'obs_relacionamento', 'dor', 'objetivo', 'nao_contatar', 'sugestao_resposta',
 ] as const
 
 export interface Honorario {
