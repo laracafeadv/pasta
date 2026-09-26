@@ -90,7 +90,8 @@ export async function processarMensagem(event: H3Event, msg: MensagemRecebida) {
   let textoMensagem = msg.texto
   if (msg.midia) textoMensagem = await processarMidia(admin, contato.id, gravada.id, msg)
 
-  if (!contato.ia_ativa) {
+  // Sem a Ana (IA desligada no contato ou sem chave de IA no servidor): só avisa você.
+  if (!contato.ia_ativa || !useRuntimeConfig(event).openaiApiKey) {
     await notificarEquipe(event, 'Nova mensagem no WhatsApp', `${contato.nome || contato.telefone}: ${textoMensagem.slice(0, 120)}`, { contato_id: contato.id })
     return
   }
