@@ -39,9 +39,10 @@ async function salvar() {
 <template>
   <div class="space-y-6 max-w-4xl">
     <div>
-      <p class="eyebrow">Configuração</p>
+      <p class="eyebrow">Configurações</p>
       <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Dados do escritório</h1>
-      <p class="text-sm text-gray-500 mt-2">Usados pela Ana (valor e formato da consulta, horário) e na procuração e no contrato de honorários.</p>
+      <p class="text-sm text-gray-500 mt-2">Usados nas mensagens prontas, nas sugestões de resposta e na procuração e no contrato de honorários.</p>
+      <p class="text-sm mt-2"><NuxtLink to="/profile" class="underline underline-offset-2">Meu perfil e senha</NuxtLink> · <NuxtLink to="/admin/auditoria" class="underline underline-offset-2">Histórico de alterações</NuxtLink></p>
     </div>
     <form class="space-y-6" @submit.prevent="salvar">
       <section v-for="(campos, grupo) in grupos" :key="grupo" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-6">

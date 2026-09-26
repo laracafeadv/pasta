@@ -36,7 +36,7 @@
       </template>
       <template #cell-etapa="{ item }">
         <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800">{{ etapa(item.etapa).nome }}</span>
-        <p v-if="!item.ia_ativa" class="mt-1 text-[10px] font-semibold uppercase text-warning-dark dark:text-warning-300">Equipe atendendo</p>
+        <p v-if="!item.ia_ativa" class="mt-1 text-[10px] font-semibold uppercase text-warning-dark dark:text-warning-300">Você atendendo</p>
       </template>
       <template #cell-caso="{ item }">
         <p>{{ item.area || '—' }}</p>

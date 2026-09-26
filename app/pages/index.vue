@@ -13,7 +13,7 @@
       <template v-else-if="aguardando">
         <h1 class="text-4xl sm:text-5xl mt-4 leading-tight">Cadastro recebido</h1>
         <p class="mt-4 text-cafe-creme/75 max-w-lg mx-auto">
-          Sua conta ainda não tem acesso aos dados do escritório. Peça para a administração liberar o seu usuário em “Equipe”.
+          Sua conta ainda não tem acesso aos dados do escritório. Fale com a Dra. Lara para liberar o seu acesso.
         </p>
       </template>
 

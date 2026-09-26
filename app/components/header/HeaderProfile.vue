@@ -111,6 +111,6 @@ function handleProfile() {
 }
 
 function handleAdmin() {
-  navigateTo('/admin/users')
+  navigateTo('/admin/escritorio')
 }
 </script>

@@ -92,7 +92,7 @@
       <div v-else-if="aba === 'conversa'" class="flex flex-col">
         <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm" :class="dados.contato.ia_ativa ? 'bg-success/5' : 'bg-warning/10'">
           <span v-if="dados.contato.ia_ativa"><Icon name="ph:robot-bold" class="align-middle" /> A assistente de IA está respondendo este contato.</span>
-          <span v-else><Icon name="ph:user-bold" class="align-middle" /> A equipe assumiu esta conversa. A IA não responde.</span>
+          <span v-else><Icon name="ph:user-bold" class="align-middle" /> Você assumiu esta conversa. A IA não responde.</span>
           <Button size="sm" variant="outline" :loading="alternandoIa" @click="alternarIa">
             {{ dados.contato.ia_ativa ? 'Assumir conversa' : 'Devolver para a IA' }}
           </Button>
@@ -120,7 +120,7 @@
             </p>
             <p v-if="m.transcricao" class="text-xs opacity-80 italic whitespace-pre-wrap break-words">Transcrição: {{ m.transcricao }}</p>
             <p v-else class="whitespace-pre-wrap break-words">{{ m.conteudo }}</p>
-            <p class="mt-1 text-[10px] opacity-70 text-right">{{ m.autor === 'ia' ? 'IA · ' : m.autor === 'equipe' ? 'Equipe · ' : '' }}{{ dataHora(m.created_at) }}</p>
+            <p class="mt-1 text-[10px] opacity-70 text-right">{{ m.autor === 'ia' ? 'IA · ' : m.autor === 'equipe' ? 'Você · ' : '' }}{{ dataHora(m.created_at) }}</p>
           </div>
         </div>
         <div v-if="dados.contato.sugestao_resposta" id="sugestao-claude" class="mx-4 mb-2 rounded-2xl border border-secondary/40 bg-secondary/10 p-3 text-sm">

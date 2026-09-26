@@ -54,7 +54,7 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
     </div>
 
     <div class="flex flex-wrap gap-2">
-      <button v-for="a in [{ id: 'comercial', n: 'Comercial' }, { id: 'qualidade', n: 'Qualidade e equipe' }]" :key="a.id"
+      <button v-for="a in [{ id: 'comercial', n: 'Comercial' }, { id: 'qualidade', n: 'Qualidade' }]" :key="a.id"
               class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.14em] border transition-colors"
               :class="aba === a.id ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary'"
               @click="aba = a.id as 'comercial' | 'qualidade'">{{ a.n }}</button>

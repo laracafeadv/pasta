@@ -10,7 +10,7 @@
           Contatos, conversas de WhatsApp, próximos passos e honorários de cada cliente em um só lugar.
         </p>
       </div>
-      <p class="text-xs text-cafe-creme/50">Acesso restrito à equipe · dados protegidos conforme a LGPD</p>
+      <p class="text-xs text-cafe-creme/50">Acesso restrito · dados protegidos conforme a LGPD</p>
       <img src="/mono-light.png" alt="" class="absolute -right-16 -bottom-10 h-[28rem] opacity-[0.07] pointer-events-none select-none" />
     </section>
 

@@ -29,7 +29,7 @@
         <p v-if="c.demanda || c.area" class="text-xs text-secondary-dark dark:text-secondary-200">{{ c.demanda || c.area }}</p>
         <p class="text-xs" :class="textoProximo(c).classe">{{ textoProximo(c).texto }}</p>
         <p class="text-[10px] text-gray-400">há {{ dias(c) }} dia(s) nesta etapa</p>
-        <p v-if="!c.ia_ativa" class="text-[10px] font-semibold uppercase tracking-wider text-warning-dark dark:text-warning-300">Aguardando equipe</p>
+        <p v-if="!c.ia_ativa" class="text-[10px] font-semibold uppercase tracking-wider text-warning-dark dark:text-warning-300">Aguardando você</p>
       </article>
     </section>
   </div>
