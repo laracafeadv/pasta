@@ -1,6 +1,17 @@
 import { assinaturaValida, extrairEcos, extrairMensagens } from '../../utils/whatsapp'
 import { registrarEco } from '../../utils/ecos'
 import { processarMensagem } from '../../utils/atendimento'
+import { serverSupabaseServiceRole } from '#supabase/server'
+
+/** Diagnóstico: guarda só o resultado da última chamada da Meta (sem conteúdo de mensagem). */
+async function registrarDiagnostico(event: Parameters<typeof readRawBody>[0], info: Record<string, unknown>) {
+  try {
+    await serverSupabaseServiceRole(event).from('escritorio').upsert(
+      { chave: 'wa_ultimo_webhook', valor: JSON.stringify({ em: new Date().toISOString(), ...info }), updated_at: new Date().toISOString() },
+      { onConflict: 'chave' },
+    )
+  } catch { /* diagnóstico nunca derruba o webhook */ }
+}
 
 /**
  * Recebe eventos do WhatsApp Cloud API. Responde 200 imediatamente (a Meta
@@ -8,7 +19,9 @@ import { processarMensagem } from '../../utils/atendimento'
  */
 export default defineEventHandler(async (event) => {
   const bruto = (await readRawBody(event, 'utf8')) ?? ''
+  const temAssinatura = !!getHeader(event, 'x-hub-signature-256')
   if (!assinaturaValida(bruto, getHeader(event, 'x-hub-signature-256'))) {
+    await registrarDiagnostico(event, { ok: false, motivo: temAssinatura ? 'assinatura não confere (App Secret diferente)' : 'sem assinatura', tamanho: bruto.length })
     throw createError({ statusCode: 401, message: 'Assinatura inválida.' })
   }
 
@@ -21,6 +34,8 @@ export default defineEventHandler(async (event) => {
 
   const mensagens = extrairMensagens(payload)
   const ecos = extrairEcos(payload)
+  const campos = ((payload as any)?.entry ?? []).flatMap((e: any) => (e?.changes ?? []).map((c: any) => c?.field))
+  await registrarDiagnostico(event, { ok: true, campos, mensagens: mensagens.length, ecos: ecos.length })
   const tarefa = (async () => {
     for (const eco of ecos) {
       try {
