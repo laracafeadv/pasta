@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
  * do escritório e para cumprir os termos da Meta.
  */
 // WHATSAPP_GRAPH_URL só existe para testes locais; em produção fica o endereço oficial.
-const GRAPH = process.env.WHATSAPP_GRAPH_URL || 'https://graph.facebook.com/v21.0'
+const GRAPH = process.env.WHATSAPP_GRAPH_URL || 'https://graph.facebook.com/v25.0'
 
 export function whatsappConfigurado() {
   const c = useRuntimeConfig()
