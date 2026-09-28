@@ -13,8 +13,8 @@ export default defineEventHandler(async (event) => {
   const desde = dias ? new Date(Date.now() - dias * 864e5).toISOString() : null
   const hoje = hojeBR()
 
-  const contatosQ = client.from('contatos').select('etapa, origem, area, motivo_perda, urgencia, proxima_acao, proxima_data, created_at, etapa_desde, ultima_mensagem_em, classificacao')
-  let honorariosQ = client.from('honorarios').select('valor, status, created_at')
+  const contatosQ = client.from('contatos').select('id, etapa, origem, area, motivo_perda, urgencia, proxima_acao, proxima_data, created_at, etapa_desde, ultima_mensagem_em, classificacao')
+  let honorariosQ = client.from('honorarios').select('valor, status, created_at, contato_id, tipo')
   if (desde) honorariosQ = honorariosQ.gte('created_at', desde)
 
   const [{ data: contatos, error: e1 }, { data: honorarios, error: e2 }] = await Promise.all([contatosQ, honorariosQ])
@@ -70,6 +70,28 @@ export default defineEventHandler(async (event) => {
 
   const carteira = (['promotora', 'neutra', 'fria', 'detratora'] as const).map(k => ({ chave: k, total: todos.filter(c => c.classificacao === k).length }))
 
+  // Funil de propostas: última proposta de honorário registrada por contato, no período.
+  const propostas = (honorarios ?? []).filter(h => h.tipo !== 'Consulta')
+  const ultimaPorContato = new Map<number, typeof propostas[number]>()
+  for (const h of propostas) {
+    const atual = ultimaPorContato.get(h.contato_id)
+    if (!atual || h.created_at > atual.created_at) ultimaPorContato.set(h.contato_id, h)
+  }
+  let aguardando = 0, fechou = 0, recusou = 0
+  for (const h of ultimaPorContato.values()) {
+    if (h.status === 'Proposta') aguardando++
+    else if (h.status === 'Contratado' || h.status === 'Pago') fechou++
+    else if (h.status === 'Cancelado') recusou++
+  }
+  // "Sem retorno": contato na etapa de proposta, sem nenhuma proposta de honorário registrada ainda.
+  const semRetorno = todos.filter(c => c.etapa === 'proposta' && !ultimaPorContato.has(c.id)).length
+  const funilPropostas = [
+    { chave: 'Aguardando resposta', total: aguardando, cor: 'warning' },
+    { chave: 'Fechou', total: fechou, cor: 'success' },
+    { chave: 'Recusou', total: recusou, cor: 'danger' },
+    { chave: 'Sem retorno', total: semRetorno, cor: 'neutral' },
+  ].filter(l => l.total > 0)
+
   return {
     gargalos,
     gargalo: pior && pior.total ? pior.etapa : null,
@@ -83,6 +105,7 @@ export default defineEventHandler(async (event) => {
     travados,
     receita,
     emProposta,
+    funilPropostas,
     porEtapa: ETAPAS.filter(e => e.aberta).map(e => ({ chave: e.nome, total: todos.filter(c => c.etapa === e.id).length })),
     porOrigem: agrupar('origem', ORIGENS),
     porArea: agrupar('area', Object.keys(AREAS)),

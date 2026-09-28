@@ -1,43 +1,34 @@
 <template>
-  <div class="min-h-screen grid lg:grid-cols-2 bg-slate-100 dark:bg-slate-950">
-    <!-- Lado da marca, no tom café do site -->
-    <section class="relative hidden lg:flex flex-col justify-between bg-cafe text-cafe-creme p-14 overflow-hidden rounded-r-[3rem]">
-      <img src="/wordmark-light.png" alt="Lara Café Advocacia & Consultoria" class="h-10 w-auto self-start" />
-      <div class="relative z-10 max-w-md">
-        <p class="eyebrow !text-cafe-creme/70">Área do escritório</p>
-        <h1 class="text-5xl leading-tight mt-4">Clareza antes da ação.</h1>
-        <p class="mt-5 text-cafe-creme/75 leading-relaxed">
-          Contatos, conversas de WhatsApp, próximos passos e honorários de cada cliente em um só lugar.
-        </p>
-      </div>
-      <p class="text-xs text-cafe-creme/50">Acesso restrito · dados protegidos conforme a LGPD</p>
-      <img src="/mono-light.png" alt="" class="absolute -right-16 -bottom-10 h-[28rem] opacity-[0.07] pointer-events-none select-none" />
-    </section>
+  <div class="min-h-screen relative flex items-center justify-center px-4 py-14 overflow-hidden bg-cafe">
+    <!-- Fundo em degradê, no tom café do site -->
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_theme(colors.secondary.DEFAULT/30%),_transparent_55%),radial-gradient(ellipse_at_bottom_right,_theme(colors.cafe.DEFAULT),_theme(colors.primary.dark))]" />
+    <img src="/mono-light.png" alt="" class="absolute -right-24 -bottom-24 h-[34rem] opacity-[0.06] pointer-events-none select-none" />
+    <img src="/mono-light.png" alt="" class="absolute -left-32 -top-28 h-[26rem] opacity-[0.04] pointer-events-none select-none" />
 
-    <!-- Formulário -->
-    <section class="flex items-center justify-center px-6 py-14">
-      <div class="w-full max-w-sm space-y-8">
-        <img src="/mono-dark.png" alt="Lara Café" class="h-16 w-auto mx-auto lg:hidden dark:invert" />
-        <div>
-          <p class="eyebrow">Bem-vinda de volta</p>
-          <h2 class="text-4xl text-primary dark:text-zinc-100 mt-2">Entrar</h2>
-          <p class="text-sm text-gray-500 mt-2">Use o e-mail e a senha do seu usuário no escritório.</p>
+    <!-- Cartão flutuante centralizado -->
+    <div class="relative z-10 w-full max-w-md">
+      <div class="rounded-[2rem] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-2xl shadow-black/30 ring-1 ring-white/10 px-8 py-10 sm:px-10 sm:py-12">
+        <div class="text-center">
+          <img src="/mono-dark.png" alt="Lara Café" class="h-14 w-auto mx-auto dark:invert" />
+          <p class="eyebrow mt-5">Área do escritório</p>
+          <h1 class="text-3xl text-primary dark:text-zinc-100 mt-1">Acesso restrito</h1>
+          <p class="text-sm text-gray-500 mt-2">Use o e-mail e a senha do seu usuário.</p>
         </div>
 
-        <form class="space-y-4" @submit.prevent="handleLogin">
+        <form class="space-y-4 mt-8" @submit.prevent="handleLogin">
           <Input v-model="loginForm.email" label="E-mail" type="email" placeholder="voce@laracafe.adv.br" autocomplete="email" />
           <Input v-model="loginForm.password" label="Senha" type="password" placeholder="••••••••" autocomplete="current-password" />
           <LoginHelperRow />
           <p v-if="loginError" class="text-sm text-danger dark:text-danger-300">{{ loginError }}</p>
           <Button variant="primary" size="lg" class="w-full" :loading="loginLoading">Entrar</Button>
         </form>
-
-        <p class="text-xs text-gray-500 leading-relaxed">
-          Ainda não tem acesso? Peça à administração do escritório para criar o seu usuário.
-          <NuxtLink to="/privacidade" class="underline underline-offset-2">Política de privacidade</NuxtLink>
-        </p>
       </div>
-    </section>
+
+      <p class="text-xs text-cafe-creme/60 text-center leading-relaxed mt-6">
+        Acesso restrito · dados protegidos conforme a LGPD ·
+        <NuxtLink to="/privacidade" class="underline underline-offset-2 hover:text-cafe-creme">Política de privacidade</NuxtLink>
+      </p>
+    </div>
   </div>
 </template>
 

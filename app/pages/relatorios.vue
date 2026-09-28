@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { definePageMeta, useHead } from '#imports'
 import KpiCard from '~/components/KpiCard.vue'
+import DonutChart from '~/components/DonutChart.vue'
 import QualidadePanel from '~/components/gestao/QualidadePanel.vue'
 import { brl } from '~/utils/formatadores'
 
@@ -14,6 +15,7 @@ interface Stats {
   gargalos: Gargalo[]; gargalo: string | null; sumiram: number; carteira: { chave: string; total: number }[]
   novos: number; taxaFechamento: number | null; ganhos: number; decididos: number
   urgentesAbertos: number; travados: number; receita: number; emProposta: number
+  funilPropostas: { chave: string; total: number; cor: string }[]
   porEtapa: Linha[]; porOrigem: Linha[]; porArea: Linha[]; motivosPerda: Linha[]; perdasPorMes: Linha[]
 }
 
@@ -108,6 +110,17 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
         responda, proponha o próximo passo ou encerre com o motivo.
         <NuxtLink :to="{ path: '/crm', query: { aba: 'funil' } }" class="underline underline-offset-2">Abrir o funil</NuxtLink>
       </p>
+    </section>
+
+    <!-- Funil de propostas: quem recebeu proposta, quem fechou, quem recusou, quem sumiu -->
+    <section v-if="stats && stats.funilPropostas.length" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-6">
+      <div>
+        <h2 class="text-2xl text-primary dark:text-zinc-100">Funil de propostas</h2>
+        <p class="text-xs text-gray-500">A última proposta de honorário registrada por cliente, no período selecionado.</p>
+      </div>
+      <div class="mt-5">
+        <DonutChart :dados="stats.funilPropostas" :size="160" />
+      </div>
     </section>
 
     <div v-if="stats" class="grid grid-cols-1 lg:grid-cols-2 gap-5">

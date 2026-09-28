@@ -106,6 +106,7 @@ const navItems = computed(() => {
   ]
   if (role === 'admin') {
     items.push({ label: 'Ana (IA)', path: '/eva' })
+    items.push({ label: 'Manual', path: '/manual' })
     items.push({ label: 'Configurações', path: '/admin/escritorio' })
   }
   return items
