@@ -61,7 +61,6 @@ const grupos = computed(() => {
         { label: 'Casos', path: '/casos', icone: 'ph:briefcase-bold' },
         { label: 'Mensagens', path: '/mensagens', icone: 'ph:chat-circle-text-bold' },
         { label: 'Formulários', path: '/formularios', icone: 'ph:clipboard-text-bold' },
-        { label: 'Gerador de documentos', path: '/gerador', icone: 'ph:file-plus-bold' },
         { label: 'Remarketing', path: '/crm?aba=remarketing', icone: 'ph:arrow-counter-clockwise-bold' },
       ],
     },
