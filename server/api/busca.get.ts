@@ -11,12 +11,11 @@ export default defineEventHandler(async (event): Promise<Resultado[]> => {
   const client = await serverSupabaseClient(event)
   const digitos = q.replace(/\D/g, '')
 
-  const [contatos, casos, tarefas, arquivos, recibos] = await Promise.all([
+  const [contatos, casos, tarefas, recibos] = await Promise.all([
     client.from('contatos').select('id, nome, telefone, email, etapa, demanda')
       .or(`nome.ilike.%${q}%,email.ilike.%${q}%,demanda.ilike.%${q}%${digitos.length >= 4 ? `,telefone.ilike.%${digitos}%` : ''}`).limit(6),
     client.from('casos').select('id, titulo, numero_processo, contato_id, contato:contatos(nome)').or(`titulo.ilike.%${q}%,numero_processo.ilike.%${q}%`).limit(6),
     client.from('tarefas_internas').select('id, titulo').eq('concluida', false).ilike('titulo', `%${q}%`).limit(6),
-    client.from('arquivos').select('id, nome, contato:contatos(nome)').or(`nome.ilike.%${q}%,descricao.ilike.%${q}%`).limit(6),
     client.from('recibos').select('id, nome_cliente, referente_a, valor').or(`nome_cliente.ilike.%${q}%,referente_a.ilike.%${q}%`).limit(6),
   ])
 
@@ -30,9 +29,6 @@ export default defineEventHandler(async (event): Promise<Resultado[]> => {
   }
   for (const t of tarefas.data ?? []) {
     resultados.push({ tipo: 'tarefa', titulo: t.titulo, subtitulo: 'Tarefa', link: '/tarefas' })
-  }
-  for (const a of arquivos.data ?? []) {
-    resultados.push({ tipo: 'documento', titulo: a.nome, subtitulo: `Documento de ${(a.contato as any)?.nome ?? 'cliente'}`, link: `/api/arquivos/${a.id}/abrir` })
   }
   for (const r of recibos.data ?? []) {
     resultados.push({ tipo: 'recibo', titulo: `Recibo — ${r.nome_cliente}`, subtitulo: `${r.referente_a} · R$ ${Number(r.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, link: `/api/recibos/${r.id}/pdf` })
