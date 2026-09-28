@@ -90,7 +90,7 @@ export default defineNuxtConfig({
       login: '/login',
       callback: '/confirm',
       include: undefined,
-      exclude: ['/', '/recovery', '/privacidade', '/f/*'],
+      exclude: ['/', '/recovery', '/privacidade', '/f/*', '/pc/*'],
       saveRedirectToCookie: false
     },
     cookieOptions: {
