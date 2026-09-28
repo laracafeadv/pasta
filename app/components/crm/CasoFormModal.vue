@@ -28,7 +28,7 @@
       <label class="field">
         <span>Fase processual</span>
         <input v-model="form.fase_processual" list="fases-processuais" class="modal-input" placeholder="Ex.: Instrução, Sentença, Recurso" />
-        <datalist id="fases-processuais"><option v-for="f in FASES_SUGERIDAS" :key="f" :value="f" /></datalist>
+        <datalist id="fases-processuais"><option v-for="f in FASES_PROCESSUAIS" :key="f" :value="f" /></datalist>
       </label>
       <label class="field"><span>Abertura</span><input v-model="form.data_abertura" type="date" class="modal-input" /></label>
       <label class="field"><span>Valor da causa</span><input v-model.number="form.valor_causa" type="number" step="0.01" min="0" class="modal-input" placeholder="0,00" /></label>
@@ -56,9 +56,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { AREAS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, UFS, type Caso, type Contato } from '../../../shared/types/crm'
-
-const FASES_SUGERIDAS = ['Postulatória (petição inicial)', 'Instrução', 'Sentença', 'Recurso', 'Execução/cumprimento de sentença', 'Arquivado aguardando']
+import { AREAS, FASES_PROCESSUAIS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, UFS, type Caso, type Contato } from '../../../shared/types/crm'
 import { numeroCnjValido } from '../../../shared/utils/juridico'
 import { hojeISO } from '../../stores/crm'
 

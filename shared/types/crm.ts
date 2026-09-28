@@ -325,6 +325,7 @@ export const CAMPOS_CONFIDENCIAIS = ['cpf', 'rg'] as const
 
 export const TIPOS_CASO = { judicial: 'Judicial', extrajudicial: 'Extrajudicial (cartório)', consultivo: 'Consultivo' } as const
 export const STATUS_CASO = { ativo: 'Ativo', suspenso: 'Suspenso', encerrado: 'Encerrado' } as const
+export const FASES_PROCESSUAIS = ['Postulatória (petição inicial)', 'Instrução', 'Sentença', 'Recurso', 'Execução/cumprimento de sentença', 'Arquivado aguardando'] as const
 export interface Caso {
   id: number
   created_at: string
