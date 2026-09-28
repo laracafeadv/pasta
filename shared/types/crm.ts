@@ -637,3 +637,68 @@ export function nomeArquivoPadrao(o: { data: string; contatoId: number; tipo: st
   partes.push(`v${String(o.versao ?? 1).padStart(2, '0')}`)
   return `${partes.join('_')}.${o.extensao}`
 }
+
+// ─── Gerador de Documentos ────────────────────────────────────────────────────
+export const CATEGORIAS_DOCUMENTO = {
+  recibo: 'Recibo',
+  contrato_honorarios: 'Contrato de Honorários',
+  procuracao: 'Procuração',
+  declaracao: 'Declaração',
+  notificacao: 'Notificação',
+  carta: 'Carta',
+  termo: 'Termo',
+  requerimento: 'Requerimento',
+  personalizado: 'Documento personalizado',
+} as const
+export type CategoriaDocumento = keyof typeof CATEGORIAS_DOCUMENTO
+
+export interface DocumentoModelo {
+  id: number
+  nome: string
+  categoria: CategoriaDocumento
+  descricao: string | null
+  conteudo: string
+  ativo: boolean
+  updated_at: string
+}
+
+export interface DocumentoGerado {
+  id: number
+  created_at: string
+  modelo_id: number | null
+  nome: string
+  categoria: CategoriaDocumento
+  contato_id: number
+  caso_id: number | null
+  honorario_id: number | null
+  valor: number | null
+  dados: Record<string, string>
+  conteudo_final: string
+  contato_nome?: string | null
+  modelo_nome?: string | null
+}
+
+/** Variáveis conhecidas que o gerador preenche sozinho a partir do CRM (cliente, caso, honorário, escritório). */
+export const VARIAVEIS_CONHECIDAS: Record<string, string> = {
+  nome_cliente: 'Nome completo do cliente',
+  cpf_cliente: 'CPF do cliente',
+  rg_cliente: 'RG do cliente',
+  endereco_cliente: 'Endereço do cliente',
+  cidade_cliente: 'Cidade do cliente',
+  estado_cliente: 'Estado (UF) do cliente',
+  telefone_cliente: 'Telefone do cliente',
+  email_cliente: 'E-mail do cliente',
+  numero_processo: 'Número do processo (CNJ)',
+  orgao_vara: 'Vara ou órgão do caso',
+  comarca: 'Comarca do caso',
+  valor: 'Valor (em reais, ex.: 1.500,00)',
+  valor_extenso: 'Valor por extenso',
+  forma_pagamento: 'Forma de pagamento',
+  numero_parcela: 'Número da parcela',
+  referente_a: 'Referente a (descrição do serviço)',
+  data: 'Data de hoje (dd/mm/aaaa)',
+  data_extenso: 'Data de hoje por extenso',
+  nome_advogada: 'Nome da advogada',
+  oab: 'Número da OAB',
+  cidade_foro: 'Cidade/foro do escritório',
+}

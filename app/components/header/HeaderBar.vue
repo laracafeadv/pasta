@@ -81,6 +81,7 @@ const navItems = computed(() => {
     { label: 'Casos', path: '/casos' },
     { label: 'Mensagens', path: '/mensagens' },
     { label: 'Formulários', path: '/formularios' },
+    { label: 'Gerador de documentos', path: '/gerador' },
     { label: 'Remarketing', path: '/crm?aba=remarketing' },
     { label: role === 'admin' ? 'Financeiro' : 'Honorários', path: '/honorarios' },
     { label: 'Relatórios', path: '/relatorios' },
