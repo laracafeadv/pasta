@@ -35,21 +35,23 @@
           </NuxtLink>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-          <section v-for="grupo in grupos" :key="grupo.titulo" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-6">
+        <div class="space-y-8">
+          <section v-for="grupo in grupos" :key="grupo.titulo">
             <h2 class="text-[10px] font-bold uppercase tracking-widest text-secondary-dark mb-3">{{ grupo.titulo }}</h2>
-            <div class="space-y-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               <NuxtLink
                 v-for="item in grupo.itens" :key="item.to" :to="item.to"
-                class="flex items-start gap-3 rounded-2xl px-3 py-2.5 -mx-3 hover:bg-secondary/10 dark:hover:bg-white/5 transition-colors group"
+                class="group rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5 flex items-start gap-4 hover:border-primary/40 dark:hover:border-primary-light/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 transition-all"
               >
-                <Icon :name="item.icone" class="text-xl text-secondary-dark mt-0.5 shrink-0" />
+                <span class="w-12 h-12 rounded-2xl bg-secondary/15 text-secondary-dark flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                  <Icon :name="item.icone" class="text-2xl" />
+                </span>
                 <span class="min-w-0">
                   <span class="flex items-center gap-2">
-                    <span class="text-sm font-semibold text-primary dark:text-zinc-100 group-hover:underline">{{ item.nome }}</span>
+                    <span class="text-sm font-bold text-primary dark:text-zinc-100">{{ item.nome }}</span>
                     <span v-if="item.badge" class="min-w-[18px] h-[18px] px-1 rounded-full bg-danger text-white text-[10px] inline-flex items-center justify-center shrink-0">{{ item.badge }}</span>
                   </span>
-                  <span class="block text-xs text-gray-500 dark:text-zinc-400 leading-snug">{{ item.desc }}</span>
+                  <span class="block text-xs text-gray-500 dark:text-zinc-400 leading-relaxed mt-1">{{ item.desc }}</span>
                 </span>
               </NuxtLink>
             </div>
