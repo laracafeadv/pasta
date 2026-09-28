@@ -9,6 +9,7 @@
 
       <div class="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto">
         <template v-if="user">
+          <HeaderSearch />
           <HeaderNotifications />
           <HeaderProfile />
         </template>
@@ -57,6 +58,7 @@ import { useRoute, useSupabaseUser } from '#imports'
 import { useProfileStore } from '../../stores/profile'
 import { useCrmStore } from '../../stores/crm'
 import DarkModeToggle from '../DarkModeToggle.vue'
+import HeaderSearch from './HeaderSearch.vue'
 import HeaderNotifications from './HeaderNotifications.vue'
 import HeaderProfile from './HeaderProfile.vue'
 import HeaderLoginButton from './HeaderLoginButton.vue'
