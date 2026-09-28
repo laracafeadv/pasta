@@ -6,17 +6,18 @@
         <!-- Header & Tabs -->
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div>
-            <p class="eyebrow">WhatsApp</p>
-            <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Assistente de IA</h1>
+            <p class="eyebrow">Ana</p>
+            <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Central da Ana</h1>
             <p class="text-slate-500 dark:text-slate-400 mt-1">
-              Ela faz a triagem no WhatsApp, preenche a ficha no CRM e passa a conversa para você quando precisa. As regras de ética da OAB e da LGPD ficam fixas e não podem ser apagadas aqui.
+              {{ activeTab === 'comercial' ? 'Toda semana, uma leitura do seu funil e das suas propostas — sem IA rodando de verdade, sem custo extra.' : 'Configuração avançada da assistente automática do WhatsApp. Não é usada no dia a dia.' }}
             </p>
           </div>
 
           <!-- Tab Navigation -->
-          <Tabs 
+          <Tabs
             v-model="activeTab"
             :tabs="[
+              { label: 'Comercial', value: 'comercial', icon: 'ph:trend-up-bold' },
               { label: 'Instruções', value: 'prompt', icon: 'ph:note-pencil-bold' },
               { label: 'Base de conhecimento', value: 'dados', icon: 'ph:books-bold' },
               { label: 'Cliente ideal', value: 'mapa', icon: 'ph:heart-bold' },
@@ -45,13 +46,14 @@ import EvaSystemPrompt from '../components/eva/EvaSystemPrompt.vue'
 import EvaDataTab from '../components/eva/EvaDataTab.vue'
 import EvaSimulador from '../components/eva/EvaSimulador.vue'
 import MapaEmpatia from '../components/eva/MapaEmpatia.vue'
+import EvaComercial from '../components/eva/EvaComercial.vue'
 
-useHead({ title: 'Assistente de IA' })
+useHead({ title: 'Ana' })
 definePageMeta({ middleware: ['auth', 'eva-editor'] })
 
-const activeTab = ref<'prompt' | 'dados' | 'mapa' | 'testar'>('prompt')
+const activeTab = ref<'comercial' | 'prompt' | 'dados' | 'mapa' | 'testar'>('comercial')
 
 const currentTabComponent = computed(() => {
-  return { prompt: EvaSystemPrompt, dados: EvaDataTab, mapa: MapaEmpatia, testar: EvaSimulador }[activeTab.value]
+  return { comercial: EvaComercial, prompt: EvaSystemPrompt, dados: EvaDataTab, mapa: MapaEmpatia, testar: EvaSimulador }[activeTab.value]
 })
 </script>

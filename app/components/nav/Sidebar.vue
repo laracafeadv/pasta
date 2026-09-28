@@ -78,7 +78,7 @@ const grupos = computed(() => {
     },
   ]
   if (role === 'admin') {
-    lista[3]!.itens.push({ label: 'Ana (IA)', path: '/eva', icone: 'ph:robot-bold' })
+    lista[3]!.itens.push({ label: 'Ana', path: '/eva', icone: 'ph:robot-bold' })
     lista[3]!.itens.push({ label: 'Configurações', path: '/admin/escritorio', icone: 'ph:gear-bold' })
   }
   return lista

@@ -140,7 +140,7 @@ const grupos = computed(() => {
   ]
   if (isAdmin.value) {
     lista[3]!.itens.push(
-      { nome: 'Ana (IA)', to: '/eva', desc: 'Instruções, base de conhecimento e teste.', icone: 'ph:robot-bold' },
+      { nome: 'Ana', to: '/eva', desc: 'Ideias comerciais toda semana, sem custo de IA.', icone: 'ph:robot-bold' },
       { nome: 'Configurações', to: '/admin/escritorio', desc: 'Dados do escritório, PIX e posicionamento.', icone: 'ph:gear-bold' },
     )
   }
