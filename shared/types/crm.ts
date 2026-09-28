@@ -49,15 +49,6 @@ export const REMARKETING_INTERVALO_DIAS = 45
 
 export const URGENCIAS = ['Alta', 'Média', 'Baixa'] as const
 
-// Formulário pré-consulta: campos fixos que podem ser ligados/desligados por caso.
-// 'resumo' não entra aqui — é sempre obrigatório, é a âncora do formulário.
-export const CAMPOS_PRE_FORM = [
-  { chave: 'area', rotulo: 'Área do problema' },
-  { chave: 'preocupacao', rotulo: 'O que mais preocupa agora' },
-  { chave: 'expectativa', rotulo: 'O que espera alcançar com a consulta' },
-  { chave: 'urgencia', rotulo: 'Urgência' },
-  { chave: 'processo', rotulo: 'Já tem processo em andamento?' },
-] as const
 export const SENTIMENTOS = ['Positivo', 'Neutro', 'Negativo'] as const
 
 export const TIPOS_HONORARIO = ['Consulta', 'Contrato fixo', 'Em camadas', 'Êxito', 'Assessoria mensal'] as const

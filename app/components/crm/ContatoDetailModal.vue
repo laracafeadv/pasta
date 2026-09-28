@@ -50,11 +50,14 @@
           <p v-if="dados.contato.motivo_perda"><b>Motivo da perda:</b> {{ dados.contato.motivo_perda }}</p>
           <p><b>Na etapa há:</b> {{ diasNaEtapa }} dia(s)</p>
           <p v-if="dados.contato.consulta_em"><b>Consulta:</b> {{ dataHora(dados.contato.consulta_em) }}</p>
-          <div class="flex flex-wrap gap-2 mt-1">
+          <div class="flex flex-wrap items-center gap-2 mt-1">
             <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"
-                    :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Contexto do caso antes da consulta, sem dados formais'"
-                    @click="abrirEditorPreFormulario">
+                    :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Um clique: gera o link com o resumo livre e já prepara a mensagem'"
+                    @click="enviarPreFormularioRapido">
               {{ dados.contato.pre_form_respondido_em ? 'Formulário pré-consulta respondido ✓' : 'Enviar formulário pré-consulta' }}
+            </button>
+            <button type="button" class="text-[11px] text-gray-400 hover:text-primary underline underline-offset-2" @click="abrirEditorPreFormulario">
+              + perguntas deste caso
             </button>
             <a href="/pc/preview" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-gray-300 dark:border-zinc-700 text-gray-500 hover:border-primary hover:text-primary">
               Visualizar formulário
@@ -334,7 +337,6 @@
 
   <PreFormularioEditor
     :is-open="editorPreFormAberto"
-    :campos-atuais="dados?.contato.pre_form_campos_ativos"
     @close="editorPreFormAberto = false"
     @gerar="gerarPreFormulario"
   />
@@ -619,15 +621,21 @@ async function enviarFormulario() {
   aba.value = 'conversa'
 }
 // Formulário pré-consulta: contexto leve, enviado antes da consulta (não substitui o de cima).
+// Sem perguntas fixas — só o resumo livre; "+ perguntas deste caso" abre o editor pra quem quiser personalizar.
 const editorPreFormAberto = ref(false)
+async function enviarPreFormularioRapido() {
+  if (!dados.value) return
+  if (dados.value.contato.pre_form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return
+  await gerarPreFormulario([])
+}
 function abrirEditorPreFormulario() {
   if (!dados.value) return
   if (dados.value.contato.pre_form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return
   editorPreFormAberto.value = true
 }
-async function gerarPreFormulario(campos: string[], extras: string[]) {
+async function gerarPreFormulario(extras: string[]) {
   if (!dados.value) return
-  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST', body: { campos, extras } })
+  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST', body: { extras } })
   editorPreFormAberto.value = false
   await carregarModelos()
   const m = modelos.value.find(x => x.atalho === '/pre-consulta')

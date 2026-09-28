@@ -74,7 +74,7 @@ watch(() => props.isOpen, (open) => {
   const c = props.contato
   Object.assign(form, props.caso ?? {
     titulo: c ? `${c.demanda || c.area || 'Caso'} — ${c.nome ?? ''}`.trim() : '',
-    tipo: 'judicial', area: c?.area ?? '', numero_processo: '', orgao: '', comarca: '', uf: '',
+    tipo: 'extrajudicial', area: c?.area ?? '', numero_processo: '', orgao: '', comarca: '', uf: '',
     parte_contraria: c?.parte_contraria ?? '', status: 'ativo', fase_processual: '', valor_causa: null, link_tribunal: '',
     data_abertura: hojeISO(), observacoes: '', resultado: null, data_encerramento: null,
   })

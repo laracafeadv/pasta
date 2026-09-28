@@ -11,8 +11,6 @@ export default defineEventHandler(async (event) => {
     primeiroNome: (c.nome ?? '').trim().split(/\s+/)[0] || null,
     advogada: e.advogada_nome ? `Dra. ${e.advogada_nome}` : 'a advogada',
     respondido: !!c.pre_form_respondido_em,
-    area: c.area,
-    campos: c.pre_form_campos_ativos ?? [],
     perguntasExtra: c.pre_form_perguntas_extra ?? [],
   }
 })
