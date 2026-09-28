@@ -236,11 +236,17 @@
             <span class="tag">{{ STATUS_CASO[k.status] }}</span>
           </div>
           <p class="text-xs text-gray-500">{{ TIPOS_CASO[k.tipo] }}<span v-if="k.numero_processo"> · <span class="font-mono">{{ k.numero_processo }}</span></span><span v-if="k.orgao"> · {{ k.orgao }}</span><span v-if="k.comarca"> · {{ k.comarca }}/{{ k.uf }}</span></p>
+          <p v-if="k.fase_processual || k.valor_causa" class="text-xs text-gray-500">
+            <span v-if="k.fase_processual">Fase: {{ k.fase_processual }}</span>
+            <span v-if="k.fase_processual && k.valor_causa"> · </span>
+            <span v-if="k.valor_causa">Valor da causa: {{ brl(k.valor_causa) }}</span>
+          </p>
           <p v-if="k.parte_contraria" class="text-xs">Parte contrária: {{ k.parte_contraria }}</p>
           <div class="flex gap-3 pt-1 text-xs">
             <button class="underline underline-offset-2" @click="editarCaso(k)">Editar</button>
             <NuxtLink :to="`/agenda?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo</NuxtLink>
             <button v-if="ehAdmin" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração deste caso</button>
+            <a v-if="k.link_tribunal" :href="k.link_tribunal" target="_blank" rel="noopener" class="underline underline-offset-2">Ver no tribunal</a>
           </div>
         </article>
         <div v-if="dados.compromissos.length">

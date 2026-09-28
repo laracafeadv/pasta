@@ -25,7 +25,14 @@
         <span>Status</span>
         <select v-model="form.status" class="modal-input"><option v-for="(n, k) in STATUS_CASO" :key="k" :value="k">{{ n }}</option></select>
       </label>
+      <label class="field">
+        <span>Fase processual</span>
+        <input v-model="form.fase_processual" list="fases-processuais" class="modal-input" placeholder="Ex.: Instrução, Sentença, Recurso" />
+        <datalist id="fases-processuais"><option v-for="f in FASES_SUGERIDAS" :key="f" :value="f" /></datalist>
+      </label>
       <label class="field"><span>Abertura</span><input v-model="form.data_abertura" type="date" class="modal-input" /></label>
+      <label class="field"><span>Valor da causa</span><input v-model.number="form.valor_causa" type="number" step="0.01" min="0" class="modal-input" placeholder="0,00" /></label>
+      <label class="field sm:col-span-2"><span>Link do processo no tribunal</span><input v-model="form.link_tribunal" type="url" class="modal-input" placeholder="https://..." /></label>
       <template v-if="form.status === 'encerrado'">
         <label class="field">
           <span>Resultado</span>
@@ -50,6 +57,8 @@ import { computed, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import { AREAS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, UFS, type Caso, type Contato } from '../../../shared/types/crm'
+
+const FASES_SUGERIDAS = ['Postulatória (petição inicial)', 'Instrução', 'Sentença', 'Recurso', 'Execução/cumprimento de sentença', 'Arquivado aguardando']
 import { numeroCnjValido } from '../../../shared/utils/juridico'
 import { hojeISO } from '../../stores/crm'
 
@@ -68,7 +77,8 @@ watch(() => props.isOpen, (open) => {
   Object.assign(form, props.caso ?? {
     titulo: c ? `${c.demanda || c.area || 'Caso'} — ${c.nome ?? ''}`.trim() : '',
     tipo: 'judicial', area: c?.area ?? '', numero_processo: '', orgao: '', comarca: '', uf: '',
-    parte_contraria: c?.parte_contraria ?? '', status: 'ativo', data_abertura: hojeISO(), observacoes: '', resultado: null, data_encerramento: null,
+    parte_contraria: c?.parte_contraria ?? '', status: 'ativo', fase_processual: '', valor_causa: null, link_tribunal: '',
+    data_abertura: hojeISO(), observacoes: '', resultado: null, data_encerramento: null,
   })
 })
 

@@ -3,7 +3,7 @@ import { onMounted, ref, watch } from 'vue'
 import { definePageMeta, useHead, navigateTo } from '#imports'
 import DataTable, { type ColumnDef } from '~/components/DataTable.vue'
 import { STATUS_CASO, TIPOS_CASO, type Caso } from '~~/shared/types/crm'
-import { dataCurta } from '~/utils/formatadores'
+import { brl, dataCurta } from '~/utils/formatadores'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
 useHead({ title: 'Casos' })
@@ -29,6 +29,7 @@ const columns: ColumnDef[] = [
   { key: 'titulo', label: 'Caso' },
   { key: 'cliente', label: 'Cliente' },
   { key: 'processo', label: 'Processo / órgão' },
+  { key: 'fase', label: 'Fase / valor da causa' },
   { key: 'status', label: 'Status' },
 ]
 </script>
@@ -51,6 +52,7 @@ const columns: ColumnDef[] = [
       <template #cell-titulo="{ item }"><p class="font-semibold">{{ item.titulo }}</p><p class="text-xs text-gray-500">{{ TIPOS_CASO[item.tipo] }} · desde {{ dataCurta(item.data_abertura) }}</p></template>
       <template #cell-cliente="{ item }">{{ item.contato?.nome }}</template>
       <template #cell-processo="{ item }"><p class="font-mono text-xs">{{ item.numero_processo || '—' }}</p><p class="text-xs text-gray-500">{{ [item.orgao, item.comarca && `${item.comarca}/${item.uf}`].filter(Boolean).join(' · ') }}</p></template>
+      <template #cell-fase="{ item }"><p class="text-xs">{{ item.fase_processual || '—' }}</p><p class="text-xs text-gray-500">{{ item.valor_causa ? brl(item.valor_causa) : '' }}</p></template>
       <template #cell-status="{ item }"><span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800">{{ STATUS_CASO[item.status] }}</span></template>
     </DataTable>
   </div>

@@ -338,13 +338,16 @@ export interface Caso {
   uf: string | null
   parte_contraria: string | null
   status: keyof typeof STATUS_CASO
+  fase_processual: string | null
+  valor_causa: number | null
+  link_tribunal: string | null
   data_abertura: string
   data_encerramento: string | null
   observacoes: string | null
   resultado?: keyof typeof RESULTADOS_CASO | null
   contato?: Pick<Contato, 'id' | 'nome'> | null
 }
-export const CASO_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'numero_processo', 'orgao', 'comarca', 'uf', 'parte_contraria', 'status', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado'] as const
+export const CASO_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'numero_processo', 'orgao', 'comarca', 'uf', 'parte_contraria', 'status', 'fase_processual', 'valor_causa', 'link_tribunal', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado'] as const
 /** Resultado do caso encerrado (base da taxa de êxito no painel de qualidade). */
 export const RESULTADOS_CASO = { exito: 'Êxito', acordo: 'Acordo', parcial: 'Êxito parcial', sem_exito: 'Sem êxito', desistencia: 'Desistência do cliente' } as const
 
