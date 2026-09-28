@@ -19,14 +19,21 @@ export async function contatoDoFormulario(admin: SupabaseClient, token: string |
 
 export const PRE_FORM_VALIDADE_DIAS = 14
 
-/** Valida o link do formulário pré-consulta. */
-export async function contatoDoPreFormulario(admin: SupabaseClient, token: string | undefined) {
+/** Valida o link de um envio do formulário pré-consulta e traz o contato + as perguntas do formulário escolhido, se houver. */
+export async function envioDoPreFormulario(admin: SupabaseClient, token: string | undefined) {
   if (!token || !/^[A-Za-z0-9_-]{32,64}$/.test(token)) throw createError({ statusCode: 404, message: 'Link inválido.' })
-  const { data } = await admin.from('contatos')
-    .select('id, nome, area, pre_form_expira, pre_form_respondido_em, pre_form_campos_ativos, pre_form_perguntas_extra')
-    .eq('pre_form_token', token).maybeSingle()
-  if (!data || !data.pre_form_expira || new Date(data.pre_form_expira).getTime() < Date.now()) {
+  const { data: envio } = await admin.from('formulario_envios')
+    .select('id, contato_id, formulario_id, expira_em, respondido_em, status, contato:contatos(id, nome, resumo)')
+    .eq('token', token).maybeSingle()
+  if (!envio || new Date(envio.expira_em).getTime() < Date.now()) {
     throw createError({ statusCode: 404, message: 'Este link não é mais válido. Peça um novo ao escritório.' })
   }
-  return data
+  let itens: { pergunta_id: number; obrigatoria: boolean; pergunta: { texto: string; tipo: string; opcoes: string[] } }[] = []
+  if (envio.formulario_id) {
+    const { data } = await admin.from('formulario_itens')
+      .select('pergunta_id, obrigatoria, ordem, pergunta:formulario_perguntas(texto, tipo, opcoes)')
+      .eq('formulario_id', envio.formulario_id).order('ordem')
+    itens = (data ?? []) as any
+  }
+  return { ...envio, itens }
 }

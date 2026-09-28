@@ -1,16 +1,21 @@
 import { serverSupabaseServiceRole } from '#supabase/server'
-import { contatoDoPreFormulario } from '../../../utils/formulario'
+import { envioDoPreFormulario } from '../../../utils/formulario'
 import { carregarEscritorio } from '../../../utils/escritorio'
 
-/** Página pública do formulário pré-consulta: só o primeiro nome e o nome da advogada. */
+/** Página pública do formulário pré-consulta: só o primeiro nome, o nome da advogada e as perguntas do formulário escolhido. */
 export default defineEventHandler(async (event) => {
   const admin = serverSupabaseServiceRole(event)
-  const c = await contatoDoPreFormulario(admin, getRouterParam(event, 'token'))
+  const envio = await envioDoPreFormulario(admin, getRouterParam(event, 'token'))
   const e = await carregarEscritorio(admin)
+
+  if (envio.status === 'enviado') {
+    await admin.from('formulario_envios').update({ status: 'visualizado', visualizado_em: new Date().toISOString() }).eq('id', envio.id)
+  }
+
   return {
-    primeiroNome: (c.nome ?? '').trim().split(/\s+/)[0] || null,
+    primeiroNome: (envio.contato?.nome ?? '').trim().split(/\s+/)[0] || null,
     advogada: e.advogada_nome ? `Dra. ${e.advogada_nome}` : 'a advogada',
-    respondido: !!c.pre_form_respondido_em,
-    perguntasExtra: c.pre_form_perguntas_extra ?? [],
+    respondido: !!envio.respondido_em,
+    perguntas: envio.itens.map(i => ({ texto: i.pergunta.texto, tipo: i.pergunta.tipo, opcoes: i.pergunta.opcoes, obrigatoria: i.obrigatoria })),
   }
 })

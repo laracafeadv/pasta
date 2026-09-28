@@ -57,7 +57,7 @@
               {{ dados.contato.pre_form_respondido_em ? 'Formulário pré-consulta respondido ✓' : 'Gerar e copiar link do formulário' }}
             </button>
             <button type="button" class="text-[11px] text-gray-400 hover:text-primary underline underline-offset-2" @click="abrirEditorPreFormulario">
-              + perguntas deste caso
+              Escolher formulário
             </button>
             <a href="/pc/preview" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-gray-300 dark:border-zinc-700 text-gray-500 hover:border-primary hover:text-primary">
               Visualizar formulário
@@ -638,21 +638,21 @@ async function enviarFormulario() {
   await copiarEAvisar(texto)
 }
 // Formulário pré-consulta: contexto leve, enviado antes da consulta (não substitui o de cima).
-// Sem perguntas fixas — só o resumo livre; "+ perguntas deste caso" abre o editor pra quem quiser personalizar.
+// O resumo livre já vai sempre; "Escolher formulário" deixa escolher um formulário do banco de perguntas.
 const editorPreFormAberto = ref(false)
 async function enviarPreFormularioRapido() {
   if (!dados.value) return
   if (dados.value.contato.pre_form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return
-  await gerarPreFormulario([])
+  await gerarPreFormulario(null)
 }
 function abrirEditorPreFormulario() {
   if (!dados.value) return
   if (dados.value.contato.pre_form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return
   editorPreFormAberto.value = true
 }
-async function gerarPreFormulario(extras: string[]) {
+async function gerarPreFormulario(formularioId: number | null) {
   if (!dados.value) return
-  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST', body: { extras } })
+  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST', body: { formulario_id: formularioId } })
   editorPreFormAberto.value = false
   await carregarModelos()
   const m = modelos.value.find(x => x.atalho === '/pre-consulta')

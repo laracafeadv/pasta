@@ -267,10 +267,58 @@ export interface ModeloMensagem {
   ativo: boolean
 }
 
-export interface FormularioTemplate {
+export type TipoPergunta = 'texto_curto' | 'texto_longo' | 'numero' | 'data' | 'email' | 'telefone' | 'sim_nao' | 'selecao_unica' | 'selecao_multipla'
+
+export interface FormularioPergunta {
+  id: number
+  texto: string
+  tipo: TipoPergunta
+  opcoes: string[]
+  arquivada: boolean
+}
+
+export interface FormularioItem {
+  id: number
+  pergunta_id: number
+  ordem: number
+  obrigatoria: boolean
+  pergunta: FormularioPergunta
+}
+
+export interface Formulario {
   id: number
   nome: string
-  perguntas: string[]
+  ativo: boolean
+  itens: FormularioItem[]
+}
+
+export type StatusEnvioFormulario = 'enviado' | 'visualizado' | 'respondido'
+
+export interface FormularioEnvio {
+  id: number
+  created_at: string
+  formulario_id: number | null
+  contato_id: number
+  token: string
+  expira_em: string
+  visualizado_em: string | null
+  respondido_em: string | null
+  status: StatusEnvioFormulario
+  contato_nome: string | null
+  formulario_nome: string | null
+}
+
+export interface FormularioEnvioResposta {
+  id: number
+  ordem: number
+  pergunta_texto: string
+  pergunta_tipo: TipoPergunta
+  resposta: string | string[] | null
+}
+
+export interface FormularioEnvioDetalhe extends FormularioEnvio {
+  resumo: string | null
+  respostas: FormularioEnvioResposta[]
 }
 
 // ─── Dados do escritório (tela "Escritório"; alimentam a Ana e as peças) ─────

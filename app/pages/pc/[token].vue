@@ -25,9 +25,34 @@
             <label class="campo"><span>Conte um pouco da sua situação *</span>
               <textarea id="pf-resumo" v-model="f.resumo" rows="5" class="modal-input" required placeholder="O que está acontecendo, desde quando, e o que você espera resolver..." />
             </label>
-            <label v-for="(p, i) in info.perguntasExtra" :key="i" class="campo">
-              <span>{{ p }}</span>
-              <textarea v-model="respostasExtra[i]" rows="2" class="modal-input" />
+
+            <label v-for="(p, i) in info.perguntas" :key="i" class="campo">
+              <span>{{ p.texto }}{{ p.obrigatoria ? ' *' : '' }}</span>
+
+              <textarea v-if="p.tipo === 'texto_longo'" v-model="respostas[i]" rows="3" class="modal-input" :required="p.obrigatoria" />
+              <input v-else-if="p.tipo === 'numero'" v-model="respostas[i]" type="number" class="modal-input" :required="p.obrigatoria" />
+              <input v-else-if="p.tipo === 'data'" v-model="respostas[i]" type="date" class="modal-input" :required="p.obrigatoria" />
+              <input v-else-if="p.tipo === 'email'" v-model="respostas[i]" type="email" class="modal-input" :required="p.obrigatoria" />
+              <input v-else-if="p.tipo === 'telefone'" v-model="respostas[i]" type="tel" class="modal-input" :required="p.obrigatoria" />
+
+              <div v-else-if="p.tipo === 'sim_nao'" class="flex gap-4 text-sm">
+                <label class="flex items-center gap-1.5"><input v-model="respostas[i]" type="radio" value="Sim" :name="`p${i}`" class="accent-[#3c2923]" /> Sim</label>
+                <label class="flex items-center gap-1.5"><input v-model="respostas[i]" type="radio" value="Não" :name="`p${i}`" class="accent-[#3c2923]" /> Não</label>
+              </div>
+
+              <div v-else-if="p.tipo === 'selecao_unica'" class="flex flex-col gap-1.5 text-sm">
+                <label v-for="op in p.opcoes" :key="op" class="flex items-center gap-1.5">
+                  <input v-model="respostas[i]" type="radio" :value="op" :name="`p${i}`" class="accent-[#3c2923]" /> {{ op }}
+                </label>
+              </div>
+
+              <div v-else-if="p.tipo === 'selecao_multipla'" class="flex flex-col gap-1.5 text-sm">
+                <label v-for="op in p.opcoes" :key="op" class="flex items-center gap-1.5">
+                  <input type="checkbox" :checked="((respostas[i] as string[] | undefined)?.includes(op))" class="accent-[#3c2923]" @change="alternarOpcao(i, op)" /> {{ op }}
+                </label>
+              </div>
+
+              <input v-else v-model="respostas[i]" type="text" class="modal-input" :required="p.obrigatoria" />
             </label>
           </section>
 
@@ -62,10 +87,11 @@ import { definePageMeta, useHead, useRoute } from '#imports'
 definePageMeta({ layout: false })
 useHead({ title: 'Antes da consulta', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
+interface PerguntaPublica { texto: string; tipo: string; opcoes: string[]; obrigatoria: boolean }
 const token = String(useRoute().params.token)
-const info = ref<{ primeiroNome: string | null; advogada: string; respondido: boolean; perguntasExtra: string[] } | null>(null)
+const info = ref<{ primeiroNome: string | null; advogada: string; respondido: boolean; perguntas: PerguntaPublica[] } | null>(null)
 const f = reactive<Record<string, any>>({ consentimento: false })
-const respostasExtra = ref<string[]>([])
+const respostas = ref<(string | string[])[]>([])
 const enviado = ref(false)
 const enviando = ref(false)
 const erro = ref('')
@@ -74,7 +100,13 @@ const preview = token === 'preview'
 
 onMounted(async () => {
   if (preview) {
-    info.value = { primeiroNome: 'Maria', advogada: 'a advogada', respondido: false, perguntasExtra: ['Pergunta extra de exemplo, específica deste caso'] }
+    info.value = {
+      primeiroNome: 'Maria', advogada: 'a advogada', respondido: false,
+      perguntas: [
+        { texto: 'Há medida protetiva em vigor?', tipo: 'sim_nao', opcoes: [], obrigatoria: true },
+        { texto: 'Área do caso', tipo: 'selecao_unica', opcoes: ['Divórcio', 'Inventário', 'Guarda e alimentos'], obrigatoria: false },
+      ],
+    }
     return
   }
   try {
@@ -85,12 +117,17 @@ onMounted(async () => {
   }
 })
 
+function alternarOpcao(i: number, op: string) {
+  const atual = (respostas.value[i] as string[] | undefined) ?? []
+  respostas.value[i] = atual.includes(op) ? atual.filter(o => o !== op) : [...atual, op]
+}
+
 async function enviar() {
   if (preview) { erro.value = 'Isso é só uma prévia — nada é enviado de verdade.'; return }
   enviando.value = true
   erro.value = ''
   try {
-    await $fetch(`/api/pre-formulario/${token}`, { method: 'POST', body: { ...f, respostasExtra: respostasExtra.value } })
+    await $fetch(`/api/pre-formulario/${token}`, { method: 'POST', body: { ...f, respostas: respostas.value } })
     enviado.value = true
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (e: any) {
