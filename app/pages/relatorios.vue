@@ -42,7 +42,6 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
 function insight(titulo: string, linhas: Linha[]): string | null {
   if (!linhas.length) return null
   const top = [...linhas].sort((a, b) => b.total - a.total)[0]!
-  if (titulo === 'Funil por etapa') return `Mais casos parados em "${top.chave}" agora — é onde olhar primeiro.`
   if (titulo === 'Origem dos contatos') {
     const comConversao = linhas.filter(l => (l.decididos ?? 0) >= 3)
     const melhor = [...comConversao].sort((a, b) => ((b.ganhos ?? 0) / b.decididos!) - ((a.ganhos ?? 0) / a.decididos!))[0]
@@ -54,11 +53,6 @@ function insight(titulo: string, linhas: Linha[]): string | null {
     return melhor ? `"${melhor.chave}" tem a melhor taxa de fechamento (${taxa(melhor)}).` : `Maior volume é em "${top.chave}".`
   }
   if (titulo === 'Motivos de não fechamento') return `Motivo mais comum: "${top.chave}" — revise como você responde a essa objeção.`
-  if (titulo === 'Não fecharam, por mês da procura') return `Pico de perdas em ${top.chave} — vale reabrir essas conversas.`
-  if (titulo === 'Carteira de clientes') {
-    const problema = linhas.find(l => l.chave === 'Fria' || l.chave === 'Detratora')
-    return problema ? `${problema.total} cliente(s) fria(s) ou detratora(s) — priorize contato de relacionamento com elas.` : `Carteira majoritariamente promotora ou neutra — bom sinal.`
-  }
   return null
 }
 </script>
@@ -140,12 +134,9 @@ function insight(titulo: string, linhas: Linha[]): string | null {
 
     <div v-if="stats" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
       <section v-for="bloco in [
-        { titulo: 'Funil por etapa', sub: 'Casos atualmente em cada etapa.', linhas: stats.porEtapa, conv: false },
         { titulo: 'Origem dos contatos', sub: 'Contatos · taxa de fechamento.', linhas: stats.porOrigem, conv: true },
         { titulo: 'Áreas de atuação', sub: 'Contatos · taxa de fechamento.', linhas: stats.porArea, conv: true },
         { titulo: 'Motivos de não fechamento', sub: 'O que ajustar na captação ou na proposta.', linhas: stats.motivosPerda, conv: false },
-        { titulo: 'Não fecharam, por mês da procura', sub: 'Mês em que a pessoa procurou o escritório e não fechou.', linhas: stats.perdasPorMes ?? [], conv: false },
-        { titulo: 'Carteira de clientes', sub: 'Promotora, neutra, fria, detratora (NPS define automaticamente).', linhas: stats.carteira.filter(c => c.total).map(c => ({ chave: c.chave.charAt(0).toUpperCase() + c.chave.slice(1), total: c.total })), conv: false },
       ]" :key="bloco.titulo" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-6">
         <h2 class="text-2xl text-primary dark:text-zinc-100">{{ bloco.titulo }}</h2>
         <p class="text-xs text-gray-500 mb-4">{{ bloco.sub }}</p>
