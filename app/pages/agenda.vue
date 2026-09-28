@@ -51,6 +51,48 @@ const blocos = computed(() => {
 })
 const hora = (c: Compromisso) => c.inicio ? new Date(c.inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : ''
 
+// ─── Visão calendário (grade do mês) ─────────────────────────────────────────
+const visao = ref<'lista' | 'calendario'>('lista')
+const mesAtual = ref(new Date(Number(hoje.slice(0, 4)), Number(hoje.slice(5, 7)) - 1, 1))
+const nomeMes = computed(() => mesAtual.value.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }))
+function mudarMes(delta: number) { mesAtual.value = new Date(mesAtual.value.getFullYear(), mesAtual.value.getMonth() + delta, 1) }
+function irParaHoje() { mesAtual.value = new Date(Number(hoje.slice(0, 4)), Number(hoje.slice(5, 7)) - 1, 1) }
+
+const porDia = computed(() => {
+  const mapa = new Map<string, Compromisso[]>()
+  for (const c of itens.value) {
+    const d = dataCompromisso(c)
+    if (!mapa.has(d)) mapa.set(d, [])
+    mapa.get(d)!.push(c)
+  }
+  return mapa
+})
+
+const semanas = computed(() => {
+  const ano = mesAtual.value.getFullYear()
+  const mes = mesAtual.value.getMonth()
+  const primeiroDia = new Date(ano, mes, 1)
+  const inicio = new Date(primeiroDia)
+  inicio.setDate(inicio.getDate() - inicio.getDay())
+  const dias: { data: string; numero: number; foraDoMes: boolean; hoje: boolean; itens: Compromisso[] }[] = []
+  const cursor = new Date(inicio)
+  for (let i = 0; i < 42; i++) {
+    const iso = cursor.toLocaleDateString('sv-SE')
+    dias.push({ data: iso, numero: cursor.getDate(), foraDoMes: cursor.getMonth() !== mes, hoje: iso === hoje, itens: (porDia.value.get(iso) ?? []).sort((a, b) => (a.inicio ?? '').localeCompare(b.inicio ?? '')) })
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  const grupos: typeof dias[] = []
+  for (let i = 0; i < dias.length; i += 7) grupos.push(dias.slice(i, i + 7))
+  return grupos
+})
+const CORES_TIPO: Record<string, string> = {
+  prazo: 'bg-warning/15 text-warning-dark dark:text-warning-200',
+  audiencia: 'bg-danger/15 text-danger-dark dark:text-danger-200',
+  consulta: 'bg-secondary/15 text-secondary-dark dark:text-secondary-200',
+  reuniao: 'bg-info/15 text-info-dark dark:text-info-200',
+  tarefa: 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300',
+}
+
 async function concluir(c: Compromisso) {
   await $fetch(`/api/compromissos/${c.id}`, { method: 'PATCH', body: { status: 'concluido' } })
   carregar()
@@ -135,7 +177,11 @@ async function excluir() {
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Agenda e prazos</h1>
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">Prazos processuais, audiências, consultas e tarefas. Prazos são contados em dias úteis (CPC), com feriados nacionais e recesso forense.</p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
+        <div class="inline-flex rounded-full border border-gray-200 dark:border-zinc-700 p-0.5">
+          <button type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors" :class="visao === 'lista' ? 'bg-primary text-white' : 'text-gray-500'" @click="visao = 'lista'">Lista</button>
+          <button type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors" :class="visao === 'calendario' ? 'bg-primary text-white' : 'text-gray-500'" @click="visao = 'calendario'">Calendário</button>
+        </div>
         <select v-model="filtroTipo" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm">
           <option value="">Tudo</option>
           <option v-for="(t, k) in TIPOS_COMPROMISSO" :key="k" :value="k">{{ t.nome }}</option>
@@ -145,6 +191,31 @@ async function excluir() {
     </div>
 
     <p v-if="carregando" class="text-sm text-gray-400">Carregando…</p>
+
+    <section v-if="visao === 'calendario'" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-4 sm:p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl text-primary dark:text-zinc-100 capitalize">{{ nomeMes }}</h2>
+        <div class="flex items-center gap-1">
+          <button type="button" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 inline-flex items-center justify-center" @click="mudarMes(-1)"><Icon name="ph:caret-left-bold" /></button>
+          <button type="button" class="text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-gray-300 dark:border-zinc-700 hover:border-primary" @click="irParaHoje">Hoje</button>
+          <button type="button" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 inline-flex items-center justify-center" @click="mudarMes(1)"><Icon name="ph:caret-right-bold" /></button>
+        </div>
+      </div>
+      <div class="grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+        <span v-for="d in ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']" :key="d">{{ d }}</span>
+      </div>
+      <div class="space-y-1">
+        <div v-for="(semana, si) in semanas" :key="si" class="grid grid-cols-7 gap-1">
+          <div v-for="dia in semana" :key="dia.data" class="min-h-[92px] rounded-xl p-1.5 border" :class="dia.hoje ? 'border-primary bg-primary/5' : 'border-gray-100 dark:border-zinc-800'">
+            <p class="text-[11px] font-semibold" :class="dia.foraDoMes ? 'text-gray-300 dark:text-zinc-700' : dia.hoje ? 'text-primary' : 'text-gray-500'">{{ dia.numero }}</p>
+            <button v-for="c in dia.itens.slice(0, 3)" :key="c.id" class="block w-full text-left text-[10px] font-semibold px-1.5 py-0.5 rounded-full truncate mt-0.5" :class="CORES_TIPO[c.tipo]" :title="c.titulo" @click="editar(c)">{{ c.titulo }}</button>
+            <p v-if="dia.itens.length > 3" class="text-[9px] text-gray-400 px-1.5">+{{ dia.itens.length - 3 }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <template v-else>
     <section v-for="b in blocos" v-show="b.itens.length || b.id === 'hoje'" :key="b.id" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5 sm:p-6">
       <h2 class="text-2xl mb-3" :class="b.cor || 'text-primary dark:text-zinc-100'">{{ b.titulo }} <span class="text-sm text-gray-400">{{ b.itens.length }}</span></h2>
       <p v-if="!b.itens.length" class="text-sm italic text-gray-400">Nada para hoje.</p>
@@ -169,6 +240,7 @@ async function excluir() {
         </li>
       </ul>
     </section>
+    </template>
 
     <Modal :is-open="aberto" :title="editando ? 'Editar compromisso' : 'Novo compromisso'" max-width="2xl" :loading="salvando" @close="aberto = false">
       <form id="compromisso-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4" @submit.prevent="salvar">
