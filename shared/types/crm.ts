@@ -326,6 +326,18 @@ export const CAMPOS_CONFIDENCIAIS = ['cpf', 'rg'] as const
 export const TIPOS_CASO = { judicial: 'Judicial', extrajudicial: 'Extrajudicial (cartório)', consultivo: 'Consultivo' } as const
 export const STATUS_CASO = { ativo: 'Ativo', suspenso: 'Suspenso', encerrado: 'Encerrado' } as const
 export const FASES_PROCESSUAIS = ['Postulatória (petição inicial)', 'Instrução', 'Sentença', 'Recurso', 'Execução/cumprimento de sentença', 'Arquivado aguardando'] as const
+
+// Tarefas internas do escritório, sem vínculo com cliente ou caso.
+export const COLUNAS_TAREFA = { hoje: 'Hoje', semana: 'Essa semana', mes: 'Esse mês', quando_der: 'Quando der' } as const
+export interface TarefaInterna {
+  id: number
+  titulo: string
+  descricao: string | null
+  coluna: keyof typeof COLUNAS_TAREFA
+  concluida: boolean
+  created_at: string
+  updated_at: string
+}
 export interface Caso {
   id: number
   created_at: string

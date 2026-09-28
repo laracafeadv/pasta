@@ -71,7 +71,10 @@ const grupos = computed(() => {
     },
     {
       titulo: 'Escritório',
-      itens: [{ label: 'Casos', path: '/casos', icone: 'ph:briefcase-bold' }] as { label: string; path: string; icone: string; badge?: number }[],
+      itens: [
+        { label: 'Casos', path: '/casos', icone: 'ph:briefcase-bold' },
+        { label: 'Tarefas internas', path: '/tarefas', icone: 'ph:check-square-bold' },
+      ] as { label: string; path: string; icone: string; badge?: number }[],
     },
   ]
   lista[3]!.itens.push({ label: 'Padrões operacionais', path: '/manual', icone: 'ph:list-checks-bold' })
