@@ -20,16 +20,22 @@
         v-for="c in col.itens"
         :key="c.id"
         draggable="true"
-        class="rounded-2xl bg-white dark:bg-zinc-800 p-3 cursor-grab border-l-4 shadow-sm hover:shadow-md transition-shadow space-y-1"
+        class="rounded-2xl bg-white dark:bg-zinc-800 p-3 cursor-grab border-l-4 shadow-sm hover:shadow-md transition-shadow space-y-1.5"
         :class="borda(c)"
         @dragstart="$event.dataTransfer?.setData('text/plain', String(c.id))"
         @click="emit('abrir', c)"
       >
-        <p class="font-semibold text-sm">{{ c.nome || telefoneFormatado(c.telefone) }}</p>
-        <p v-if="c.demanda || c.area" class="text-xs text-secondary-dark dark:text-secondary-200">{{ c.demanda || c.area }}</p>
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" :class="corArea(c.area)">{{ iniciais(c) }}</span>
+          <p class="font-bold text-sm truncate flex-1">{{ c.nome || telefoneFormatado(c.telefone) }}</p>
+          <span v-if="c.urgencia === 'Alta'" class="w-2 h-2 rounded-full bg-danger shrink-0" title="Urgência alta" />
+        </div>
+        <span v-if="c.demanda || c.area" class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full" :class="corAreaTag(c.area)">{{ c.demanda || c.area }}</span>
         <p class="text-xs" :class="textoProximo(c).classe">{{ textoProximo(c).texto }}</p>
-        <p class="text-[10px] text-gray-400">há {{ dias(c) }} dia(s) nesta etapa</p>
-        <p v-if="!c.ia_ativa" class="text-[10px] font-semibold uppercase tracking-wider text-warning-dark dark:text-warning-300">Aguardando você</p>
+        <div class="flex items-center justify-between pt-0.5">
+          <span class="text-[10px] text-gray-400">há {{ dias(c) }} dia(s)</span>
+          <span v-if="!c.ia_ativa" class="text-[10px] font-semibold uppercase tracking-wider text-warning-dark dark:text-warning-300">Aguardando você</span>
+        </div>
       </article>
     </section>
   </div>
@@ -68,6 +74,23 @@ const textoProximo = (c: Contato) => {
 }
 
 const dias = (c: Contato) => Math.max(0, Math.floor((Date.now() - new Date(c.etapa_desde).getTime()) / 864e5))
+
+const iniciais = (c: Contato) => (c.nome || telefoneFormatado(c.telefone) || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase()
+// Classes estáticas (Tailwind precisa ver a string completa).
+const CORES_AREA: Record<string, string> = {
+  'Direito de Família': 'bg-secondary/20 text-secondary-dark',
+  'Sucessões': 'bg-primary/15 text-primary',
+  'Planejamento Matrimonial': 'bg-success/15 text-success-dark',
+  'Consultoria Jurídica': 'bg-info/15 text-info-dark',
+}
+const CORES_AREA_TAG: Record<string, string> = {
+  'Direito de Família': 'bg-secondary/15 text-secondary-dark',
+  'Sucessões': 'bg-primary/10 text-primary',
+  'Planejamento Matrimonial': 'bg-success/10 text-success-dark',
+  'Consultoria Jurídica': 'bg-info/10 text-info-dark',
+}
+const corArea = (area: string | null) => CORES_AREA[area ?? ''] ?? 'bg-gray-200 text-gray-500'
+const corAreaTag = (area: string | null) => CORES_AREA_TAG[area ?? ''] ?? 'bg-gray-100 text-gray-500'
 
 function soltar(etapaId: string, e: DragEvent) {
   arrastandoSobre.value = null
