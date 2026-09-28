@@ -267,6 +267,12 @@ export interface ModeloMensagem {
   ativo: boolean
 }
 
+export interface FormularioTemplate {
+  id: number
+  nome: string
+  perguntas: string[]
+}
+
 // ─── Dados do escritório (tela "Escritório"; alimentam a Ana e as peças) ─────
 export const ESCRITORIO_CAMPOS = [
   { chave: 'advogada_nome', rotulo: 'Nome da advogada', grupo: 'Identificação', exemplo: 'Lara Café' },

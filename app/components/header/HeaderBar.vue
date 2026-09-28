@@ -78,6 +78,7 @@ const navItems = computed(() => {
     { label: 'Funil e contatos', path: '/crm?aba=funil' },
     { label: 'Casos', path: '/casos' },
     { label: 'Mensagens', path: '/mensagens' },
+    { label: 'Modelos de formulário', path: '/formularios' },
     { label: 'Remarketing', path: '/crm?aba=remarketing' },
     { label: role === 'admin' ? 'Financeiro' : 'Honorários', path: '/honorarios' },
     { label: 'Relatórios', path: '/relatorios' },

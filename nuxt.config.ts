@@ -34,6 +34,7 @@ export default defineNuxtConfig({
     'nuxt-llms',
     '@nuxt/icon',
     '@vite-pwa/nuxt',
+    '@vercel/speed-insights/nuxt',
   ],
   pwa: {
     registerType: 'autoUpdate',
