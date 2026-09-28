@@ -4,7 +4,6 @@ import { useRoute } from '#imports'
 import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
 import { TIPOS_COMPROMISSO, dataCompromisso, type Caso, type Compromisso, type Contato } from '~~/shared/types/crm'
-import { calcularPrazo } from '~~/shared/utils/juridico'
 import { dataCurta } from '~/utils/formatadores'
 import { hojeISO, somarDias } from '~/stores/crm'
 

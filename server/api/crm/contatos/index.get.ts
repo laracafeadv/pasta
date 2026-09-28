@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
     q = q.or(`nome.ilike.%${search}%,email.ilike.%${search}%,telefone.ilike.%${search.replace(/\D/g, '') || search}%,parte_contraria.ilike.%${search}%,resumo.ilike.%${search}%`)
   }
   if (query.etapa) q = q.eq('etapa', String(query.etapa))
+  else if (query.clientes === '1') q = q.in('etapa', ['ativo', 'concluido'])
+  else if (query.leads === '1') q = q.not('etapa', 'in', '(ativo,concluido)')
   else if (query.abertos === '1') q = q.not('etapa', 'in', '(concluido,perdido)')
   if (query.area) q = q.eq('area', String(query.area))
   if (query.origem) q = q.eq('origem', String(query.origem))

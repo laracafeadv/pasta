@@ -4,7 +4,6 @@ import { definePageMeta, useHead, useRoute, useRouter } from '#imports'
 import Button from '~/components/Button.vue'
 import HojePanel from '~/components/crm/HojePanel.vue'
 import CalendarioPanel from '~/components/crm/CalendarioPanel.vue'
-import FunilBoard from '~/components/crm/FunilBoard.vue'
 import ContatosTable from '~/components/crm/ContatosTable.vue'
 import RemarketingBoard from '~/components/crm/RemarketingBoard.vue'
 import ContatoFormModal from '~/components/crm/ContatoFormModal.vue'
@@ -22,12 +21,10 @@ const router = useRouter()
 
 const abas = [
   { id: 'hoje', label: 'Hoje' },
-  { id: 'funil', label: 'Funil' },
-  { id: 'contatos', label: 'Contatos' },
+  { id: 'contatos', label: 'Buscar contatos' },
   { id: 'remarketing', label: 'Remarketing' },
 ] as const
 const aba = computed(() => (abas.some(a => a.id === route.query.aba) ? String(route.query.aba) : 'hoje'))
-const mostrarEncerrados = ref(false)
 const dataHoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
 
 // ─── Hoje: lista (kanban, já com as tarefas internas juntas) ou calendário ───
@@ -35,7 +32,6 @@ const visaoHoje = ref<'kanban' | 'calendario'>(route.query.ver === 'calendario' 
 
 function carregarAba() {
   if (aba.value === 'hoje') crm.fetchAgenda()
-  if (aba.value === 'funil') crm.fetchFunil(mostrarEncerrados.value)
   if (aba.value === 'contatos') crm.fetchRecords()
 }
 onMounted(() => {
@@ -44,7 +40,6 @@ onMounted(() => {
   if (aba.value !== 'hoje') crm.fetchAgenda() // alimenta o contador do menu
 })
 watch(aba, carregarAba)
-watch(mostrarEncerrados, (v) => crm.fetchFunil(v))
 
 // ─── Ficha (criar / editar) ─────────────────────────────────────────────────
 const formAberto = ref(false)
@@ -110,13 +105,12 @@ async function adiar(c: Contato) {
       <div>
         <p class="eyebrow capitalize">{{ aba === 'hoje' ? dataHoje : 'Jornada do cliente' }}</p>
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">
-          {{ aba === 'hoje' ? 'O que precisa de você hoje' : aba === 'funil' ? 'Funil de atendimento' : aba === 'remarketing' ? 'Remarketing' : 'Contatos e clientes' }}
+          {{ aba === 'hoje' ? 'O que precisa de você hoje' : aba === 'remarketing' ? 'Remarketing' : 'Buscar contatos' }}
         </h1>
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">
           <template v-if="aba === 'hoje'">{{ visaoHoje === 'kanban' ? 'Casos com próxima ação e tarefas internas, lado a lado — tudo que precisa de você.' : 'Prazos processuais, audiências, consultas e tarefas — contados em dias úteis (CPC), com feriados nacionais e recesso forense.' }}</template>
-          <template v-else-if="aba === 'funil'">Arraste os cartões entre as etapas. Borda vermelha: atrasado. Âmbar: sem próxima ação.</template>
           <template v-else-if="aba === 'remarketing'">Quem procurou e não fechou, por demanda, para receber conteúdo do interesse dela e, quando fizer sentido, retomar a conversa.</template>
-          <template v-else>Toda a base, com busca e filtros.</template>
+          <template v-else>Toda a base, com busca e filtros — leads e clientes têm telas próprias em Leads e Clientes.</template>
         </p>
       </div>
       <Button icon="ph:plus-bold" @click="novo">Novo contato</Button>
@@ -133,9 +127,6 @@ async function adiar(c: Contato) {
         {{ a.label }}
         <span v-if="a.id === 'hoje' && crm.pendencias" class="ml-1.5 opacity-80">{{ crm.pendencias }}</span>
       </NuxtLink>
-      <label v-if="aba === 'funil'" class="ml-auto text-sm flex items-center gap-2 cursor-pointer">
-        <input v-model="mostrarEncerrados" type="checkbox" class="accent-[#3c2923]" /> Mostrar encerrados
-      </label>
       <div v-if="aba === 'hoje'" class="ml-auto flex gap-1.5 rounded-full bg-gray-100 dark:bg-zinc-800 p-1">
         <button type="button" class="px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 :class="visaoHoje === 'kanban' ? 'bg-white dark:bg-zinc-700 text-primary dark:text-white shadow-sm' : 'text-gray-500'"
@@ -152,7 +143,6 @@ async function adiar(c: Contato) {
       <HojePanel v-if="visaoHoje === 'kanban'" :agenda="crm.agenda" @abrir="abrir" @andamento="andamento" @adiar="adiar" />
       <CalendarioPanel v-else />
     </template>
-    <FunilBoard v-else-if="aba === 'funil'" :contatos="crm.funil" :mostrar-encerrados="mostrarEncerrados" @abrir="abrir" @mover="andamento" />
     <RemarketingBoard v-else-if="aba === 'remarketing'" ref="remarketing" @abrir="abrir" @mensagem="(c, m) => abrir(c, 'conversa', m)" @reabrir="(c) => andamento(c, 'qualificacao')" />
     <ContatosTable v-else @abrir="abrir" />
 

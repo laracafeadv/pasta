@@ -57,7 +57,6 @@ import { computed, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import { AREAS, FASES_PROCESSUAIS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, UFS, type Caso, type Contato } from '../../../shared/types/crm'
-import { numeroCnjValido } from '../../../shared/utils/juridico'
 import { hojeISO } from '../../stores/crm'
 
 const props = defineProps<{ isOpen: boolean; contato: Pick<Contato, 'id' | 'nome' | 'area' | 'demanda' | 'parte_contraria'> | null; caso?: Caso | null }>()

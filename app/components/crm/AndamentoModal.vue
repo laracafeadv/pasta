@@ -95,7 +95,6 @@ import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import { CADENCIA, ETAPAS, MOTIVOS_PERDA, SEQUENCIA_FOLLOWUP, TIPOS_HONORARIO, etapa, type Contato, type Honorario } from '../../../shared/types/crm'
 import { hojeISO, somarDias, type AndamentoPayload } from '../../stores/crm'
-import { calcularPrazo } from '../../../shared/utils/juridico'
 import { brl, linkGoogleAgenda } from '../../utils/formatadores'
 
 const props = defineProps<{ isOpen: boolean; contato: Contato | null; etapaDestino?: string | null; loading?: boolean; erro?: string | null }>()

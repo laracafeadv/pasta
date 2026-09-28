@@ -56,7 +56,8 @@ const grupos = computed(() => {
     {
       titulo: 'Meus clientes',
       itens: [
-        { label: 'Funil e contatos', path: '/crm?aba=funil', icone: 'ph:kanban-bold' },
+        { label: 'Leads', path: '/leads', icone: 'ph:kanban-bold' },
+        { label: 'Clientes', path: '/clientes', icone: 'ph:users-bold' },
         { label: 'Casos', path: '/casos', icone: 'ph:briefcase-bold' },
         { label: 'Mensagens', path: '/mensagens', icone: 'ph:chat-circle-text-bold' },
         { label: 'Formulários', path: '/formularios', icone: 'ph:clipboard-text-bold' },

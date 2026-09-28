@@ -47,12 +47,12 @@ import { ETAPAS, type Contato } from '../../../shared/types/crm'
 import { hojeISO } from '../../stores/crm'
 import { dataCurta, telefoneFormatado } from '../../utils/formatadores'
 
-const props = defineProps<{ contatos: Contato[]; mostrarEncerrados?: boolean }>()
+const props = defineProps<{ contatos: Contato[]; mostrarEncerrados?: boolean; etapasIds?: string[] }>()
 const emit = defineEmits<{ abrir: [c: Contato]; mover: [c: Contato, etapa: string] }>()
 const arrastandoSobre = ref<string | null>(null)
 
 const colunas = computed(() =>
-  ETAPAS.filter(e => e.aberta || props.mostrarEncerrados).map(e => ({
+  ETAPAS.filter(e => (!props.etapasIds || props.etapasIds.includes(e.id)) && (e.aberta || props.mostrarEncerrados)).map(e => ({
     ...e,
     itens: props.contatos
       .filter(c => c.etapa === e.id)
