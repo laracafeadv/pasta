@@ -117,7 +117,6 @@ const grupos = computed(() => {
       cor: 'secondary',
       itens: [
         { nome: 'Funil e contatos', to: '/crm?aba=funil', desc: 'Todo o funil, de novo contato a cliente ativo.', icone: 'ph:kanban-bold' },
-        { nome: 'Carteira', to: '/crm?aba=carteira', desc: 'Promotoras, neutras, frias e detratoras.', icone: 'ph:heart-bold' },
         { nome: 'Mensagens', to: '/mensagens', desc: 'Biblioteca de mensagens prontas (/atalho).', icone: 'ph:chat-circle-text-bold' },
         { nome: 'Remarketing', to: '/crm?aba=remarketing', desc: 'Quem não fechou, por demanda e motivo.', icone: 'ph:arrow-counter-clockwise-bold' },
       ],

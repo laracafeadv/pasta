@@ -1,10 +1,5 @@
 <template>
   <div class="space-y-5">
-    <div class="flex flex-wrap items-center gap-3 text-sm">
-      <NuxtLink v-if="agenda.relacionamento" :to="{ query: { aba: 'carteira' } }" class="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-secondary/15 text-secondary-dark dark:text-secondary-200 hover:bg-secondary/25">
-        <Icon name="ph:heart-bold" /> {{ agenda.relacionamento }} cliente(s) da carteira pedem um gesto
-      </NuxtLink>
-    </div>
     <div v-if="agenda.transferidas.length" class="rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm flex flex-wrap items-center gap-2">
       <Icon name="ph:user-switch-bold" class="text-warning-dark" />
       <b>{{ agenda.transferidas.length }} conversa(s) aguardam você no WhatsApp</b>

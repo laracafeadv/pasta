@@ -13,7 +13,6 @@ export interface Agenda {
   sugestoes?: Contato[]
   compromissos: Compromisso[]
   aniversarios: Pick<Contato, 'id' | 'nome' | 'telefone' | 'data_nascimento' | 'classificacao'>[]
-  relacionamento?: number
   semRelatorio?: Contato[]
 }
 

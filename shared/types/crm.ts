@@ -381,56 +381,6 @@ export function normalizarNome(s: string | null | undefined): string {
   return String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
 }
 
-// ─── Carteira: plano de ação por classificação (playbook "Classificando seus clientes") ───
-export const PERGUNTA_CLASSIFICAR = 'Se essa pessoa precisasse de uma advogada amanhã, ela me procuraria, procuraria outra pessoa, ou nem lembraria de mim?'
-
-/** Dias sem contato a partir dos quais a cliente "pede um gesto". Detratora segue regra própria. */
-export const PLANO_CARTEIRA: Record<Classificacao, { meta: string; cadenciaDias: number | null; acoes: string[]; modelos: string[] }> = {
-  promotora: {
-    meta: 'Manter e ativar, sem "gastar" o relacionamento',
-    cadenciaDias: 60,
-    acoes: ['Reconhecimento sem pedir nada em troca', 'Tratar como VIP: prioridade, um pequeno mimo, convite exclusivo', 'Conectar promotoras entre si, quando fizer sentido', 'Guardar para o funil de avaliação/indicação'],
-    modelos: ['/reconhecimento', '/aniversario'],
-  },
-  neutra: {
-    meta: 'Dar um motivo para ela se aproximar',
-    cadenciaDias: 45,
-    acoes: ['Mensagem de reconexão não comercial ("lembrei de você")', 'Algo que só clientes recebem: conteúdo exclusivo, bastidor', 'Personalizar: citar algo específico do caso ou da conversa'],
-    modelos: ['/reconexao', '/bastidor'],
-  },
-  fria: {
-    meta: 'Reconstruir proximidade sem pressa e sem pressão comercial',
-    cadenciaDias: 30,
-    acoes: ['Contato humano, não institucional, sem gancho comercial', 'Nutrir com conteúdo de autoridade se a relação ainda está começando', 'Pequenos gestos de atenção; nunca aparecer só quando precisa de algo'],
-    modelos: ['/reaquecer'],
-  },
-  detratora: {
-    meta: 'Reparar ou blindar, nunca ignorar',
-    cadenciaDias: null,
-    acoes: ['Recente (até 90 dias): responder rápido, reconhecer com empatia, ser transparente e oferecer reparação concreta', 'Antiga ou já corrigida: não reabrir o assunto; registrar o motivo e garantir que não se repita com outras clientes'],
-    modelos: ['/reparacao'],
-  },
-}
-export const DETRATORA_RECENTE_DIAS = 90
-
-export interface ClienteCarteira extends Pick<Contato, 'id' | 'nome' | 'telefone' | 'etapa' | 'area' | 'demanda' | 'classificacao' | 'classificacao_desde' | 'nps' | 'obs_relacionamento' | 'data_nascimento'> {
-  ultimo_contato: string | null
-}
-
-/** O que a carteira pede para esta cliente agora (null = nada a fazer). */
-export function situacaoCarteira(c: Pick<ClienteCarteira, 'classificacao' | 'classificacao_desde' | 'ultimo_contato'>, agora = Date.now()): { tipo: 'classificar' | 'gesto' | 'reparar' | 'blindar'; texto: string } | null {
-  if (!c.classificacao) return { tipo: 'classificar', texto: 'Classificar' }
-  const dias = (iso: string | null) => (iso ? Math.floor((agora - new Date(iso).getTime()) / 864e5) : Infinity)
-  if (c.classificacao === 'detratora') {
-    return dias(c.classificacao_desde) <= DETRATORA_RECENTE_DIAS
-      ? { tipo: 'reparar', texto: 'Reparar agora' }
-      : { tipo: 'blindar', texto: 'Blindar: não reabrir' }
-  }
-  const limite = PLANO_CARTEIRA[c.classificacao].cadenciaDias!
-  const d = dias(c.ultimo_contato)
-  return d >= limite ? { tipo: 'gesto', texto: d === Infinity ? 'Sem contato registrado' : `${d} dias sem contato` } : null
-}
-
 // ─── Diagnóstico: roteiro da consulta, 5 porquês e viabilidade ───────────────
 export const ROTEIRO_CONSULTA: Record<string, string[]> = {
   '*': [

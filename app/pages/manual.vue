@@ -125,7 +125,7 @@ const FASES: Fase[] = [
       { titulo: 'Prazos em dias úteis', texto: 'A calculadora já considera fins de semana, feriados nacionais e o recesso de 20/12 a 20/01 (CPC art. 219/220/224).' },
       { titulo: 'Relatório semanal', texto: 'Quando um cliente ativo fica 7+ dias sem novidade registrada, a tela Hoje avisa e sugere a mensagem /relatorio-semanal.', automatico: true },
       { titulo: 'Revisão por amostragem', texto: 'Nos Relatórios, revise casos por amostragem (prazos, próxima ação, cliente informado, documentos, financeiro). Falha vira tarefa com prazo.' },
-      { titulo: 'Aniversários e carteira', texto: 'A tela Hoje avisa aniversário do dia; a Carteira classifica automaticamente pela nota do NPS.', automatico: true },
+      { titulo: 'Aniversários e classificação', texto: 'A tela Hoje avisa aniversário do dia; a classificação (promotora/neutra/fria/detratora) fica na ficha do cliente e é definida automaticamente pela nota do NPS.', automatico: true },
     ],
     links: [{ nome: 'Ir para a Agenda', to: '/agenda' }],
   },
@@ -136,11 +136,11 @@ const FASES: Fase[] = [
     passos: [
       { titulo: 'Encerrar o caso', texto: 'Registre o resultado (êxito, parcial, acordo, sem êxito ou desistência) e a data de encerramento.' },
       { titulo: 'Pós-venda agendado', texto: 'O sistema já agenda um contato 30 dias depois (/pos-venda-30) e outro 1 ano depois (/pos-venda-1ano).', automatico: true },
-      { titulo: 'Pesquisa de satisfação', texto: 'Convite, nota de 0 a 10 e o motivo — a nota classifica a cliente sozinha na Carteira.', automatico: true },
+      { titulo: 'Pesquisa de satisfação', texto: 'Convite, nota de 0 a 10 e o motivo — a nota classifica a cliente sozinha na ficha dela.', automatico: true },
       { titulo: 'Pedido de avaliação', texto: 'Só para quem deu nota alta: peça a avaliação no Google (/avaliacao).' },
       { titulo: 'Remarketing', texto: 'Quem não fechou entra no Remarketing, agrupado por demanda, e pode receber conteúdo a cada 45 dias — nunca quem pediu para não receber.' },
     ],
-    links: [{ nome: 'Ir para a Carteira', to: '/crm?aba=carteira' }, { nome: 'Ir para o Remarketing', to: '/crm?aba=remarketing' }],
+    links: [{ nome: 'Ir para o Remarketing', to: '/crm?aba=remarketing' }],
   },
 ]
 
