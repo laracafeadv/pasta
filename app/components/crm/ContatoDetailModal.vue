@@ -52,9 +52,9 @@
           <p v-if="dados.contato.consulta_em"><b>Consulta:</b> {{ dataHora(dados.contato.consulta_em) }}</p>
           <div class="flex flex-wrap items-center gap-2 mt-1">
             <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"
-                    :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Um clique: gera o link com o resumo livre e já prepara a mensagem'"
+                    :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Um clique: gera o link e já copia pra você colar no WhatsApp'"
                     @click="enviarPreFormularioRapido">
-              {{ dados.contato.pre_form_respondido_em ? 'Formulário pré-consulta respondido ✓' : 'Enviar formulário pré-consulta' }}
+              {{ dados.contato.pre_form_respondido_em ? 'Formulário pré-consulta respondido ✓' : 'Gerar e copiar link do formulário' }}
             </button>
             <button type="button" class="text-[11px] text-gray-400 hover:text-primary underline underline-offset-2" @click="abrirEditorPreFormulario">
               + perguntas deste caso
@@ -63,6 +63,7 @@
               Visualizar formulário
             </a>
           </div>
+          <p v-if="avisoFormulario" class="text-xs mt-1" :class="avisoFormulario.erro ? 'text-danger' : 'text-success-dark'">{{ avisoFormulario.texto }}</p>
         </div>
         <div class="card">
           <h3>Relacionamento</h3>
@@ -227,7 +228,7 @@
           <button v-if="ehAdmin" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}`)">Procuração (.docx)</button>
           <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/relatorio-semanal?contato=${dados.contato.id}`)">Relatório semanal (.docx)</button>
           <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full bg-primary text-white" :title="dados.contato.form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Dados formais pra procuração e contrato (nome, CPF, endereço) — depois de fechar, não é o formulário pré-consulta'" @click="enviarFormulario">
-            {{ dados.contato.form_respondido_em ? 'Dados do contrato ✓' : 'Enviar dados para o contrato' }}
+            {{ dados.contato.form_respondido_em ? 'Dados do contrato ✓' : 'Gerar e copiar link dos dados do contrato' }}
           </button>
         </div>
         <label v-if="ehAdmin && driveOk" class="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400 cursor-pointer">
@@ -236,6 +237,7 @@
         <p v-if="avisoDrive" class="text-xs" :class="avisoDrive.erro ? 'text-danger' : 'text-success-dark'">
           {{ avisoDrive.texto }} <a v-if="avisoDrive.url" :href="avisoDrive.url" target="_blank" rel="noopener" class="underline">abrir</a>
         </p>
+        <p v-if="avisoFormulario" class="text-xs" :class="avisoFormulario.erro ? 'text-danger' : 'text-success-dark'">{{ avisoFormulario.texto }}</p>
         <p v-if="!dados.casos.length" class="text-sm text-gray-400">Nenhum caso aberto.</p>
         <article v-for="k in dados.casos" :key="k.id" class="card">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
@@ -609,6 +611,19 @@ async function descartarSugestao() {
   await $fetch(`/api/crm/contatos/${dados.value.contato.id}`, { method: 'PUT', body: { sugestao_resposta: null } })
   dados.value.contato.sugestao_resposta = null
 }
+// Copia o texto pronto pra área de transferência e avisa — nunca depende do envio
+// automático pelo WhatsApp (incerto), então funciona sempre: você mesma cola no seu WhatsApp.
+const avisoFormulario = ref<{ texto: string; erro?: boolean } | null>(null)
+async function copiarEAvisar(texto: string) {
+  try {
+    await navigator.clipboard.writeText(texto)
+    avisoFormulario.value = { texto: 'Copiado! Agora é só colar no WhatsApp da cliente.' }
+  } catch {
+    avisoFormulario.value = { texto: 'Não deu pra copiar sozinho — selecione e copie o texto na aba Conversa.', erro: true }
+  }
+  setTimeout(() => { avisoFormulario.value = null }, 6000)
+}
+
 // Formulário da cliente (Módulo 1: depois de contratar, não antes da consulta).
 async function enviarFormulario() {
   if (!dados.value) return
@@ -617,8 +632,10 @@ async function enviarFormulario() {
   await carregarModelos()
   const m = modelos.value.find(x => x.atalho === '/formulario')
   const link = `${window.location.origin}${r.caminho}`
-  resposta.value = m ? preencher(m.texto, dados.value.contato.nome, { ...extrasContato.value, 'LINK DO FORMULÁRIO': link }) : link
-  aba.value = 'conversa'
+  const texto = m ? preencher(m.texto, dados.value.contato.nome, { ...extrasContato.value, 'LINK DO FORMULÁRIO': link }) : link
+  resposta.value = texto
+  await carregar()
+  await copiarEAvisar(texto)
 }
 // Formulário pré-consulta: contexto leve, enviado antes da consulta (não substitui o de cima).
 // Sem perguntas fixas — só o resumo livre; "+ perguntas deste caso" abre o editor pra quem quiser personalizar.
@@ -640,8 +657,10 @@ async function gerarPreFormulario(extras: string[]) {
   await carregarModelos()
   const m = modelos.value.find(x => x.atalho === '/pre-consulta')
   const link = `${window.location.origin}${r.caminho}`
-  resposta.value = m ? preencher(m.texto, dados.value.contato.nome, { ...extrasContato.value, 'LINK DO FORMULÁRIO': link }) : link
-  aba.value = 'conversa'
+  const texto = m ? preencher(m.texto, dados.value.contato.nome, { ...extrasContato.value, 'LINK DO FORMULÁRIO': link }) : link
+  resposta.value = texto
+  await carregar()
+  await copiarEAvisar(texto)
 }
 
 async function enviarAoDrive(m: MensagemWhatsapp) {

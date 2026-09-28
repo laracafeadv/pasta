@@ -154,7 +154,7 @@ const FASES: Fase[] = [
       { titulo: 'Triagem x consulta', texto: 'A triagem é gratuita e só entende os fatos. A partir do momento em que se analisa direitos, riscos e estratégia do caso concreto, é consulta — e é paga.' },
       { titulo: 'Convite para a consulta', texto: 'Depois da triagem, o sistema sugere convidar para a consulta estratégica (mensagem /consulta) e move o contato para "Em qualificação".', automatico: 'avisa' },
       { titulo: 'Pagamento e agendamento', texto: 'Confirma o pagamento (PIX) e agenda o horário. Ao registrar, o contato vai para "Consulta agendada" e entra na Agenda.' },
-      { titulo: 'Formulário pré-consulta', texto: 'Um clique já gera e envia: abra a ficha da cliente e clique em "Enviar formulário pré-consulta". Só tem o resumo livre — se quiser perguntar algo específico deste caso, use "+ perguntas deste caso" antes de gerar o link.' },
+      { titulo: 'Formulário pré-consulta', texto: 'Um clique já gera o link e copia pra você: abra a ficha da cliente e clique em "Gerar e copiar link do formulário". É só colar no seu WhatsApp normal e mandar. Só tem o resumo livre — se quiser perguntar algo específico deste caso, use "+ perguntas deste caso" antes de gerar o link.' },
       { titulo: 'Lembrete', texto: 'No dia anterior, o sistema lembra de mandar a mensagem /lembrete com data, hora e link — mas é você que manda.', automatico: 'avisa' },
     ],
     links: [{ nome: 'Ir para o Hoje', to: '/crm' }, { nome: 'Mensagens prontas', to: '/mensagens' }],

@@ -25,7 +25,7 @@
 
       <div class="flex justify-end gap-2 pt-2">
         <Button variant="outline" @click="emit('close')">Cancelar</Button>
-        <Button :loading="gerando" @click="gerar">Gerar link e enviar</Button>
+        <Button :loading="gerando" @click="gerar">Gerar e copiar link</Button>
       </div>
     </div>
   </Modal>
