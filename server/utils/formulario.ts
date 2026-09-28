@@ -23,7 +23,7 @@ export const PRE_FORM_VALIDADE_DIAS = 14
 export async function contatoDoPreFormulario(admin: SupabaseClient, token: string | undefined) {
   if (!token || !/^[A-Za-z0-9_-]{32,64}$/.test(token)) throw createError({ statusCode: 404, message: 'Link inválido.' })
   const { data } = await admin.from('contatos')
-    .select('id, nome, area, pre_form_expira, pre_form_respondido_em, pre_form_pergunta_extra')
+    .select('id, nome, area, pre_form_expira, pre_form_respondido_em, pre_form_campos_ativos, pre_form_perguntas_extra')
     .eq('pre_form_token', token).maybeSingle()
   if (!data || !data.pre_form_expira || new Date(data.pre_form_expira).getTime() < Date.now()) {
     throw createError({ statusCode: 404, message: 'Este link não é mais válido. Peça um novo ao escritório.' })

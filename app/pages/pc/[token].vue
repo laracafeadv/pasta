@@ -22,7 +22,7 @@
 
         <form v-if="!enviado" class="space-y-6" @submit.prevent="enviar">
           <section class="card space-y-4">
-            <label class="campo"><span>Qual área tem a ver com a sua situação?</span>
+            <label v-if="temCampo('area')" class="campo"><span>Qual área tem a ver com a sua situação?</span>
               <select id="pf-area" v-model="f.area" class="modal-input">
                 <option value="">—</option>
                 <option v-for="a in Object.keys(AREAS)" :key="a">{{ a }}</option>
@@ -31,24 +31,24 @@
             <label class="campo"><span>Conte um pouco da sua situação *</span>
               <textarea id="pf-resumo" v-model="f.resumo" rows="4" class="modal-input" required placeholder="O que está acontecendo, desde quando..." />
             </label>
-            <label class="campo"><span>O que mais te preocupa agora?</span><textarea id="pf-preoc" v-model="f.preocupacao" rows="2" class="modal-input" /></label>
-            <label class="campo"><span>O que você espera alcançar com a consulta?</span><textarea id="pf-exp" v-model="f.expectativa" rows="2" class="modal-input" /></label>
-            <label class="campo"><span>Quão urgente você sente que isso é?</span>
+            <label v-if="temCampo('preocupacao')" class="campo"><span>O que mais te preocupa agora?</span><textarea id="pf-preoc" v-model="f.preocupacao" rows="2" class="modal-input" /></label>
+            <label v-if="temCampo('expectativa')" class="campo"><span>O que você espera alcançar com a consulta?</span><textarea id="pf-exp" v-model="f.expectativa" rows="2" class="modal-input" /></label>
+            <label v-if="temCampo('urgencia')" class="campo"><span>Quão urgente você sente que isso é?</span>
               <select id="pf-urg" v-model="f.urgencia" class="modal-input">
                 <option value="">—</option>
                 <option v-for="u in URGENCIAS" :key="u">{{ u }}</option>
               </select>
             </label>
-            <fieldset class="campo">
+            <fieldset v-if="temCampo('processo')" class="campo">
               <span>Já existe um processo em andamento sobre isso?</span>
               <div class="flex gap-4 text-sm">
                 <label class="flex items-center gap-2"><input v-model="f.processo_em_andamento" type="radio" :value="true" class="accent-[#3c2923]" /> Sim</label>
                 <label class="flex items-center gap-2"><input v-model="f.processo_em_andamento" type="radio" :value="false" class="accent-[#3c2923]" /> Não</label>
               </div>
             </fieldset>
-            <label v-if="info.perguntaExtra" class="campo">
-              <span>{{ info.perguntaExtra }}</span>
-              <textarea id="pf-extra" v-model="f.resposta_extra" rows="2" class="modal-input" />
+            <label v-for="(p, i) in info.perguntasExtra" :key="i" class="campo">
+              <span>{{ p }}</span>
+              <textarea v-model="respostasExtra[i]" rows="2" class="modal-input" />
             </label>
           </section>
 
@@ -85,17 +85,19 @@ definePageMeta({ layout: false })
 useHead({ title: 'Antes da consulta', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
 const token = String(useRoute().params.token)
-const info = ref<{ primeiroNome: string | null; advogada: string; respondido: boolean; area: string | null; perguntaExtra?: string | null } | null>(null)
+const info = ref<{ primeiroNome: string | null; advogada: string; respondido: boolean; area: string | null; campos: string[]; perguntasExtra: string[] } | null>(null)
 const f = reactive<Record<string, any>>({ processo_em_andamento: null, consentimento: false })
+const respostasExtra = ref<string[]>([])
 const enviado = ref(false)
 const enviando = ref(false)
 const erro = ref('')
 
 const preview = token === 'preview'
+const temCampo = (chave: string) => !info.value?.campos.length || info.value.campos.includes(chave)
 
 onMounted(async () => {
   if (preview) {
-    info.value = { primeiroNome: 'Maria', advogada: 'a advogada', respondido: false, area: null, perguntaExtra: 'Pergunta extra de exemplo, específica deste caso' }
+    info.value = { primeiroNome: 'Maria', advogada: 'a advogada', respondido: false, area: null, campos: ['area', 'preocupacao', 'expectativa', 'urgencia', 'processo'], perguntasExtra: ['Pergunta extra de exemplo, específica deste caso'] }
     return
   }
   try {
@@ -112,7 +114,7 @@ async function enviar() {
   enviando.value = true
   erro.value = ''
   try {
-    await $fetch(`/api/pre-formulario/${token}`, { method: 'POST', body: { ...f } })
+    await $fetch(`/api/pre-formulario/${token}`, { method: 'POST', body: { ...f, respostasExtra: respostasExtra.value } })
     enviado.value = true
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (e: any) {

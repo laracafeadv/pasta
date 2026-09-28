@@ -48,6 +48,16 @@ export const MOTIVOS_SEM_REMARKETING = ['Fora da área de atuação', 'Encaminha
 export const REMARKETING_INTERVALO_DIAS = 45
 
 export const URGENCIAS = ['Alta', 'Média', 'Baixa'] as const
+
+// Formulário pré-consulta: campos fixos que podem ser ligados/desligados por caso.
+// 'resumo' não entra aqui — é sempre obrigatório, é a âncora do formulário.
+export const CAMPOS_PRE_FORM = [
+  { chave: 'area', rotulo: 'Área do problema' },
+  { chave: 'preocupacao', rotulo: 'O que mais preocupa agora' },
+  { chave: 'expectativa', rotulo: 'O que espera alcançar com a consulta' },
+  { chave: 'urgencia', rotulo: 'Urgência' },
+  { chave: 'processo', rotulo: 'Já tem processo em andamento?' },
+] as const
 export const SENTIMENTOS = ['Positivo', 'Neutro', 'Negativo'] as const
 
 export const TIPOS_HONORARIO = ['Consulta', 'Contrato fixo', 'Em camadas', 'Êxito', 'Assessoria mensal'] as const
@@ -97,7 +107,9 @@ export interface Contato {
   form_respondido_em?: string | null
   pre_form_respondido_em?: string | null
   pre_form_pergunta_extra?: string | null
-  pre_form_resposta_extra?: string | null
+  pre_form_campos_ativos?: string[] | null
+  pre_form_perguntas_extra?: string[] | null
+  pre_form_respostas_extra?: (string | null)[] | null
   processo_em_andamento?: boolean | null
   /** Rascunho de resposta deixado pela rotina do Claude (some quando você responde). */
   sugestao_resposta?: string | null

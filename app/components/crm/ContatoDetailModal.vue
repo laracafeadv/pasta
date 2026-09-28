@@ -52,7 +52,7 @@
           <div class="flex flex-wrap gap-2 mt-1">
             <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"
                     :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Contexto do caso antes da consulta, sem dados formais'"
-                    @click="enviarPreFormulario">
+                    @click="abrirEditorPreFormulario">
               {{ dados.contato.pre_form_respondido_em ? 'Formulário pré-consulta respondido ✓' : 'Enviar formulário pré-consulta' }}
             </button>
             <a href="/pc/preview" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-gray-300 dark:border-zinc-700 text-gray-500 hover:border-primary hover:text-primary">
@@ -79,11 +79,13 @@
           <p v-if="dados.contato.obs_relacionamento"><b>Observação:</b> {{ dados.contato.obs_relacionamento }}</p>
           <p v-if="dados.contato.ultimo_contato_em"><b>Último gesto:</b> {{ dataCurta(dados.contato.ultimo_contato_em) }}</p>
         </div>
-        <div v-if="dados.contato.dor || dados.contato.objetivo || dados.contato.pre_form_resposta_extra" class="card">
+        <div v-if="dados.contato.dor || dados.contato.objetivo || dados.contato.pre_form_respostas_extra?.length" class="card">
           <h3>Com as palavras dela</h3>
           <p v-if="dados.contato.dor"><b>O que preocupa:</b> “{{ dados.contato.dor }}”</p>
           <p v-if="dados.contato.objetivo"><b>O que quer que mude:</b> “{{ dados.contato.objetivo }}”</p>
-          <p v-if="dados.contato.pre_form_resposta_extra"><b>{{ dados.contato.pre_form_pergunta_extra || 'Pergunta extra' }}:</b> “{{ dados.contato.pre_form_resposta_extra }}”</p>
+          <template v-for="(r, i) in dados.contato.pre_form_respostas_extra ?? []" :key="i">
+            <p v-if="r"><b>{{ dados.contato.pre_form_perguntas_extra?.[i] || 'Pergunta extra' }}:</b> “{{ r }}”</p>
+          </template>
         </div>
         <div class="card md:col-span-2">
           <h3>Resumo do caso</h3>
@@ -317,12 +319,20 @@
       </div>
     </template>
   </Modal>
+
+  <PreFormularioEditor
+    :is-open="editorPreFormAberto"
+    :campos-atuais="dados?.contato.pre_form_campos_ativos"
+    @close="editorPreFormAberto = false"
+    @gerar="gerarPreFormulario"
+  />
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
+import PreFormularioEditor from './PreFormularioEditor.vue'
 import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
@@ -597,11 +607,16 @@ async function enviarFormulario() {
   aba.value = 'conversa'
 }
 // Formulário pré-consulta: contexto leve, enviado antes da consulta (não substitui o de cima).
-async function enviarPreFormulario() {
+const editorPreFormAberto = ref(false)
+function abrirEditorPreFormulario() {
   if (!dados.value) return
   if (dados.value.contato.pre_form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return
-  const perguntaExtra = prompt('Alguma pergunta específica deste caso, além das fixas do formulário? (opcional, deixe em branco para pular)') ?? undefined
-  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST', body: { perguntaExtra } })
+  editorPreFormAberto.value = true
+}
+async function gerarPreFormulario(campos: string[], extras: string[]) {
+  if (!dados.value) return
+  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST', body: { campos, extras } })
+  editorPreFormAberto.value = false
   await carregarModelos()
   const m = modelos.value.find(x => x.atalho === '/pre-consulta')
   const link = `${window.location.origin}${r.caminho}`
