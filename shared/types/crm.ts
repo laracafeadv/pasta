@@ -627,6 +627,31 @@ export const ESTRUTURA_PASTA_CLIENTE = [
 ] as const
 export type SubpastaCliente = typeof ESTRUTURA_PASTA_CLIENTE[number]['chave']
 
+/** Categorias da biblioteca de documentos (mesmas da pasta do cliente, sem a numeração). */
+export const CATEGORIAS_ARQUIVO: Record<SubpastaCliente, string> = {
+  recebidos: 'Recebidos pelo WhatsApp',
+  pessoais: 'Documentos pessoais',
+  contrato: 'Contrato, procuração e honorários',
+  pecas: 'Peças e petições',
+  provas: 'Provas e documentos do caso',
+  comunicacoes: 'Comunicações e atas',
+  financeiro: 'Financeiro',
+  arquivo: 'Arquivo (versões antigas)',
+}
+export interface Arquivo {
+  id: number
+  created_at: string
+  contato_id: number
+  caso_id: number | null
+  categoria: SubpastaCliente
+  nome: string
+  descricao: string | null
+  mime: string
+  tamanho: number
+  contato?: Pick<Contato, 'id' | 'nome'> | null
+  caso?: Pick<Caso, 'id' | 'titulo'> | null
+}
+
 /** Código estável do cliente, usado em pastas e nomes de arquivo (não expõe CPF nem nome completo). */
 export const codigoCliente = (id: number) => `CLI-${String(id).padStart(4, '0')}`
 

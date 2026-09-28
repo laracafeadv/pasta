@@ -53,8 +53,8 @@ import { storeToRefs } from 'pinia'
 import { useSupabaseUser } from '#imports'
 import { useProfileStore } from '../../stores/profile'
 
-interface Resultado { tipo: 'contato' | 'caso' | 'tarefa' | 'documento'; titulo: string; subtitulo: string; link: string }
-const ICONE: Record<string, string> = { contato: 'ph:user-bold', caso: 'ph:briefcase-bold', tarefa: 'ph:check-square-bold', documento: 'ph:file-text-bold' }
+interface Resultado { tipo: 'contato' | 'caso' | 'tarefa' | 'documento' | 'recibo'; titulo: string; subtitulo: string; link: string }
+const ICONE: Record<string, string> = { contato: 'ph:user-bold', caso: 'ph:briefcase-bold', tarefa: 'ph:check-square-bold', documento: 'ph:file-text-bold', recibo: 'ph:receipt-bold' }
 
 const user = useSupabaseUser()
 const profileStore = useProfileStore()
@@ -79,7 +79,9 @@ function fechar() {
 }
 function ir(link: string) {
   fechar()
-  navigateTo(link)
+  // Documentos e recibos abrem o arquivo (endpoint), não uma página do app.
+  if (link.startsWith('/api/')) window.open(link, '_blank', 'noopener')
+  else navigateTo(link)
 }
 
 watch(q, (v) => {
