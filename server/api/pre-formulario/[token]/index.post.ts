@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
     ...(txt(b.expectativa, 400) ? { objetivo: txt(b.expectativa, 400) } : {}),
     ...(urgencia ? { urgencia } : {}),
     ...(typeof b.processo_em_andamento === 'boolean' ? { processo_em_andamento: b.processo_em_andamento } : {}),
+    ...(txt(b.resposta_extra, 500) ? { pre_form_resposta_extra: txt(b.resposta_extra, 500) } : {}),
     pre_form_respondido_em: new Date().toISOString(),
     consentimento_em: new Date().toISOString(),
   }).eq('id', c.id)

@@ -12,5 +12,6 @@ export default defineEventHandler(async (event) => {
     advogada: e.advogada_nome ? `Dra. ${e.advogada_nome}` : 'a advogada',
     respondido: !!c.pre_form_respondido_em,
     area: c.area,
+    perguntaExtra: c.pre_form_pergunta_extra,
   }
 })

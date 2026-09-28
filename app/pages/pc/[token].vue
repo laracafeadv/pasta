@@ -10,6 +10,9 @@
       <p v-else-if="!info" class="text-center text-sm text-gray-500">Carregando…</p>
 
       <template v-else>
+        <div v-if="preview" class="rounded-2xl border border-secondary/40 bg-secondary/10 p-3 text-xs text-center font-semibold text-secondary-dark">
+          Prévia — é assim que a cliente vê. Nada aqui é enviado de verdade.
+        </div>
         <section class="card space-y-2">
           <h1 class="text-3xl text-primary dark:text-zinc-100">{{ info.primeiroNome ? `Olá, ${info.primeiroNome}!` : 'Olá!' }}</h1>
           <p class="text-sm text-gray-600 dark:text-zinc-300">
@@ -43,6 +46,10 @@
                 <label class="flex items-center gap-2"><input v-model="f.processo_em_andamento" type="radio" :value="false" class="accent-[#3c2923]" /> Não</label>
               </div>
             </fieldset>
+            <label v-if="info.perguntaExtra" class="campo">
+              <span>{{ info.perguntaExtra }}</span>
+              <textarea id="pf-extra" v-model="f.resposta_extra" rows="2" class="modal-input" />
+            </label>
           </section>
 
           <section class="card space-y-3">
@@ -78,13 +85,19 @@ definePageMeta({ layout: false })
 useHead({ title: 'Antes da consulta', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
 const token = String(useRoute().params.token)
-const info = ref<{ primeiroNome: string | null; advogada: string; respondido: boolean; area: string | null } | null>(null)
+const info = ref<{ primeiroNome: string | null; advogada: string; respondido: boolean; area: string | null; perguntaExtra?: string | null } | null>(null)
 const f = reactive<Record<string, any>>({ processo_em_andamento: null, consentimento: false })
 const enviado = ref(false)
 const enviando = ref(false)
 const erro = ref('')
 
+const preview = token === 'preview'
+
 onMounted(async () => {
+  if (preview) {
+    info.value = { primeiroNome: 'Maria', advogada: 'a advogada', respondido: false, area: null, perguntaExtra: 'Pergunta extra de exemplo, específica deste caso' }
+    return
+  }
   try {
     info.value = await $fetch(`/api/pre-formulario/${token}`)
     enviado.value = info.value!.respondido
@@ -95,6 +108,7 @@ onMounted(async () => {
 })
 
 async function enviar() {
+  if (preview) { erro.value = 'Isso é só uma prévia — nada é enviado de verdade.'; return }
   enviando.value = true
   erro.value = ''
   try {

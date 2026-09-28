@@ -49,11 +49,16 @@
           <p v-if="dados.contato.motivo_perda"><b>Motivo da perda:</b> {{ dados.contato.motivo_perda }}</p>
           <p><b>Na etapa há:</b> {{ diasNaEtapa }} dia(s)</p>
           <p v-if="dados.contato.consulta_em"><b>Consulta:</b> {{ dataHora(dados.contato.consulta_em) }}</p>
-          <button type="button" class="mt-1 text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"
-                  :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Contexto do caso antes da consulta, sem dados formais'"
-                  @click="enviarPreFormulario">
-            {{ dados.contato.pre_form_respondido_em ? 'Formulário pré-consulta respondido ✓' : 'Enviar formulário pré-consulta' }}
-          </button>
+          <div class="flex flex-wrap gap-2 mt-1">
+            <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"
+                    :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Contexto do caso antes da consulta, sem dados formais'"
+                    @click="enviarPreFormulario">
+              {{ dados.contato.pre_form_respondido_em ? 'Formulário pré-consulta respondido ✓' : 'Enviar formulário pré-consulta' }}
+            </button>
+            <a href="/pc/preview" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-gray-300 dark:border-zinc-700 text-gray-500 hover:border-primary hover:text-primary">
+              Visualizar formulário
+            </a>
+          </div>
         </div>
         <div class="card">
           <h3>Relacionamento</h3>
@@ -74,10 +79,11 @@
           <p v-if="dados.contato.obs_relacionamento"><b>Observação:</b> {{ dados.contato.obs_relacionamento }}</p>
           <p v-if="dados.contato.ultimo_contato_em"><b>Último gesto:</b> {{ dataCurta(dados.contato.ultimo_contato_em) }}</p>
         </div>
-        <div v-if="dados.contato.dor || dados.contato.objetivo" class="card">
+        <div v-if="dados.contato.dor || dados.contato.objetivo || dados.contato.pre_form_resposta_extra" class="card">
           <h3>Com as palavras dela</h3>
           <p v-if="dados.contato.dor"><b>O que preocupa:</b> “{{ dados.contato.dor }}”</p>
           <p v-if="dados.contato.objetivo"><b>O que quer que mude:</b> “{{ dados.contato.objetivo }}”</p>
+          <p v-if="dados.contato.pre_form_resposta_extra"><b>{{ dados.contato.pre_form_pergunta_extra || 'Pergunta extra' }}:</b> “{{ dados.contato.pre_form_resposta_extra }}”</p>
         </div>
         <div class="card md:col-span-2">
           <h3>Resumo do caso</h3>
@@ -594,7 +600,8 @@ async function enviarFormulario() {
 async function enviarPreFormulario() {
   if (!dados.value) return
   if (dados.value.contato.pre_form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return
-  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST' })
+  const perguntaExtra = prompt('Alguma pergunta específica deste caso, além das fixas do formulário? (opcional, deixe em branco para pular)') ?? undefined
+  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST', body: { perguntaExtra } })
   await carregarModelos()
   const m = modelos.value.find(x => x.atalho === '/pre-consulta')
   const link = `${window.location.origin}${r.caminho}`
