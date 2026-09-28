@@ -84,25 +84,16 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
           {{ stats.sumiram }} sem resposta do cliente há 7+ dias
         </span>
       </div>
-      <div class="overflow-x-auto mt-4">
-        <table class="w-full text-sm min-w-[560px]">
-          <thead>
-            <tr class="text-left text-[10px] uppercase tracking-widest text-gray-400">
-              <th class="py-2 font-semibold">Etapa</th><th class="font-semibold">Contatos hoje</th><th class="font-semibold">Tempo médio parado</th><th class="font-semibold">Mais antigo</th><th class="font-semibold">Gargalo?</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="g in stats.gargalos" :key="g.etapa" class="border-t border-gray-100 dark:border-zinc-800" :class="stats.gargalo === g.etapa ? 'bg-danger/5' : ''">
-              <td class="py-2.5 font-medium">{{ g.nome }}</td>
-              <td>{{ g.total }}</td>
-              <td>{{ g.total ? `${g.mediaDias} dia(s)` : '—' }}</td>
-              <td>{{ g.total ? `${g.maisAntigo} dia(s)` : '—' }}</td>
-              <td>
-                <span v-if="stats.gargalo === g.etapa" class="text-xs font-semibold text-danger">✕ Prioridade da semana</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="mt-4 space-y-2">
+        <div v-for="g in stats.gargalos" :key="g.etapa"
+             class="rounded-2xl border-l-[3px] p-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 bg-white dark:bg-zinc-800/60"
+             :class="stats.gargalo === g.etapa ? 'border-danger' : 'border-gray-200 dark:border-zinc-700'">
+          <span class="font-bold text-sm text-primary dark:text-zinc-100 min-w-[140px]">{{ g.nome }}</span>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary/15 text-secondary-dark dark:text-secondary-200">{{ g.total }} contato(s)</span>
+          <span class="text-xs text-gray-500">{{ g.total ? `média ${g.mediaDias} dia(s) parado` : '—' }}</span>
+          <span class="text-xs text-gray-500">{{ g.total ? `mais antigo: ${g.maisAntigo} dia(s)` : '' }}</span>
+          <span v-if="stats.gargalo === g.etapa" class="ml-auto text-[11px] font-bold uppercase tracking-wider text-danger">✕ Prioridade da semana</span>
+        </div>
       </div>
       <p v-if="stats.gargalo" class="mt-4 text-sm">
         <Icon name="ph:lightbulb-bold" class="align-middle text-secondary" />
