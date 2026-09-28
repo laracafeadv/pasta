@@ -75,7 +75,6 @@ const navItems = computed(() => {
 
   const items: { label: string; path: string; badge?: number }[] = [
     { label: 'Hoje', path: '/crm', badge: crm.pendencias || undefined },
-    { label: 'Agenda', path: '/agenda' },
     { label: 'Funil e contatos', path: '/crm?aba=funil' },
     { label: 'Mensagens', path: '/mensagens' },
     { label: 'Remarketing', path: '/crm?aba=remarketing' },

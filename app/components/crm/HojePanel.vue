@@ -10,26 +10,37 @@
       </template>
     </div>
 
-    <section v-for="grupo in grupos" :key="grupo.id">
-      <h2 class="text-[11px] font-bold uppercase tracking-widest mb-1" :class="grupo.cor">{{ grupo.titulo }}</h2>
-      <p v-if="!grupo.itens.length" class="text-sm italic text-gray-400 py-2">{{ grupo.vazio }}</p>
-      <div v-for="it in grupo.itens" :key="it.id" class="flex items-start gap-3.5 py-3 border-b border-gray-100 dark:border-zinc-800">
-        <span class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5"
-              :class="grupo.id === 'atrasado' ? 'bg-danger text-white' : 'bg-gray-100 dark:bg-zinc-800 text-secondary-dark'">
-          <Icon v-if="grupo.id === 'atrasado'" name="ph:warning-bold" class="text-xs" />
-          <template v-else>{{ it.badge[0] }}</template>
-        </span>
-        <div class="flex-1 min-w-0 cursor-pointer" @click="it.onClick">
-          <p class="font-bold text-sm text-primary dark:text-zinc-100 leading-tight">{{ it.titulo }}</p>
-          <p class="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">{{ it.detalhe }}</p>
-          <div v-if="it.contato" class="flex flex-wrap gap-2 mt-2">
-            <button class="btn-mini bg-primary text-white hover:bg-primary-light" @click.stop="emit('andamento', it.contato)">Feito</button>
-            <button class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-primary" @click.stop="emit('adiar', it.contato)">Adiar 1 dia</button>
+    <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
+      <section v-for="grupo in grupos" :key="grupo.id" class="w-80 shrink-0 rounded-3xl bg-gray-200/50 dark:bg-zinc-900/60 p-3 flex flex-col gap-2.5 min-h-[260px]">
+        <header class="px-1.5 pt-1 flex items-baseline justify-between">
+          <h3 class="font-serif text-xl" :class="grupo.cor">{{ grupo.titulo }}</h3>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/70 dark:bg-zinc-800">{{ grupo.itens.length }}</span>
+        </header>
+        <p v-if="!grupo.itens.length" class="text-sm italic text-gray-400 px-1.5 py-2">{{ grupo.vazio }}</p>
+        <article
+          v-for="it in grupo.itens" :key="it.id"
+          class="rounded-2xl bg-white dark:bg-zinc-800 p-3 border-l-4 shadow-sm hover:shadow-md transition-shadow space-y-1.5"
+          :class="grupo.id === 'atrasado' ? 'border-danger' : grupo.id === 'hoje' ? 'border-secondary' : 'border-gray-300 dark:border-zinc-700'"
+        >
+          <div class="flex items-center gap-2 cursor-pointer" @click="it.onClick">
+            <span class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
+                  :class="grupo.id === 'atrasado' ? 'bg-danger/15 text-danger-dark' : 'bg-secondary/15 text-secondary-dark'">
+              <Icon v-if="grupo.id === 'atrasado'" name="ph:warning-bold" class="text-xs" />
+              <template v-else>{{ it.badge[0] }}</template>
+            </span>
+            <p class="font-bold text-sm truncate flex-1">{{ it.titulo }}</p>
           </div>
-        </div>
-        <span class="text-[11px] shrink-0 mt-0.5" :class="grupo.id === 'atrasado' ? 'text-danger font-bold' : 'text-gray-400'">{{ it.quando }}</span>
-      </div>
-    </section>
+          <p class="text-xs text-gray-500 dark:text-zinc-400 cursor-pointer" @click="it.onClick">{{ it.detalhe }}</p>
+          <div class="flex items-center justify-between pt-0.5">
+            <span class="text-[10px]" :class="grupo.id === 'atrasado' ? 'text-danger font-bold' : 'text-gray-400'">{{ it.quando }}</span>
+            <div v-if="it.contato" class="flex gap-1.5">
+              <button class="btn-mini bg-primary text-white hover:bg-primary-light" @click.stop="emit('andamento', it.contato)">Feito</button>
+              <button class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-primary" @click.stop="emit('adiar', it.contato)">Adiar</button>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
 
     <button type="button" class="text-xs text-gray-500 hover:text-primary flex items-center gap-1.5 px-1" @click="mostrarSemAcao = !mostrarSemAcao">
       <Icon :name="mostrarSemAcao ? 'ph:caret-down-bold' : 'ph:caret-right-bold'" />
@@ -107,5 +118,5 @@ const totalAvisos = computed(() => avisos.value.reduce((a, v) => a + v.itens.len
 
 <style scoped>
 .painel { @apply rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5 sm:p-6; }
-.btn-mini { @apply text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full transition-colors; }
+.btn-mini { @apply text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full transition-colors; }
 </style>

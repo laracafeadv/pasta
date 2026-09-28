@@ -212,7 +212,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Abrir caso</Button>
-          <NuxtLink :to="`/agenda?contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">+ Prazo ou compromisso</NuxtLink>
+          <NuxtLink :to="`/crm?aba=hoje&ver=calendario&contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">+ Prazo ou compromisso</NuxtLink>
           <a v-if="dados.contato.drive_pasta_url" :href="dados.contato.drive_pasta_url" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"><Icon name="ph:google-drive-logo-bold" class="align-middle" /> Pasta no Drive</a>
           <button v-else-if="driveOk" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" :disabled="criandoPasta" @click="criarPastaDrive">
             <Icon name="ph:google-drive-logo-bold" class="align-middle" /> {{ criandoPasta ? 'Criando…' : 'Criar pasta no Drive' }}
@@ -244,7 +244,7 @@
           <p v-if="k.parte_contraria" class="text-xs">Parte contrária: {{ k.parte_contraria }}</p>
           <div class="flex gap-3 pt-1 text-xs">
             <button class="underline underline-offset-2" @click="editarCaso(k)">Editar</button>
-            <NuxtLink :to="`/agenda?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo</NuxtLink>
+            <NuxtLink :to="`/crm?aba=hoje&ver=calendario&contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo</NuxtLink>
             <button v-if="ehAdmin" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração deste caso</button>
             <a v-if="k.link_tribunal" :href="k.link_tribunal" target="_blank" rel="noopener" class="underline underline-offset-2">Ver no tribunal</a>
           </div>

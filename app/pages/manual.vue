@@ -140,7 +140,7 @@ const FASES: Fase[] = [
       { titulo: 'Revisão por amostragem', texto: 'Nos Relatórios, revise casos por amostragem (prazos, próxima ação, cliente informado, documentos, financeiro). Falha vira tarefa com prazo.' },
       { titulo: 'Aniversários e classificação', texto: 'A tela Hoje avisa aniversário do dia; a classificação (promotora/neutra/fria/detratora) fica na ficha do cliente e é definida automaticamente pela nota do NPS.', automatico: true },
     ],
-    links: [{ nome: 'Ir para a Agenda', to: '/agenda' }],
+    links: [{ nome: 'Ir para a Agenda', to: '/crm?aba=hoje&ver=calendario' }],
   },
   {
     id: 'encerramento',

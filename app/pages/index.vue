@@ -108,8 +108,7 @@ const grupos = computed(() => {
       titulo: 'O que fazer agora',
       cor: 'danger',
       itens: [
-        { nome: 'Hoje', to: '/crm', desc: 'Atrasadas, para hoje e sem próxima ação.', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
-        { nome: 'Agenda', to: '/agenda', desc: 'Prazos, audiências, reuniões e consultas.', icone: 'ph:calendar-bold' },
+        { nome: 'Hoje', to: '/crm', desc: 'Lista, calendário, prazos e audiências — tudo num só lugar.', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
       ],
     },
     {

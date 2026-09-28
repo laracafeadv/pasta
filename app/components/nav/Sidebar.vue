@@ -51,7 +51,6 @@ const grupos = computed(() => {
       titulo: 'O que fazer agora',
       itens: [
         { label: 'Hoje', path: '/crm', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
-        { label: 'Agenda', path: '/agenda', icone: 'ph:calendar-bold' },
       ],
     },
     {
