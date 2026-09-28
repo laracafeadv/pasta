@@ -37,6 +37,13 @@ const grupos = computed(() => {
 })
 const categorias = computed(() => [...new Set(lista.value.map(m => m.categoria))])
 
+// Classes estáticas (Tailwind precisa ver a string completa) — cor por número da categoria ("2. Agendamento" → índice 1).
+const PALETA_BORDA = ['border-l-danger', 'border-l-warning', 'border-l-success', 'border-l-secondary', 'border-l-info', 'border-l-primary']
+const corCategoria = (cat: string) => {
+  const n = parseInt(cat, 10)
+  return PALETA_BORDA[(Number.isFinite(n) ? n - 1 : 0) % PALETA_BORDA.length]
+}
+
 const mostrarGuia = ref(false)
 const GUIA = [
   {
@@ -204,10 +211,10 @@ async function excluir() {
     <section v-for="(itens, cat) in grupos" :key="cat" class="space-y-3">
       <h2 class="text-2xl text-primary dark:text-zinc-100">{{ cat }}</h2>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <article v-for="m in itens" :key="m.id" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5 flex flex-col gap-3" :class="m.ativo ? '' : 'opacity-50'">
+        <article v-for="m in itens" :key="m.id" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border-l-[3px] border-y border-r border-gray-200/70 dark:border-zinc-800 p-5 flex flex-col gap-3" :class="[corCategoria(cat), m.ativo ? '' : 'opacity-50']">
           <header class="flex items-baseline justify-between gap-3">
             <p class="font-semibold">{{ m.titulo }} <span v-if="!m.ativo" class="text-xs text-gray-400">(desativada)</span></p>
-            <code class="text-xs text-secondary-dark dark:text-secondary-200">{{ m.atalho }}</code>
+            <code class="text-xs text-secondary-dark dark:text-secondary-200 shrink-0">{{ m.atalho }}</code>
           </header>
           <p class="text-sm text-gray-600 dark:text-zinc-300 whitespace-pre-wrap flex-1">{{ m.texto }}</p>
           <div class="flex gap-2">
