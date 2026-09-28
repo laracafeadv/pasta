@@ -10,8 +10,17 @@
       </template>
     </div>
 
+    <form class="flex gap-2" @submit.prevent="adicionarTarefa">
+      <input v-model="novaTarefa" type="text" class="flex-1 rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm" placeholder="Nova tarefa interna… (entra em Hoje)" />
+      <button type="submit" class="px-5 py-2 rounded-full bg-primary text-white text-xs font-semibold uppercase tracking-wider">Adicionar</button>
+    </form>
+
     <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
-      <section v-for="grupo in grupos" :key="grupo.id" class="w-80 shrink-0 rounded-3xl bg-gray-200/50 dark:bg-zinc-900/60 p-3 flex flex-col gap-2.5 min-h-[260px]">
+      <section v-for="grupo in grupos" :key="grupo.id" class="w-80 shrink-0 rounded-3xl bg-gray-200/50 dark:bg-zinc-900/60 p-3 flex flex-col gap-2.5 min-h-[260px] transition-shadow"
+               :class="{ 'ring-2 ring-secondary ring-inset': arrastandoSobre === grupo.id }"
+               @dragover.prevent="grupo.aceitaTarefa ? (arrastandoSobre = grupo.id) : null"
+               @dragleave="arrastandoSobre = null"
+               @drop.prevent="grupo.aceitaTarefa ? soltarTarefa(grupo.colunaTarefa!, $event) : null">
         <header class="px-1.5 pt-1 flex items-baseline justify-between">
           <h3 class="font-serif text-xl" :class="grupo.cor">{{ grupo.titulo }}</h3>
           <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/70 dark:bg-zinc-800">{{ grupo.itens.length }}</span>
@@ -20,22 +29,29 @@
         <article
           v-for="it in grupo.itens" :key="it.id"
           class="rounded-2xl bg-white dark:bg-zinc-800 p-3 border-l-4 shadow-sm hover:shadow-md transition-shadow space-y-1.5"
-          :class="grupo.id === 'atrasado' ? 'border-danger' : grupo.id === 'hoje' ? 'border-secondary' : 'border-gray-300 dark:border-zinc-700'"
+          :draggable="it.tarefa ? true : undefined"
+          :class="it.tarefa ? 'cursor-grab border-gray-300 dark:border-zinc-700' : grupo.id === 'atrasado' ? 'border-danger' : grupo.id === 'hoje' ? 'border-secondary' : 'border-gray-300 dark:border-zinc-700'"
+          @dragstart="it.tarefa ? $event.dataTransfer?.setData('text/plain', String(it.tarefa.id)) : null"
         >
           <div class="flex items-center gap-2 cursor-pointer" @click="it.onClick">
             <span class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                  :class="grupo.id === 'atrasado' ? 'bg-danger/15 text-danger-dark' : 'bg-secondary/15 text-secondary-dark'">
-              <Icon v-if="grupo.id === 'atrasado'" name="ph:warning-bold" class="text-xs" />
+                  :class="it.tarefa ? 'bg-gray-100 dark:bg-zinc-700 text-gray-500' : grupo.id === 'atrasado' ? 'bg-danger/15 text-danger-dark' : 'bg-secondary/15 text-secondary-dark'">
+              <Icon v-if="it.tarefa" name="ph:check-square-bold" class="text-xs" />
+              <Icon v-else-if="grupo.id === 'atrasado'" name="ph:warning-bold" class="text-xs" />
               <template v-else>{{ it.badge[0] }}</template>
             </span>
             <p class="font-bold text-sm truncate flex-1">{{ it.titulo }}</p>
           </div>
-          <p class="text-xs text-gray-500 dark:text-zinc-400 cursor-pointer" @click="it.onClick">{{ it.detalhe }}</p>
+          <p v-if="it.detalhe" class="text-xs text-gray-500 dark:text-zinc-400 cursor-pointer" @click="it.onClick">{{ it.detalhe }}</p>
           <div class="flex items-center justify-between pt-0.5">
-            <span class="text-[10px]" :class="grupo.id === 'atrasado' ? 'text-danger font-bold' : 'text-gray-400'">{{ it.quando }}</span>
+            <span class="text-[10px]" :class="grupo.id === 'atrasado' && !it.tarefa ? 'text-danger font-bold' : 'text-gray-400'">{{ it.quando }}</span>
             <div v-if="it.contato" class="flex gap-1.5">
               <button class="btn-mini bg-primary text-white hover:bg-primary-light" @click.stop="emit('andamento', it.contato)">Feito</button>
               <button class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-primary" @click.stop="emit('adiar', it.contato)">Adiar</button>
+            </div>
+            <div v-else-if="it.tarefa" class="flex gap-1.5">
+              <button class="btn-mini bg-primary text-white hover:bg-primary-light" @click.stop="concluirTarefa(it.tarefa)">Feita</button>
+              <button class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-danger hover:text-danger" @click.stop="excluirTarefa(it.tarefa)">Excluir</button>
             </div>
           </div>
         </article>
@@ -55,9 +71,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import TarefaItem from './TarefaItem.vue'
-import { TIPOS_COMPROMISSO, dataCompromisso, type Compromisso, type Contato } from '../../../shared/types/crm'
+import { TIPOS_COMPROMISSO, dataCompromisso, type Compromisso, type Contato, type TarefaInterna } from '../../../shared/types/crm'
 import type { Agenda } from '../../stores/crm'
 import { diaRelativo, telefoneFormatado } from '../../utils/formatadores'
 import { hojeISO } from '../../stores/crm'
@@ -68,7 +84,42 @@ const mostrarSemAcao = ref(false)
 const props = defineProps<{ agenda: Agenda }>()
 const emit = defineEmits<{ abrir: [c: Contato, aba?: string, modelo?: string]; andamento: [c: Contato]; adiar: [c: Contato] }>()
 
-interface ItemLinha { id: string; badge: string; titulo: string; detalhe: string; quando: string; contato: Contato | null; onClick: () => void }
+// ─── Tarefas internas ────────────────────────────────────────────────────────
+const tarefas = ref<TarefaInterna[]>([])
+const novaTarefa = ref('')
+const arrastandoSobre = ref<string | null>(null)
+
+async function carregarTarefas() {
+  tarefas.value = await $fetch<TarefaInterna[]>('/api/tarefas')
+}
+onMounted(carregarTarefas)
+
+async function adicionarTarefa() {
+  const titulo = novaTarefa.value.trim()
+  if (!titulo) return
+  const t = await $fetch<TarefaInterna>('/api/tarefas', { method: 'POST', body: { titulo, coluna: 'hoje' } })
+  tarefas.value.push(t)
+  novaTarefa.value = ''
+}
+async function concluirTarefa(t: TarefaInterna) {
+  tarefas.value = tarefas.value.filter(x => x.id !== t.id)
+  await $fetch(`/api/tarefas/${t.id}`, { method: 'PATCH', body: { concluida: true } })
+}
+async function excluirTarefa(t: TarefaInterna) {
+  if (!confirm(`Excluir "${t.titulo}"?`)) return
+  tarefas.value = tarefas.value.filter(x => x.id !== t.id)
+  await $fetch(`/api/tarefas/${t.id}`, { method: 'DELETE' })
+}
+async function soltarTarefa(coluna: TarefaInterna['coluna'], e: DragEvent) {
+  arrastandoSobre.value = null
+  const id = Number(e.dataTransfer?.getData('text/plain'))
+  const t = tarefas.value.find(x => x.id === id)
+  if (!t || t.coluna === coluna) return
+  t.coluna = coluna
+  await $fetch(`/api/tarefas/${id}`, { method: 'PATCH', body: { coluna } })
+}
+
+interface ItemLinha { id: string; badge: string; titulo: string; detalhe: string; quando: string; contato: Contato | null; tarefa: TarefaInterna | null; onClick: () => void }
 
 function deCompromisso(c: Compromisso): ItemLinha {
   const data = dataCompromisso(c)
@@ -79,6 +130,7 @@ function deCompromisso(c: Compromisso): ItemLinha {
     detalhe: [TIPOS_COMPROMISSO[c.tipo].nome, c.contato?.nome, c.caso?.numero_processo].filter(Boolean).join(' · ') || '—',
     quando: data < hoje ? `há ${Math.round((Date.now() - new Date(data).getTime()) / 864e5)} dia(s)` : diaRelativo(data),
     contato: null,
+    tarefa: null,
     onClick: () => { if (c.contato) emit('abrir', c.contato as Contato) },
   }
 }
@@ -90,18 +142,33 @@ function deContato(c: Contato): ItemLinha {
     detalhe: [c.nome || telefoneFormatado(c.telefone), c.area].filter(Boolean).join(' · '),
     quando: c.proxima_data ? diaRelativo(c.proxima_data) : '—',
     contato: c,
+    tarefa: null,
     onClick: () => emit('abrir', c),
   }
+}
+function deTarefa(t: TarefaInterna): ItemLinha {
+  return { id: `t-${t.id}`, badge: 'Tarefa', titulo: t.titulo, detalhe: t.descricao || '', quando: '', contato: null, tarefa: t, onClick: () => {} }
 }
 
 const grupos = computed(() => {
   const compAtrasados = props.agenda.compromissos.filter(c => dataCompromisso(c) < hoje)
   const compHoje = props.agenda.compromissos.filter(c => dataCompromisso(c) === hoje)
   const compSemana = props.agenda.compromissos.filter(c => dataCompromisso(c) > hoje)
+  const tarefasHoje = tarefas.value.filter(t => t.coluna === 'hoje')
+  const tarefasSemana = tarefas.value.filter(t => t.coluna === 'semana')
+  const tarefasMes = tarefas.value.filter(t => t.coluna === 'mes')
+  const tarefasQuandoDer = tarefas.value.filter(t => t.coluna === 'quando_der')
   return [
-    { id: 'atrasado', titulo: '⚠ Atrasado', cor: 'text-danger', vazio: 'Nada atrasado.', itens: [...compAtrasados.map(deCompromisso), ...props.agenda.atrasadas.map(deContato)] },
-    { id: 'hoje', titulo: '● Hoje', cor: 'text-secondary-dark', vazio: 'Nada marcado para hoje.', itens: [...compHoje.map(deCompromisso), ...props.agenda.hoje.map(deContato)] },
-    { id: 'semana', titulo: 'Próximos 7 dias', cor: 'text-gray-400', vazio: 'Semana livre por enquanto.', itens: [...compSemana.map(deCompromisso), ...props.agenda.semana.map(deContato)] },
+    { id: 'atrasado', titulo: '⚠ Atrasado', cor: 'text-danger', vazio: 'Nada atrasado.', aceitaTarefa: false, colunaTarefa: null,
+      itens: [...compAtrasados.map(deCompromisso), ...props.agenda.atrasadas.map(deContato)] },
+    { id: 'hoje', titulo: '● Hoje', cor: 'text-secondary-dark', vazio: 'Nada marcado para hoje.', aceitaTarefa: true, colunaTarefa: 'hoje' as const,
+      itens: [...compHoje.map(deCompromisso), ...props.agenda.hoje.map(deContato), ...tarefasHoje.map(deTarefa)] },
+    { id: 'semana', titulo: 'Próximos 7 dias', cor: 'text-gray-400', vazio: 'Semana livre por enquanto.', aceitaTarefa: true, colunaTarefa: 'semana' as const,
+      itens: [...compSemana.map(deCompromisso), ...props.agenda.semana.map(deContato), ...tarefasSemana.map(deTarefa)] },
+    { id: 'mes', titulo: 'Esse mês', cor: 'text-gray-400', vazio: 'Nada guardado pro mês.', aceitaTarefa: true, colunaTarefa: 'mes' as const,
+      itens: tarefasMes.map(deTarefa) },
+    { id: 'quando_der', titulo: 'Quando der', cor: 'text-gray-400', vazio: 'Nada na fila.', aceitaTarefa: true, colunaTarefa: 'quando_der' as const,
+      itens: tarefasQuandoDer.map(deTarefa) },
   ]
 })
 

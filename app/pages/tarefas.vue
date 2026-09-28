@@ -3,7 +3,7 @@ import { definePageMeta, navigateTo } from '#imports'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
 
-await navigateTo({ path: '/crm', query: { aba: 'hoje', ver: 'tarefas' } })
+await navigateTo({ path: '/crm', query: { aba: 'hoje' } })
 </script>
 
 <template>

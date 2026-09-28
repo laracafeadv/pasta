@@ -1,6 +1,10 @@
 <template>
   <div v-if="!d" class="p-10 text-center text-sm text-gray-400">Carregando…</div>
   <form v-else class="p-5 space-y-5 text-sm" @submit.prevent="salvar">
+    <div class="rounded-2xl border border-secondary/30 bg-secondary/10 p-4 text-sm">
+      <b>Pra que serve esta aba:</b> é onde você registra a análise da consulta — o que a cliente contou, se o caso é viável, o que está em jogo e a proposta. Preencha durante ou logo depois da consulta; o que você escrever aqui vira a mensagem de proposta lá embaixo.
+    </div>
+
     <!-- Roteiro -->
     <details class="card" :open="!d.updated_at">
       <summary class="cursor-pointer font-semibold text-primary dark:text-zinc-200">Roteiro da consulta ({{ area || 'geral' }})</summary>

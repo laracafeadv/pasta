@@ -22,7 +22,7 @@
                 :class="fase === f.id ? 'bg-white/20' : 'bg-secondary/20 text-secondary-dark'">{{ i + 1 }}</span>
           <span class="min-w-0 flex-1">
             <span class="block text-sm font-semibold leading-tight truncate">{{ f.nome }}</span>
-            <span class="block text-[10px] mt-0.5" :class="fase === f.id ? 'text-white/70' : 'text-gray-400'">{{ f.passos.length }} passo(s) · {{ f.passos.filter(p => p.automatico).length }} automático(s)</span>
+            <span class="block text-[10px] mt-0.5" :class="fase === f.id ? 'text-white/70' : 'text-gray-400'">{{ f.passos.length }} passo(s) · {{ f.passos.filter(p => p.automatico === 'faz').length }} automático(s)</span>
           </span>
         </button>
       </nav>
@@ -34,23 +34,27 @@
           <p class="text-sm text-gray-500 mt-1">{{ atual.resumo }}</p>
         </div>
 
-        <div class="flex items-center gap-2 text-xs text-gray-500">
-          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-success" /> automático</span>
-          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-secondary" /> você faz</span>
+        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-success" /> o sistema faz sozinho</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-warning" /> o sistema só avisa — você ainda envia</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-secondary" /> você faz do zero</span>
           <span class="ml-auto font-semibold">{{ atual.passos.length }} passo(s)</span>
         </div>
 
         <ol class="space-y-2.5">
           <li v-for="(passo, i) in atual.passos" :key="i"
               class="rounded-2xl border-l-[3px] p-3.5 flex gap-3.5 bg-white dark:bg-zinc-800/60"
-              :class="passo.automatico ? 'border-success' : 'border-secondary'">
+              :class="passo.automatico === 'faz' ? 'border-success' : passo.automatico === 'avisa' ? 'border-warning' : 'border-secondary'">
             <span class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 mt-0.5"
-                  :class="passo.automatico ? 'bg-success/15 text-success-dark' : 'bg-secondary/15 text-secondary-dark'">{{ i + 1 }}</span>
+                  :class="passo.automatico === 'faz' ? 'bg-success/15 text-success-dark' : passo.automatico === 'avisa' ? 'bg-warning/15 text-warning-dark' : 'bg-secondary/15 text-secondary-dark'">{{ i + 1 }}</span>
             <div class="min-w-0">
               <p class="text-sm text-primary dark:text-zinc-100 font-semibold">{{ passo.titulo }}</p>
               <p class="text-sm text-gray-600 dark:text-zinc-300 mt-0.5 leading-relaxed">{{ passo.texto }}</p>
-              <p v-if="passo.automatico" class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-success-dark bg-success/10 px-2.5 py-1 rounded-full">
-                <Icon name="ph:sparkle-bold" /> O sistema já faz isso sozinho
+              <p v-if="passo.automatico === 'faz'" class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-success-dark bg-success/10 px-2.5 py-1 rounded-full">
+                <Icon name="ph:sparkle-bold" /> O sistema faz isso sozinho, sem você clicar em nada
+              </p>
+              <p v-else-if="passo.automatico === 'avisa'" class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-warning-dark bg-warning/10 px-2.5 py-1 rounded-full">
+                <Icon name="ph:bell-bold" /> O sistema avisa — você ainda precisa enviar
               </p>
             </div>
           </li>
@@ -73,7 +77,7 @@ import { definePageMeta, useHead } from '#imports'
 definePageMeta({ middleware: ['auth', 'admin'] })
 useHead({ title: 'Padrões operacionais' })
 
-interface Passo { titulo: string; texto: string; automatico?: boolean }
+interface Passo { titulo: string; texto: string; automatico?: 'faz' | 'avisa' }
 interface Fase { id: string; nome: string; resumo: string; passos: Passo[]; links?: { nome: string; to: string }[] }
 
 const FASES: Fase[] = [
@@ -82,12 +86,12 @@ const FASES: Fase[] = [
     nome: '1. Atendimento inicial',
     resumo: 'Do primeiro "oi" no WhatsApp até a consulta agendada e paga.',
     passos: [
-      { titulo: 'A cliente escreve no WhatsApp', texto: 'A conversa entra no CRM, o contato é criado e a Ana faz a triagem: entende a situação com a técnica dos 5 porquês, sem dar orientação jurídica.', automatico: true },
+      { titulo: 'A cliente escreve no WhatsApp', texto: 'A conversa entra no CRM e o contato é criado. A triagem automática por IA (5 porquês, sem orientação jurídica) só roda se você configurar a chave da OpenAI — como você optou por não pagar por isso, hoje essa parte é manual: é você (ou a equipe) que responde.', automatico: 'avisa' },
       { titulo: 'Triagem x consulta', texto: 'A triagem é gratuita e só entende os fatos. A partir do momento em que se analisa direitos, riscos e estratégia do caso concreto, é consulta — e é paga.' },
-      { titulo: 'Convite para a consulta', texto: 'Depois da triagem, o sistema sugere convidar para a consulta estratégica (mensagem /consulta) e move o contato para "Em qualificação".', automatico: true },
+      { titulo: 'Convite para a consulta', texto: 'Depois da triagem, o sistema sugere convidar para a consulta estratégica (mensagem /consulta) e move o contato para "Em qualificação".', automatico: 'avisa' },
       { titulo: 'Pagamento e agendamento', texto: 'Confirma o pagamento (PIX) e agenda o horário. Ao registrar, o contato vai para "Consulta agendada" e entra na Agenda.' },
-      { titulo: 'Formulário pré-consulta', texto: 'Envie a mensagem /pre-consulta: um formulário leve (área, resumo da situação, o que preocupa, o que espera, urgência) para você já chegar com contexto. Sem dados formais — isso fica só para depois de fechar.' },
-      { titulo: 'Lembrete', texto: 'No dia anterior, o sistema lembra de mandar a mensagem /lembrete com data, hora e link.', automatico: true },
+      { titulo: 'Formulário pré-consulta', texto: 'Você mesma escolhe as perguntas antes de enviar: abra a ficha da cliente, clique em "Enviar formulário pré-consulta" e marque quais perguntas fixas entram e quais extras quer incluir — muda caso a caso.' },
+      { titulo: 'Lembrete', texto: 'No dia anterior, o sistema lembra de mandar a mensagem /lembrete com data, hora e link — mas é você que manda.', automatico: 'avisa' },
     ],
     links: [{ nome: 'Ir para o Hoje', to: '/crm' }, { nome: 'Mensagens prontas', to: '/mensagens' }],
   },
@@ -100,7 +104,7 @@ const FASES: Fase[] = [
       { titulo: 'Checagem de viabilidade', texto: 'Marque prescrição, competência, provas e conflito de interesses. Registre os riscos por escrito — eles vão para a proposta.' },
       { titulo: '"O que está em jogo"', texto: 'Registre o valor aproximado do que está em jogo (a meação, a pensão, o patrimônio) para ancorar o valor do honorário.' },
       { titulo: 'Decisão', texto: 'Marque viável, com ressalvas ou inviável. Isso fica no histórico do caso.' },
-      { titulo: 'Feedback pós-consulta', texto: 'No dia seguinte, o sistema lembra de mandar a mensagem /feedback e avisa que a proposta vem em até 2 dias úteis.', automatico: true },
+      { titulo: 'Feedback pós-consulta', texto: 'No dia seguinte, o sistema lembra de mandar a mensagem /feedback e avisa que a proposta vem em até 2 dias úteis — mas é você que envia.', automatico: 'avisa' },
     ],
     links: [{ nome: 'Ir para o Hoje', to: '/crm' }],
   },
@@ -111,7 +115,7 @@ const FASES: Fase[] = [
     passos: [
       { titulo: 'Montar a proposta', texto: 'Na aba Diagnóstico, "Montar mensagem de proposta" já usa o que está em jogo e o honorário proposto.' },
       { titulo: 'Registrar o honorário', texto: 'Contrato fixo, êxito, assessoria mensal ou em camadas (arranque + mensal + % de êxito) — o que fizer sentido para o caso.' },
-      { titulo: 'Follow-up automático', texto: '24h depois da proposta, 7 dias depois, e um follow-up final aos 14 dias — cada um com a mensagem certa.', automatico: true },
+      { titulo: 'Follow-up de proposta', texto: '24h depois da proposta, 7 dias depois, e um follow-up final aos 14 dias — o sistema avisa em cada marco com a mensagem certa, mas é você que manda.', automatico: 'avisa' },
       { titulo: 'Dados para o contrato', texto: 'Depois de fechar, envie o link com /formulario: reúne CPF, endereço e demais dados formais pra procuração e contrato. É diferente do formulário pré-consulta — esse aqui só faz sentido depois que ela já fechou.' },
       { titulo: 'Contrato e procuração', texto: 'Gere os dois em Word a partir da ficha, já com a qualificação preenchida.' },
     ],
@@ -122,8 +126,8 @@ const FASES: Fase[] = [
     nome: '4. Abertura do caso',
     resumo: 'Cliente virou cliente ativa: organizar a pasta e abrir o processo.',
     passos: [
-      { titulo: 'Pasta no Google Drive', texto: 'Ao criar a pasta do cliente (ou automaticamente, no primeiro documento), o sistema cria a estrutura padrão: Recebidos, Documentos pessoais, Contrato, Peças, Provas, Comunicações, Financeiro e Arquivo.', automatico: true },
-      { titulo: 'Arquivos do WhatsApp', texto: 'Fotos e documentos que a cliente manda pelo WhatsApp vão sozinhos para "00 Recebidos pelo WhatsApp" na pasta dela.', automatico: true },
+      { titulo: 'Pasta no Google Drive', texto: 'Ao criar a pasta do cliente (ou automaticamente, no primeiro documento), o sistema cria a estrutura padrão: Recebidos, Documentos pessoais, Contrato, Peças, Provas, Comunicações, Financeiro e Arquivo.', automatico: 'faz' },
+      { titulo: 'Arquivos do WhatsApp', texto: 'Fotos e documentos que a cliente manda pelo WhatsApp vão sozinhos para "00 Recebidos pelo WhatsApp" na pasta dela.', automatico: 'faz' },
       { titulo: 'Nome padrão dos arquivos', texto: 'AAAA-MM-DD_CLI-0000_TIPO_descrição_v01.ext — o código do cliente nunca expõe nome completo nem CPF.' },
       { titulo: 'Abrir o caso', texto: 'Cadastre o número do processo (validado no padrão CNJ), a vara ou o cartório e a parte contrária.' },
       { titulo: 'Checklist de documentos', texto: 'A lista de documentos por área já vem pronta; cobre os pendentes em um clique.' },
@@ -136,9 +140,10 @@ const FASES: Fase[] = [
     resumo: 'Prazos, audiências e manter a cliente informada.',
     passos: [
       { titulo: 'Prazos em dias úteis', texto: 'A calculadora já considera fins de semana, feriados nacionais e o recesso de 20/12 a 20/01 (CPC art. 219/220/224).' },
-      { titulo: 'Relatório semanal', texto: 'Quando um cliente ativo fica 7+ dias sem novidade registrada, a tela Hoje avisa e sugere a mensagem /relatorio-semanal.', automatico: true },
+      { titulo: 'Relatório semanal', texto: 'Quando um cliente ativo fica 7+ dias sem novidade registrada, a tela Hoje avisa e sugere a mensagem /relatorio-semanal — você decide se manda.', automatico: 'avisa' },
       { titulo: 'Revisão por amostragem', texto: 'Nos Relatórios, revise casos por amostragem (prazos, próxima ação, cliente informado, documentos, financeiro). Falha vira tarefa com prazo.' },
-      { titulo: 'Aniversários e classificação', texto: 'A tela Hoje avisa aniversário do dia; a classificação (promotora/neutra/fria/detratora) fica na ficha do cliente e é definida automaticamente pela nota do NPS.', automatico: true },
+      { titulo: 'Aniversário', texto: 'A tela Hoje avisa aniversário do dia — o convite pra mandar parabéns é seu.', automatico: 'avisa' },
+      { titulo: 'Classificação da cliente', texto: 'Promotora, neutra, fria ou detratora: calculada sozinha a partir da nota do NPS, sem você precisar marcar nada.', automatico: 'faz' },
     ],
     links: [{ nome: 'Ir para a Agenda', to: '/crm?aba=hoje&ver=calendario' }],
   },
@@ -148,8 +153,8 @@ const FASES: Fase[] = [
     resumo: 'Fechar o caso sem perder o relacionamento.',
     passos: [
       { titulo: 'Encerrar o caso', texto: 'Registre o resultado (êxito, parcial, acordo, sem êxito ou desistência) e a data de encerramento.' },
-      { titulo: 'Pós-venda agendado', texto: 'O sistema já agenda um contato 30 dias depois (/pos-venda-30) e outro 1 ano depois (/pos-venda-1ano).', automatico: true },
-      { titulo: 'Pesquisa de satisfação', texto: 'Convite, nota de 0 a 10 e o motivo — a nota classifica a cliente sozinha na ficha dela.', automatico: true },
+      { titulo: 'Pós-venda agendado', texto: 'O sistema já agenda o lembrete de contato 30 dias depois (/pos-venda-30) e outro 1 ano depois (/pos-venda-1ano) — aparece na tela Hoje na hora certa, mas é você que envia.', automatico: 'avisa' },
+      { titulo: 'Pesquisa de satisfação', texto: 'Convite e motivo são seus; a nota de 0 a 10 que a cliente responde já classifica ela sozinha na ficha.', automatico: 'avisa' },
       { titulo: 'Pedido de avaliação', texto: 'Só para quem deu nota alta: peça a avaliação no Google (/avaliacao).' },
       { titulo: 'Remarketing', texto: 'Quem não fechou entra no Remarketing, agrupado por demanda, e pode receber conteúdo a cada 45 dias — nunca quem pediu para não receber.' },
     ],
