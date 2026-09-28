@@ -81,6 +81,7 @@ const navItems = computed(() => {
     { label: 'Clientes', path: '/clientes' },
     { label: 'Casos', path: '/casos' },
     { label: 'Tarefas', path: '/tarefas' },
+    { label: 'Prazos', path: '/prazos' },
     { label: 'Mensagens', path: '/mensagens' },
     { label: 'Formulários', path: '/formularios' },
     { label: 'Remarketing', path: '/crm?aba=remarketing' },

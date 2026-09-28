@@ -60,6 +60,7 @@ const grupos = computed(() => {
         { label: 'Clientes', path: '/clientes', icone: 'ph:users-bold' },
         { label: 'Casos', path: '/casos', icone: 'ph:briefcase-bold' },
         { label: 'Tarefas', path: '/tarefas', icone: 'ph:check-square-bold' },
+        { label: 'Prazos', path: '/prazos', icone: 'ph:hourglass-high-bold' },
         { label: 'Mensagens', path: '/mensagens', icone: 'ph:chat-circle-text-bold' },
         { label: 'Formulários', path: '/formularios', icone: 'ph:clipboard-text-bold' },
         { label: 'Remarketing', path: '/crm?aba=remarketing', icone: 'ph:arrow-counter-clockwise-bold' },
