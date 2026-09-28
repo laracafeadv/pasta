@@ -670,6 +670,22 @@ export function nomeArquivoPadrao(o: { data: string; contatoId: number; tipo: st
   return `${partes.join('_')}.${o.extensao}`
 }
 
+// ─── Conteúdo (planejamento editorial) ──────────────────────────────────────────
+export const STATUS_CONTEUDO = { ideia: 'Ideia', rascunho: 'Rascunho', producao: 'Produção', revisao: 'Revisão', agendado: 'Agendado', publicado: 'Publicado' } as const
+export const FORMATOS_CONTEUDO = { post: 'Post', reels: 'Reels', stories: 'Stories', carrossel: 'Carrossel', artigo: 'Artigo', video: 'Vídeo', outro: 'Outro' } as const
+export const PLATAFORMAS_CONTEUDO = { instagram: 'Instagram', linkedin: 'LinkedIn', tiktok: 'TikTok', youtube: 'YouTube', blog: 'Blog/site', whatsapp: 'WhatsApp', outro: 'Outro' } as const
+export interface Conteudo {
+  id: number
+  titulo: string
+  tema: string | null
+  formato: keyof typeof FORMATOS_CONTEUDO
+  plataforma: keyof typeof PLATAFORMAS_CONTEUDO
+  legenda: string | null
+  cta: string | null
+  data_publicacao: string | null
+  status: keyof typeof STATUS_CONTEUDO
+}
+
 // ─── Recibos ──────────────────────────────────────────────────────────────────
 export interface Recibo {
   id: number
