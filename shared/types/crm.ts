@@ -95,6 +95,8 @@ export interface Contato {
   nao_contatar?: boolean
   tem_filhos?: boolean | null
   form_respondido_em?: string | null
+  pre_form_respondido_em?: string | null
+  processo_em_andamento?: boolean | null
   /** Rascunho de resposta deixado pela rotina do Claude (some quando você responde). */
   sugestao_resposta?: string | null
   sugestao_em?: string | null

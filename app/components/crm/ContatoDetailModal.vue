@@ -49,6 +49,11 @@
           <p v-if="dados.contato.motivo_perda"><b>Motivo da perda:</b> {{ dados.contato.motivo_perda }}</p>
           <p><b>Na etapa há:</b> {{ diasNaEtapa }} dia(s)</p>
           <p v-if="dados.contato.consulta_em"><b>Consulta:</b> {{ dataHora(dados.contato.consulta_em) }}</p>
+          <button type="button" class="mt-1 text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"
+                  :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Contexto do caso antes da consulta, sem dados formais'"
+                  @click="enviarPreFormulario">
+            {{ dados.contato.pre_form_respondido_em ? 'Formulário pré-consulta respondido ✓' : 'Enviar formulário pré-consulta' }}
+          </button>
         </div>
         <div class="card">
           <h3>Relacionamento</h3>
@@ -581,6 +586,17 @@ async function enviarFormulario() {
   const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/formulario`, { method: 'POST' })
   await carregarModelos()
   const m = modelos.value.find(x => x.atalho === '/formulario')
+  const link = `${window.location.origin}${r.caminho}`
+  resposta.value = m ? preencher(m.texto, dados.value.contato.nome, { ...extrasContato.value, 'LINK DO FORMULÁRIO': link }) : link
+  aba.value = 'conversa'
+}
+// Formulário pré-consulta: contexto leve, enviado antes da consulta (não substitui o de cima).
+async function enviarPreFormulario() {
+  if (!dados.value) return
+  if (dados.value.contato.pre_form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return
+  const r = await $fetch<{ caminho: string }>(`/api/crm/contatos/${dados.value.contato.id}/pre-formulario`, { method: 'POST' })
+  await carregarModelos()
+  const m = modelos.value.find(x => x.atalho === '/pre-consulta')
   const link = `${window.location.origin}${r.caminho}`
   resposta.value = m ? preencher(m.texto, dados.value.contato.nome, { ...extrasContato.value, 'LINK DO FORMULÁRIO': link }) : link
   aba.value = 'conversa'

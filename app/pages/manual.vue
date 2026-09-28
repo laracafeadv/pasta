@@ -74,6 +74,7 @@ const FASES: Fase[] = [
       { titulo: 'Triagem x consulta', texto: 'A triagem é gratuita e só entende os fatos. A partir do momento em que se analisa direitos, riscos e estratégia do caso concreto, é consulta — e é paga.' },
       { titulo: 'Convite para a consulta', texto: 'Depois da triagem, o sistema sugere convidar para a consulta estratégica (mensagem /consulta) e move o contato para "Em qualificação".', automatico: true },
       { titulo: 'Pagamento e agendamento', texto: 'Confirma o pagamento (PIX) e agenda o horário. Ao registrar, o contato vai para "Consulta agendada" e entra na Agenda.' },
+      { titulo: 'Formulário pré-consulta', texto: 'Envie a mensagem /pre-consulta: um formulário leve (área, resumo da situação, o que preocupa, o que espera, urgência) para você já chegar com contexto. Sem dados formais — isso fica só para depois de fechar.' },
       { titulo: 'Lembrete', texto: 'No dia anterior, o sistema lembra de mandar a mensagem /lembrete com data, hora e link.', automatico: true },
     ],
     links: [{ nome: 'Ir para o Hoje', to: '/crm' }, { nome: 'Mensagens prontas', to: '/mensagens' }],
