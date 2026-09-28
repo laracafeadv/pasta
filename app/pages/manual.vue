@@ -112,7 +112,7 @@ const FASES: Fase[] = [
       { titulo: 'Montar a proposta', texto: 'Na aba Diagnóstico, "Montar mensagem de proposta" já usa o que está em jogo e o honorário proposto.' },
       { titulo: 'Registrar o honorário', texto: 'Contrato fixo, êxito, assessoria mensal ou em camadas (arranque + mensal + % de êxito) — o que fizer sentido para o caso.' },
       { titulo: 'Follow-up automático', texto: '24h depois da proposta, 7 dias depois, e um follow-up final aos 14 dias — cada um com a mensagem certa.', automatico: true },
-      { titulo: 'Formulário da cliente', texto: 'Depois de fechar, envie o formulário (/formulario): ele reúne os dados da procuração e do contrato, sem barrar a consulta antes de fechar.' },
+      { titulo: 'Dados para o contrato', texto: 'Depois de fechar, envie o link com /formulario: reúne CPF, endereço e demais dados formais pra procuração e contrato. É diferente do formulário pré-consulta — esse aqui só faz sentido depois que ela já fechou.' },
       { titulo: 'Contrato e procuração', texto: 'Gere os dois em Word a partir da ficha, já com a qualificação preenchida.' },
     ],
     links: [{ nome: 'Ir para o Financeiro', to: '/honorarios' }],

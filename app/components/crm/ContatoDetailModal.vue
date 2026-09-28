@@ -219,8 +219,8 @@
           </button>
           <button v-if="ehAdmin" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}`)">Procuração (.docx)</button>
           <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" @click="peca(`/api/pecas/relatorio-semanal?contato=${dados.contato.id}`)">Relatório semanal (.docx)</button>
-          <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full bg-primary text-white" :title="dados.contato.form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Dados da procuração, documentos e perguntas do Mapa'" @click="enviarFormulario">
-            {{ dados.contato.form_respondido_em ? 'Formulário respondido ✓' : 'Formulário da cliente' }}
+          <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full bg-primary text-white" :title="dados.contato.form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Dados formais pra procuração e contrato (nome, CPF, endereço) — depois de fechar, não é o formulário pré-consulta'" @click="enviarFormulario">
+            {{ dados.contato.form_respondido_em ? 'Dados do contrato ✓' : 'Enviar dados para o contrato' }}
           </button>
         </div>
         <label v-if="ehAdmin && driveOk" class="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400 cursor-pointer">
