@@ -645,3 +645,20 @@ export function nomeArquivoPadrao(o: { data: string; contatoId: number; tipo: st
   return `${partes.join('_')}.${o.extensao}`
 }
 
+// ─── Recibos ──────────────────────────────────────────────────────────────────
+export interface Recibo {
+  id: number
+  created_at: string
+  honorario_id: number | null
+  contato_id: number
+  nome_cliente: string
+  documento_cliente: string | null
+  valor: number
+  valor_extenso: string
+  referente_a: string
+  forma_pagamento: string | null
+  numero_parcela: string | null
+  data: string
+  contato_nome?: string | null
+}
+

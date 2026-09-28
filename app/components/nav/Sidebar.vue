@@ -69,6 +69,7 @@ const grupos = computed(() => {
       titulo: 'Dinheiro',
       itens: [
         { label: role === 'admin' ? 'Financeiro' : 'Honorários', path: '/honorarios', icone: 'ph:wallet-bold' },
+        { label: 'Recibos', path: '/recibos', icone: 'ph:receipt-bold' },
         { label: 'Relatórios', path: '/relatorios', icone: 'ph:chart-bar-bold' },
       ],
     },
