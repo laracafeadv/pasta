@@ -37,6 +37,30 @@ watch(dias, carregar)
 
 const max = (l: Linha[]) => Math.max(1, ...l.map(x => x.total))
 const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.decididos) * 100)}%` : '—')
+
+// Cada bloco só com barra não diz o que fazer — essa função dá uma leitura em uma frase.
+function insight(titulo: string, linhas: Linha[]): string | null {
+  if (!linhas.length) return null
+  const top = [...linhas].sort((a, b) => b.total - a.total)[0]!
+  if (titulo === 'Funil por etapa') return `Mais casos parados em "${top.chave}" agora — é onde olhar primeiro.`
+  if (titulo === 'Origem dos contatos') {
+    const comConversao = linhas.filter(l => (l.decididos ?? 0) >= 3)
+    const melhor = [...comConversao].sort((a, b) => ((b.ganhos ?? 0) / b.decididos!) - ((a.ganhos ?? 0) / a.decididos!))[0]
+    return melhor ? `"${melhor.chave}" converte melhor (${taxa(melhor)}) — vale investir mais nesse canal.` : `Maior volume vem de "${top.chave}".`
+  }
+  if (titulo === 'Áreas de atuação') {
+    const comConversao = linhas.filter(l => (l.decididos ?? 0) >= 3)
+    const melhor = [...comConversao].sort((a, b) => ((b.ganhos ?? 0) / b.decididos!) - ((a.ganhos ?? 0) / a.decididos!))[0]
+    return melhor ? `"${melhor.chave}" tem a melhor taxa de fechamento (${taxa(melhor)}).` : `Maior volume é em "${top.chave}".`
+  }
+  if (titulo === 'Motivos de não fechamento') return `Motivo mais comum: "${top.chave}" — revise como você responde a essa objeção.`
+  if (titulo === 'Não fecharam, por mês da procura') return `Pico de perdas em ${top.chave} — vale reabrir essas conversas.`
+  if (titulo === 'Carteira de clientes') {
+    const problema = linhas.find(l => l.chave === 'Fria' || l.chave === 'Detratora')
+    return problema ? `${problema.total} cliente(s) fria(s) ou detratora(s) — priorize contato de relacionamento com elas.` : `Carteira majoritariamente promotora ou neutra — bom sinal.`
+  }
+  return null
+}
 </script>
 
 <template>
@@ -45,7 +69,7 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
       <div>
         <p class="eyebrow">Indicadores</p>
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Relatórios</h1>
-        <p class="text-sm text-gray-500 mt-2">Onde os clientes nascem, onde o funil trava e por que se perdem.</p>
+        <p class="text-sm text-gray-500 mt-2">Cada bloco termina com uma frase dizendo o que fazer — não é só pra olhar o número.</p>
       </div>
       <select v-if="aba === 'comercial'" v-model="dias" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm">
         <option :value="30">Últimos 30 dias</option>
@@ -133,6 +157,9 @@ const taxa = (l: Linha) => (l.decididos ? `${Math.round(((l.ganhos ?? 0) / l.dec
           </div>
           <span class="text-gray-500 tabular-nums whitespace-nowrap">{{ l.total }}<template v-if="bloco.conv"> · {{ taxa(l) }}</template></span>
         </div>
+        <p v-if="insight(bloco.titulo, bloco.linhas)" class="mt-3 pt-3 border-t border-gray-100 dark:border-zinc-800 text-xs text-gray-600 dark:text-zinc-300">
+          <Icon name="ph:lightbulb-bold" class="align-middle text-secondary" /> {{ insight(bloco.titulo, bloco.linhas) }}
+        </p>
       </section>
     </div>
     </template>

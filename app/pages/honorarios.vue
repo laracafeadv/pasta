@@ -18,12 +18,13 @@ const route = useRoute()
 // Contas, caixa e preços são da administração; a equipe vê só os honorários.
 const ehAdmin = computed(() => useProfileStore().profile?.role === 'admin')
 const abas = [
-  { id: 'honorarios', label: 'Honorários' },
-  { id: 'contas', label: 'Contas a pagar e receber' },
-  { id: 'caixa', label: 'Fluxo de caixa' },
-  { id: 'precos', label: 'Preço e rentabilidade' },
+  { id: 'honorarios', label: 'Honorários', desc: 'Cada proposta e contrato, cliente por cliente — o que você usa no dia a dia.' },
+  { id: 'contas', label: 'Contas a pagar e receber', desc: 'O que ainda vai entrar e o que ainda vai sair, lançamento por lançamento.' },
+  { id: 'caixa', label: 'Fluxo de caixa', desc: 'Projeção de quanto sobra por mês, olhando 6 meses à frente.' },
+  { id: 'precos', label: 'Preço e rentabilidade', desc: 'Quanto cobrar por demanda e se cada cliente está dando lucro.' },
 ]
 const aba = ref('honorarios')
+const abaAtual = computed(() => abas.find(a => a.id === aba.value)!)
 const lista = ref<Honorario[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -198,16 +199,27 @@ async function soltar(status: string, e: DragEvent) {
       <div>
         <p class="eyebrow">Financeiro</p>
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">{{ ehAdmin ? 'Gestão financeira' : 'Honorários' }}</h1>
-        <p class="text-sm text-gray-500 mt-2">{{ ehAdmin ? 'Honorários, contas, caixa projetado, preço mínimo e rentabilidade.' : 'Propostas, contratos e recebimentos por cliente.' }}</p>
+        <p class="text-sm text-gray-500 mt-2">{{ ehAdmin ? 'Comece por Honorários — as outras três são ferramentas de gestão, use quando precisar planejar.' : 'Propostas, contratos e recebimentos por cliente.' }}</p>
       </div>
       <Button v-if="aba === 'honorarios'" icon="ph:plus-bold" @click="novo()">Registrar honorário</Button>
     </div>
 
-    <div v-if="ehAdmin" class="flex flex-wrap gap-2">
-      <button v-for="a in abas" :key="a.id" class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.14em] border transition-colors"
-              :class="aba === a.id ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary'" @click="aba = a.id">
-        {{ a.label }}
-      </button>
+    <div v-if="ehAdmin" class="space-y-2.5">
+      <div class="flex flex-wrap gap-2 items-center">
+        <button class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.14em] border transition-colors"
+                :class="aba === 'honorarios' ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary'" @click="aba = 'honorarios'">
+          Honorários
+        </button>
+        <span class="h-5 w-px bg-gray-200 dark:bg-zinc-700 mx-1" />
+        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Ferramentas de gestão</span>
+        <button v-for="a in abas.slice(1)" :key="a.id" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors"
+                :class="aba === a.id ? 'bg-secondary text-white border-secondary' : 'border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:border-secondary'" @click="aba = a.id">
+          {{ a.label }}
+        </button>
+      </div>
+      <p class="text-xs text-gray-500 bg-gray-50 dark:bg-zinc-900/60 rounded-xl px-3.5 py-2 inline-flex items-center gap-1.5">
+        <Icon name="ph:info-bold" class="text-secondary shrink-0" /> {{ abaAtual.desc }}
+      </p>
     </div>
 
     <FinanceiroContas v-if="aba === 'contas'" />
@@ -220,7 +232,7 @@ async function soltar(status: string, e: DragEvent) {
       <KpiCard title="Contratado" :value="brl(stats.contratado)" :sub-value="`${stats.quantidade} contrato(s)`" icon="ph:handshake-bold" color="primary" :loading="loading" />
       <KpiCard title="Recebido" :value="brl(stats.recebido)" icon="ph:check-circle-bold" color="success" :loading="loading" />
       <KpiCard title="Em proposta" :value="brl(stats.emProposta)" icon="ph:hourglass-bold" color="warning" :loading="loading" />
-      <KpiCard title="Ticket médio" :value="brl(stats.ticketMedio)" icon="ph:scales-bold" color="neutral" :loading="loading" />
+      <KpiCard title="Valor médio por contrato" :value="brl(stats.ticketMedio)" sub-value="quanto cada contrato fechado rende, em média" icon="ph:scales-bold" color="neutral" :loading="loading" />
     </div>
 
     <div class="flex flex-wrap gap-2">
