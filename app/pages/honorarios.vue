@@ -31,11 +31,14 @@ const pageSize = 25
 const loading = ref(false)
 const filtros = reactive({ status: '', tipo: '' })
 const stats = ref({ contratado: 0, recebido: 0, emProposta: 0, ticketMedio: 0, quantidade: 0 })
+const visao = ref<'lista' | 'kanban'>('lista')
 
 async function carregar() {
   loading.value = true
   try {
-    const params: Record<string, string> = { page: String(page.value), pageSize: String(pageSize) }
+    const params: Record<string, string> = visao.value === 'kanban'
+      ? { page: '1', pageSize: '500' }
+      : { page: String(page.value), pageSize: String(pageSize) }
     if (filtros.status) params.status = filtros.status
     if (filtros.tipo) params.tipo = filtros.tipo
     const [r, s] = await Promise.all([
@@ -54,6 +57,7 @@ onMounted(() => {
   if (route.query.contato) novo(Number(route.query.contato))
 })
 watch(filtros, () => { page.value = 1; carregar() })
+watch(visao, carregar)
 
 const columns: ColumnDef[] = [
   { key: 'contato', label: 'Cliente' },
@@ -173,6 +177,19 @@ async function excluir() {
 }
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
+
+// ─── Kanban por status ────────────────────────────────────────────────────────
+const colunasKanban = computed(() => STATUS_HONORARIO.map(s => ({ nome: s, itens: lista.value.filter(h => h.status === s) })))
+const arrastandoSobre = ref<string | null>(null)
+async function soltar(status: string, e: DragEvent) {
+  arrastandoSobre.value = null
+  const id = Number(e.dataTransfer?.getData('text/plain'))
+  const h = lista.value.find(x => x.id === id)
+  if (!h || h.status === status) return
+  h.status = status as Honorario['status']
+  await $fetch(`/api/honorarios/${id}`, { method: 'PATCH', body: { status } })
+  carregar()
+}
 </script>
 
 <template>
@@ -207,6 +224,10 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
     </div>
 
     <div class="flex flex-wrap gap-2">
+      <div class="inline-flex rounded-full border border-gray-200 dark:border-zinc-700 p-0.5">
+        <button type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors" :class="visao === 'lista' ? 'bg-primary text-white' : 'text-gray-500'" @click="visao = 'lista'">Lista</button>
+        <button type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors" :class="visao === 'kanban' ? 'bg-primary text-white' : 'text-gray-500'" @click="visao = 'kanban'">Kanban</button>
+      </div>
       <select v-model="filtros.status" class="filtro">
         <option value="">Todos os status</option>
         <option v-for="s in STATUS_HONORARIO" :key="s">{{ s }}</option>
@@ -217,7 +238,34 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
       </select>
     </div>
 
-    <DataTable
+    <div v-if="visao === 'kanban'" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
+      <section
+        v-for="col in colunasKanban" :key="col.nome"
+        class="w-72 shrink-0 rounded-3xl bg-gray-200/50 dark:bg-zinc-900/60 p-3 flex flex-col gap-2.5 min-h-[260px] transition-shadow"
+        :class="{ 'ring-2 ring-secondary ring-inset': arrastandoSobre === col.nome }"
+        @dragover.prevent="arrastandoSobre = col.nome"
+        @dragleave="arrastandoSobre = null"
+        @drop.prevent="soltar(col.nome, $event)"
+      >
+        <header class="px-1.5 pt-1 flex items-baseline justify-between">
+          <h3 class="font-serif text-lg text-primary dark:text-zinc-100">{{ col.nome }}</h3>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/70 dark:bg-zinc-800">{{ col.itens.length }}</span>
+        </header>
+        <article
+          v-for="h in col.itens" :key="h.id"
+          draggable="true"
+          class="rounded-2xl bg-white dark:bg-zinc-800 p-3 cursor-grab shadow-sm hover:shadow-md transition-shadow space-y-1"
+          @dragstart="$event.dataTransfer?.setData('text/plain', String(h.id))"
+          @click="editar(h)"
+        >
+          <p class="font-semibold text-sm">{{ h.contato?.nome || 'Sem nome' }}</p>
+          <p class="text-xs text-gray-500">{{ h.descricao || h.tipo }}</p>
+          <p class="text-sm font-bold text-secondary-dark">{{ brl(h.valor) }}<span v-if="h.parcelas > 1" class="text-xs font-normal text-gray-500"> · {{ h.parcelas }}x</span></p>
+        </article>
+      </section>
+    </div>
+
+    <DataTable v-else
       :columns="columns"
       :data="lista"
       :loading="loading"
