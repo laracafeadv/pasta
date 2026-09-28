@@ -37,6 +37,89 @@ const grupos = computed(() => {
 })
 const categorias = computed(() => [...new Set(lista.value.map(m => m.categoria))])
 
+const mostrarGuia = ref(false)
+const GUIA = [
+  {
+    fase: 'Primeiro contato',
+    situacoes: [
+      { texto: 'Cliente pergunta se a consulta é paga', atalho: '/obj-consulta-paga' },
+      { texto: 'Achou caro pagar pela consulta', atalho: '/obj-caro-consulta' },
+      { texto: 'Disse que vai pensar antes de marcar', atalho: '/obj-pensar-consulta' },
+      { texto: 'Diz que não tem dinheiro agora', atalho: '/obj-sem-dinheiro' },
+      { texto: 'Caso é fora da sua área de atuação', atalho: '/fora-da-area' },
+      { texto: 'Quer entender a diferença entre triagem e consulta', atalho: '/triagem-x-consulta' },
+      { texto: 'Já entendeu a situação, hora de convidar para a consulta', atalho: '/consulta' },
+    ],
+  },
+  {
+    fase: 'Agendamento',
+    situacoes: [
+      { texto: 'Informar seus horários livres', atalho: '/disponibilidade ou /opcoes' },
+      { texto: 'Confirmar que o agendamento foi feito', atalho: '/agendado' },
+      { texto: 'Preparar antes da consulta (contexto do caso)', atalho: '/pre-consulta' },
+      { texto: 'Um dia antes da consulta', atalho: '/lembrete' },
+      { texto: 'Orientações no dia (link, regras)', atalho: '/regras-consulta' },
+    ],
+  },
+  {
+    fase: 'Depois da consulta',
+    situacoes: [
+      { texto: 'No dia seguinte à consulta', atalho: '/feedback' },
+      { texto: 'Fechar o raciocínio do que foi conversado', atalho: '/pos-consulta ou /resumo' },
+    ],
+  },
+  {
+    fase: 'Proposta e fechamento',
+    situacoes: [
+      { texto: 'Enviar a proposta de honorários', atalho: '/proposta ou /proposta-valor' },
+      { texto: 'Estranhou ou perguntou sobre o valor', atalho: '/valor' },
+      { texto: 'Achou caro (honorários, não a consulta)', atalho: '/obj-caro' },
+      { texto: 'Pediu garantia de vitória', atalho: '/obj-garantia' },
+      { texto: 'Vai falar com a família antes de decidir', atalho: '/obj-familia' },
+      { texto: 'Pediu desconto', atalho: '/obj-desconto' },
+      { texto: '24h sem resposta à proposta', atalho: '/followup-24h' },
+      { texto: '7 dias sem resposta', atalho: '/followup-7d' },
+      { texto: '14 dias sem resposta (último follow-up)', atalho: '/followup-final' },
+      { texto: 'Fechou! Enviar contrato', atalho: '/contrato' },
+      { texto: 'Contrato assinado', atalho: '/boas-vindas-cliente, depois /formulario' },
+    ],
+  },
+  {
+    fase: 'Documentos',
+    situacoes: [
+      { texto: 'Depois de fechar, pedir os documentos', atalho: '/documentos' },
+      { texto: 'Confirmar que recebeu algo', atalho: '/recebidos' },
+      { texto: 'Falta algum documento', atalho: '/pendencia' },
+    ],
+  },
+  {
+    fase: 'Financeiro',
+    situacoes: [
+      { texto: 'Pagamento caiu', atalho: '/pagamento-ok' },
+      { texto: 'Mandar o boleto da parcela', atalho: '/boleto' },
+      { texto: 'Perto do vencimento', atalho: '/vencimento' },
+      { texto: 'Parcela atrasada', atalho: '/cobranca' },
+    ],
+  },
+  {
+    fase: 'Encerramento e relacionamento',
+    situacoes: [
+      { texto: 'Encerrou o caso — pedir avaliação no Google', atalho: '/avaliacao' },
+      { texto: 'Rodar a pesquisa de satisfação (NPS)', atalho: '/nps-convite → /nps-nota → /nps-motivo' },
+      { texto: 'Nota 9–10 (promotora)', atalho: '/nps-promotora, depois /reconhecimento' },
+      { texto: 'Nota 7–8 (neutra)', atalho: '/nps-neutra, depois /reconexao' },
+      { texto: 'Nota 0–6 (detratora)', atalho: '/nps-detratora, depois /reparacao se for recente' },
+      { texto: '30 dias após encerrar o caso', atalho: '/pos-venda-30' },
+      { texto: '1 ano depois', atalho: '/pos-venda-1ano' },
+      { texto: 'Aniversário da cliente', atalho: '/aniversario' },
+      { texto: 'Cliente esfriando, sem gancho comercial', atalho: '/reconexao ou /reaquecer' },
+      { texto: 'Quem não fechou, mandar conteúdo do interesse dela', atalho: '/remarketing' },
+      { texto: 'Proposta antiga sem resposta, tentar retomar', atalho: '/remarketing-proposta ou /remarketing-retomar' },
+      { texto: 'Datas comemorativas', atalho: '/natal' },
+    ],
+  },
+]
+
 async function copiar(m: ModeloMensagem) {
   await navigator.clipboard?.writeText(m.texto)
   copiadoId.value = m.id
@@ -94,6 +177,25 @@ async function excluir() {
         </p>
       </div>
       <Button icon="ph:plus-bold" @click="abrir()">Nova mensagem</Button>
+    </div>
+
+    <button type="button" class="w-full text-left rounded-3xl bg-secondary/10 border border-secondary/30 px-5 py-3.5 flex items-center gap-2.5 hover:bg-secondary/15 transition-colors" @click="mostrarGuia = !mostrarGuia">
+      <Icon name="ph:compass-bold" class="text-secondary-dark text-xl shrink-0" />
+      <span class="flex-1">
+        <span class="font-bold text-sm text-primary dark:text-zinc-100">Guia rápido: qual mensagem usar</span>
+        <span class="block text-xs text-gray-500">Não sabe qual atalho encaixa na situação? Comece por aqui.</span>
+      </span>
+      <Icon :name="mostrarGuia ? 'ph:caret-up-bold' : 'ph:caret-down-bold'" class="text-secondary-dark shrink-0" />
+    </button>
+
+    <div v-if="mostrarGuia" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section v-for="bloco in GUIA" :key="bloco.fase" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-secondary-dark mb-2.5">{{ bloco.fase }}</h3>
+        <div v-for="s in bloco.situacoes" :key="s.texto" class="flex items-baseline justify-between gap-3 py-1.5 border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
+          <span class="text-sm text-gray-600 dark:text-zinc-300">{{ s.texto }}</span>
+          <code class="text-xs text-secondary-dark dark:text-secondary-200 shrink-0 text-right">{{ s.atalho }}</code>
+        </div>
+      </section>
     </div>
 
     <input v-model="busca" type="search" class="w-full max-w-md rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm" placeholder="Buscar por título, atalho ou texto…" />
