@@ -5,7 +5,7 @@ import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
 import { TIPOS_COMPROMISSO, dataCompromisso, type Caso, type Compromisso, type Contato } from '~~/shared/types/crm'
 import { calcularPrazo } from '~~/shared/utils/juridico'
-import { dataCurta, diaRelativo, linkGoogleAgenda } from '~/utils/formatadores'
+import { dataCurta } from '~/utils/formatadores'
 import { hojeISO, somarDias } from '~/stores/crm'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
@@ -31,28 +31,8 @@ onMounted(() => {
 watch(filtroTipo, carregar)
 
 const hoje = hojeISO()
-const blocos = computed(() => {
-  const em7 = somarDias(hoje, 7)
-  const b = { atrasados: [] as Compromisso[], hoje: [] as Compromisso[], semana: [] as Compromisso[], depois: [] as Compromisso[] }
-  for (const c of itens.value) {
-    const d = dataCompromisso(c)
-    if (d < hoje) b.atrasados.push(c)
-    else if (d === hoje) b.hoje.push(c)
-    else if (d <= em7) b.semana.push(c)
-    else b.depois.push(c)
-  }
-  const ord = (a: Compromisso, z: Compromisso) => (dataCompromisso(a) + (a.inicio ?? '')).localeCompare(dataCompromisso(z) + (z.inicio ?? ''))
-  return [
-    { id: 'atrasados', titulo: 'Vencidos', cor: 'text-danger', itens: b.atrasados.sort(ord) },
-    { id: 'hoje', titulo: 'Hoje', cor: '', itens: b.hoje.sort(ord) },
-    { id: 'semana', titulo: 'Próximos 7 dias', cor: '', itens: b.semana.sort(ord) },
-    { id: 'depois', titulo: 'Depois', cor: '', itens: b.depois.sort(ord) },
-  ]
-})
-const hora = (c: Compromisso) => c.inicio ? new Date(c.inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : ''
 
-// ─── Visão calendário (grade do mês) ─────────────────────────────────────────
-const visao = ref<'lista' | 'calendario'>('lista')
+// ─── Calendário (grade do mês) — a Agenda é só isso; a lista priorizada já é o Hoje ───
 const mesAtual = ref(new Date(Number(hoje.slice(0, 4)), Number(hoje.slice(5, 7)) - 1, 1))
 const nomeMes = computed(() => mesAtual.value.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }))
 function mudarMes(delta: number) { mesAtual.value = new Date(mesAtual.value.getFullYear(), mesAtual.value.getMonth() + delta, 1) }
@@ -95,6 +75,7 @@ const CORES_TIPO: Record<string, string> = {
 
 async function concluir(c: Compromisso) {
   await $fetch(`/api/compromissos/${c.id}`, { method: 'PATCH', body: { status: 'concluido' } })
+  aberto.value = false
   carregar()
 }
 
@@ -178,10 +159,6 @@ async function excluir() {
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">Prazos processuais, audiências, consultas e tarefas. Prazos são contados em dias úteis (CPC), com feriados nacionais e recesso forense.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <div class="inline-flex rounded-full border border-gray-200 dark:border-zinc-700 p-0.5">
-          <button type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors" :class="visao === 'lista' ? 'bg-primary text-white' : 'text-gray-500'" @click="visao = 'lista'">Lista</button>
-          <button type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors" :class="visao === 'calendario' ? 'bg-primary text-white' : 'text-gray-500'" @click="visao = 'calendario'">Calendário</button>
-        </div>
         <select v-model="filtroTipo" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm">
           <option value="">Tudo</option>
           <option v-for="(t, k) in TIPOS_COMPROMISSO" :key="k" :value="k">{{ t.nome }}</option>
@@ -192,7 +169,7 @@ async function excluir() {
 
     <p v-if="carregando" class="text-sm text-gray-400">Carregando…</p>
 
-    <section v-if="visao === 'calendario'" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-4 sm:p-6">
+    <section class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-4 sm:p-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-2xl text-primary dark:text-zinc-100 capitalize">{{ nomeMes }}</h2>
         <div class="flex items-center gap-1">
@@ -214,33 +191,6 @@ async function excluir() {
         </div>
       </div>
     </section>
-
-    <template v-else>
-    <section v-for="b in blocos" v-show="b.itens.length || b.id === 'hoje'" :key="b.id" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5 sm:p-6">
-      <h2 class="text-2xl mb-3" :class="b.cor || 'text-primary dark:text-zinc-100'">{{ b.titulo }} <span class="text-sm text-gray-400">{{ b.itens.length }}</span></h2>
-      <p v-if="!b.itens.length" class="text-sm italic text-gray-400">Nada para hoje.</p>
-      <ul class="divide-y divide-gray-100 dark:divide-zinc-800">
-        <li v-for="c in b.itens" :key="c.id" class="py-3 flex flex-wrap items-center gap-3">
-          <Icon :name="TIPOS_COMPROMISSO[c.tipo].icone" class="text-xl text-secondary shrink-0" />
-          <div class="w-28 shrink-0">
-            <p class="font-semibold text-sm">{{ dataCurta(dataCompromisso(c)) }} <span v-if="hora(c)" class="font-normal text-gray-500">{{ hora(c) }}</span></p>
-            <p class="text-xs text-gray-500">{{ diaRelativo(dataCompromisso(c)) }}</p>
-          </div>
-          <button class="flex-1 min-w-[200px] text-left" @click="editar(c)">
-            <p class="text-sm font-medium">{{ c.titulo }}</p>
-            <p class="text-xs text-gray-500">
-              {{ TIPOS_COMPROMISSO[c.tipo].nome }}
-              <template v-if="c.contato && !c.titulo.includes(c.contato.nome ?? '—')"> · {{ c.contato.nome }}</template>
-              <template v-if="c.caso?.numero_processo"> · <span class="font-mono">{{ c.caso.numero_processo }}</span></template>
-              <template v-if="c.local"> · {{ c.local }}</template>
-            </p>
-          </button>
-          <a v-if="c.inicio" :href="linkGoogleAgenda({ titulo: c.titulo, inicio: c.inicio, local: c.local })" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border border-gray-300 dark:border-zinc-700 hover:border-primary" title="Adicionar ao Google Agenda">Google Agenda</a>
-          <button class="text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-primary text-white" @click="concluir(c)">Concluído</button>
-        </li>
-      </ul>
-    </section>
-    </template>
 
     <Modal :is-open="aberto" :title="editando ? 'Editar compromisso' : 'Novo compromisso'" max-width="2xl" :loading="salvando" @close="aberto = false">
       <form id="compromisso-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4" @submit.prevent="salvar">
@@ -276,7 +226,10 @@ async function excluir() {
       </form>
       <template #footer>
         <div class="flex flex-col-reverse sm:flex-row gap-3 justify-between">
-          <Button v-if="editando" variant="outline" icon="ph:trash-bold" @click="excluir">Excluir</Button>
+          <div class="flex gap-3">
+            <Button v-if="editando" variant="outline" icon="ph:trash-bold" @click="excluir">Excluir</Button>
+            <Button v-if="editando" variant="outline" icon="ph:check-circle-bold" @click="concluir(editando)">Marcar concluído</Button>
+          </div>
           <div class="flex gap-3 sm:ml-auto">
             <Button variant="outline" @click="aberto = false">Cancelar</Button>
             <Button form="compromisso-form" type="submit" :loading="salvando" icon="ph:check-bold">Salvar</Button>
