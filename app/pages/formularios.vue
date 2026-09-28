@@ -132,11 +132,16 @@ const envios = ref<FormularioEnvio[]>([])
 const respostasCarregando = ref(false)
 const buscaResposta = ref('')
 const filtroFormulario = ref<number | ''>('')
+const filtroDe = ref('')
+const filtroAte = ref('')
 async function carregarRespostas() {
   respostasCarregando.value = true
   try {
     envios.value = await $fetch<FormularioEnvio[]>('/api/formularios/respostas', {
-      params: { busca: buscaResposta.value || undefined, formulario_id: filtroFormulario.value || undefined },
+      params: {
+        busca: buscaResposta.value || undefined, formulario_id: filtroFormulario.value || undefined,
+        de: filtroDe.value || undefined, ate: filtroAte.value ? `${filtroAte.value}T23:59:59` : undefined,
+      },
     })
   } finally {
     respostasCarregando.value = false
@@ -224,6 +229,8 @@ onMounted(async () => {
           <option value="">Todos os formulários</option>
           <option v-for="f in formularios" :key="f.id" :value="f.id">{{ f.nome }}</option>
         </select>
+        <label class="flex items-center gap-1.5 text-xs text-gray-500">De <input v-model="filtroDe" type="date" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-3 py-1.5 text-sm" @change="carregarRespostas" /></label>
+        <label class="flex items-center gap-1.5 text-xs text-gray-500">até <input v-model="filtroAte" type="date" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-3 py-1.5 text-sm" @change="carregarRespostas" /></label>
         <Button size="sm" variant="outline" @click="carregarRespostas">Filtrar</Button>
       </div>
 
