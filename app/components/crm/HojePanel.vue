@@ -1,38 +1,35 @@
 <template>
-  <div class="space-y-5">
+  <div class="space-y-6">
     <div v-if="avisos.length" class="rounded-full border border-secondary/30 bg-secondary/10 px-5 py-2.5 text-xs flex flex-wrap items-center gap-x-2 gap-y-1">
       <Icon name="ph:bell-bold" class="text-secondary-dark shrink-0" />
       <b class="text-secondary-dark">{{ totalAvisos }} aviso{{ totalAvisos > 1 ? 's' : '' }}</b>
-      <template v-for="(a, i) in avisos" :key="a.chave">
+      <template v-for="a in avisos" :key="a.chave">
         <span class="opacity-40">·</span>
         <span>{{ a.texto }}</span>
         <button v-for="c in a.itens" :key="c.id" class="underline underline-offset-2 font-semibold" @click="emit('abrir', c, a.aba, a.modelo)">{{ c.nome || telefoneFormatado(c.telefone) }}</button>
       </template>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <section v-for="col in colunas" :key="col.id" class="rounded-3xl bg-gray-100/60 dark:bg-zinc-900/50 p-3">
-        <header class="flex items-baseline justify-between px-2 pt-1 pb-2.5">
-          <h2 class="text-sm font-bold" :class="col.corTitulo">{{ col.titulo }}</h2>
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white dark:bg-zinc-800">{{ col.itens.length }}</span>
-        </header>
-        <p v-if="!col.itens.length" class="text-xs italic text-gray-400 px-2 py-3">{{ col.vazio }}</p>
-        <article
-          v-for="it in col.itens" :key="it.id"
-          class="rounded-2xl bg-white dark:bg-zinc-800 p-3 mb-2 border-l-[3px] shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-          :class="col.corBorda"
-          @click="it.onClick"
-        >
-          <span class="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5" :class="it.corBadge">{{ it.badge }}</span>
+    <section v-for="grupo in grupos" :key="grupo.id">
+      <h2 class="text-[11px] font-bold uppercase tracking-widest mb-1" :class="grupo.cor">{{ grupo.titulo }}</h2>
+      <p v-if="!grupo.itens.length" class="text-sm italic text-gray-400 py-2">{{ grupo.vazio }}</p>
+      <div v-for="it in grupo.itens" :key="it.id" class="flex items-start gap-3.5 py-3 border-b border-gray-100 dark:border-zinc-800">
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5"
+              :class="grupo.id === 'atrasado' ? 'bg-danger text-white' : 'bg-gray-100 dark:bg-zinc-800 text-secondary-dark'">
+          <Icon v-if="grupo.id === 'atrasado'" name="ph:warning-bold" class="text-xs" />
+          <template v-else>{{ it.badge[0] }}</template>
+        </span>
+        <div class="flex-1 min-w-0 cursor-pointer" @click="it.onClick">
           <p class="font-bold text-sm text-primary dark:text-zinc-100 leading-tight">{{ it.titulo }}</p>
           <p class="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">{{ it.detalhe }}</p>
-          <div class="flex items-center justify-between mt-2">
-            <span class="text-[10px] text-gray-400">{{ it.quando }}</span>
-            <button v-if="it.contato" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-full bg-primary text-white" @click.stop="emit('andamento', it.contato)">Feito</button>
+          <div v-if="it.contato" class="flex flex-wrap gap-2 mt-2">
+            <button class="btn-mini bg-primary text-white hover:bg-primary-light" @click.stop="emit('andamento', it.contato)">Feito</button>
+            <button class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-primary" @click.stop="emit('adiar', it.contato)">Adiar 1 dia</button>
           </div>
-        </article>
-      </section>
-    </div>
+        </div>
+        <span class="text-[11px] shrink-0 mt-0.5" :class="grupo.id === 'atrasado' ? 'text-danger font-bold' : 'text-gray-400'">{{ it.quando }}</span>
+      </div>
+    </section>
 
     <button type="button" class="text-xs text-gray-500 hover:text-primary flex items-center gap-1.5 px-1" @click="mostrarSemAcao = !mostrarSemAcao">
       <Icon :name="mostrarSemAcao ? 'ph:caret-down-bold' : 'ph:caret-right-bold'" />
@@ -60,57 +57,40 @@ const mostrarSemAcao = ref(false)
 const props = defineProps<{ agenda: Agenda }>()
 const emit = defineEmits<{ abrir: [c: Contato, aba?: string, modelo?: string]; andamento: [c: Contato]; adiar: [c: Contato] }>()
 
-interface ItemKanban {
-  id: string; badge: string; corBadge: string; titulo: string; detalhe: string; quando: string
-  contato: Contato | null; onClick: () => void
-}
+interface ItemLinha { id: string; badge: string; titulo: string; detalhe: string; quando: string; contato: Contato | null; onClick: () => void }
 
-function deCompromisso(c: Compromisso): ItemKanban {
+function deCompromisso(c: Compromisso): ItemLinha {
   const data = dataCompromisso(c)
   return {
     id: `k-${c.id}`,
     badge: TIPOS_COMPROMISSO[c.tipo].nome,
-    corBadge: 'bg-warning/15 text-warning-dark dark:text-warning-200',
     titulo: c.titulo,
-    detalhe: [c.contato?.nome, c.caso?.numero_processo].filter(Boolean).join(' · ') || '—',
-    quando: data < hoje ? `atrasado · ${diaRelativo(data)}` : diaRelativo(data),
+    detalhe: [TIPOS_COMPROMISSO[c.tipo].nome, c.contato?.nome, c.caso?.numero_processo].filter(Boolean).join(' · ') || '—',
+    quando: data < hoje ? `há ${Math.round((Date.now() - new Date(data).getTime()) / 864e5)} dia(s)` : diaRelativo(data),
     contato: null,
     onClick: () => { if (c.contato) emit('abrir', c.contato as Contato) },
   }
 }
-function deContato(c: Contato): ItemKanban {
+function deContato(c: Contato): ItemLinha {
   return {
     id: `c-${c.id}`,
     badge: 'Contato',
-    corBadge: 'bg-secondary/15 text-secondary-dark dark:text-secondary-200',
     titulo: c.proxima_acao || '—',
-    detalhe: c.nome || telefoneFormatado(c.telefone),
+    detalhe: [c.nome || telefoneFormatado(c.telefone), c.area].filter(Boolean).join(' · '),
     quando: c.proxima_data ? diaRelativo(c.proxima_data) : '—',
     contato: c,
     onClick: () => emit('abrir', c),
   }
 }
 
-const colunas = computed(() => {
+const grupos = computed(() => {
   const compAtrasados = props.agenda.compromissos.filter(c => dataCompromisso(c) < hoje)
   const compHoje = props.agenda.compromissos.filter(c => dataCompromisso(c) === hoje)
   const compSemana = props.agenda.compromissos.filter(c => dataCompromisso(c) > hoje)
   return [
-    {
-      id: 'atrasado', titulo: '⚠ Atrasado', corTitulo: 'text-danger', corBorda: 'border-danger',
-      vazio: 'Nada atrasado.',
-      itens: [...compAtrasados.map(deCompromisso), ...props.agenda.atrasadas.map(deContato)],
-    },
-    {
-      id: 'hoje', titulo: '● Hoje', corTitulo: 'text-secondary-dark', corBorda: 'border-secondary',
-      vazio: 'Nada marcado para hoje.',
-      itens: [...compHoje.map(deCompromisso), ...props.agenda.hoje.map(deContato)],
-    },
-    {
-      id: 'semana', titulo: 'Próximos 7 dias', corTitulo: 'text-gray-500', corBorda: 'border-gray-300 dark:border-zinc-600',
-      vazio: 'Semana livre por enquanto.',
-      itens: [...compSemana.map(deCompromisso), ...props.agenda.semana.map(deContato)],
-    },
+    { id: 'atrasado', titulo: '⚠ Atrasado', cor: 'text-danger', vazio: 'Nada atrasado.', itens: [...compAtrasados.map(deCompromisso), ...props.agenda.atrasadas.map(deContato)] },
+    { id: 'hoje', titulo: '● Hoje', cor: 'text-secondary-dark', vazio: 'Nada marcado para hoje.', itens: [...compHoje.map(deCompromisso), ...props.agenda.hoje.map(deContato)] },
+    { id: 'semana', titulo: 'Próximos 7 dias', cor: 'text-gray-400', vazio: 'Semana livre por enquanto.', itens: [...compSemana.map(deCompromisso), ...props.agenda.semana.map(deContato)] },
   ]
 })
 
@@ -127,4 +107,5 @@ const totalAvisos = computed(() => avisos.value.reduce((a, v) => a + v.itens.len
 
 <style scoped>
 .painel { @apply rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5 sm:p-6; }
+.btn-mini { @apply text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full transition-colors; }
 </style>
