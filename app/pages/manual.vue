@@ -9,7 +9,17 @@
       </p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5 items-start">
+    <!-- Alternância Fluxo / Serviços -->
+    <div class="flex gap-2">
+      <button type="button" class="tab-btn" :class="{ 'tab-btn-ativo': modo === 'fluxo' }" @click="modo = 'fluxo'">
+        <Icon name="ph:flow-arrow-bold" class="align-middle" /> Fluxo do atendimento
+      </button>
+      <button type="button" class="tab-btn" :class="{ 'tab-btn-ativo': modo === 'servicos' }" @click="modo = 'servicos'">
+        <Icon name="ph:scales-bold" class="align-middle" /> Serviços e documentos
+      </button>
+    </div>
+
+    <div v-if="modo === 'fluxo'" class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5 items-start">
       <!-- Índice das fases -->
       <nav class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-3 lg:sticky lg:top-24 space-y-1">
         <button
@@ -67,12 +77,66 @@
         </div>
       </section>
     </div>
+
+    <!-- Serviços e documentos -->
+    <div v-else class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5 items-start">
+      <nav class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-3 lg:sticky lg:top-24 space-y-1">
+        <button
+          v-for="s in SERVICOS" :key="s.id" type="button"
+          class="w-full text-left px-4 py-2.5 rounded-2xl text-sm font-semibold transition-colors"
+          :class="servico === s.id ? 'bg-primary text-white' : 'hover:bg-secondary/10 dark:hover:bg-white/5 text-primary dark:text-zinc-100'"
+          @click="servico = s.id"
+        >{{ s.nome }}</button>
+      </nav>
+
+      <section v-if="servicoAtual" class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-6 sm:p-8 space-y-6">
+        <div>
+          <h2 class="text-2xl text-primary dark:text-zinc-100">{{ servicoAtual.nome }}</h2>
+          <p class="text-sm text-gray-500 mt-1">{{ servicoAtual.resumo }}</p>
+        </div>
+
+        <!-- Variantes (judicial/extrajudicial etc.) -->
+        <div v-if="servicoAtual.variantes.length > 1" class="flex flex-wrap gap-2">
+          <button
+            v-for="v in servicoAtual.variantes" :key="v.id" type="button"
+            class="chip"
+            :class="variante === v.id ? '!border-primary !text-primary dark:!text-white' : ''"
+            @click="variante = v.id"
+          >{{ v.nome }}</button>
+        </div>
+
+        <ol v-if="varianteAtual" class="space-y-2.5">
+          <li v-for="(f, i) in varianteAtual.fases" :key="i"
+              class="rounded-2xl border-l-[3px] border-secondary p-3.5 flex gap-3.5 bg-white dark:bg-zinc-800/60">
+            <span class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 bg-secondary/15 text-secondary-dark">{{ i + 1 }}</span>
+            <div class="min-w-0">
+              <p class="text-sm text-primary dark:text-zinc-100 font-semibold">{{ f.titulo }}</p>
+              <p class="text-sm text-gray-600 dark:text-zinc-300 mt-0.5 leading-relaxed">{{ f.texto }}</p>
+            </div>
+          </li>
+        </ol>
+
+        <!-- Checklist de documentos -->
+        <div v-if="servicoAtual.documentos.length" class="pt-4 border-t border-gray-100 dark:border-zinc-800 space-y-4">
+          <p class="text-sm font-semibold text-primary dark:text-zinc-100">Checklist de documentos</p>
+          <div v-for="(g, gi) in servicoAtual.documentos" :key="gi">
+            <p v-if="g.grupo" class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">{{ g.grupo }}</p>
+            <ul class="space-y-1">
+              <li v-for="(item, ii) in g.itens" :key="ii" class="text-sm text-gray-600 dark:text-zinc-300 flex gap-2">
+                <Icon name="ph:check-square-bold" class="text-secondary mt-0.5 shrink-0" /> {{ item }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { definePageMeta, useHead } from '#imports'
+import { SERVICOS } from '~~/shared/data/servicos'
 
 definePageMeta({ middleware: ['auth', 'admin'] })
 useHead({ title: 'Padrões operacionais' })
@@ -164,8 +228,20 @@ const FASES: Fase[] = [
 
 const fase = ref(FASES[0]!.id)
 const atual = computed(() => FASES.find(f => f.id === fase.value))
+
+const modo = ref<'fluxo' | 'servicos'>('fluxo')
+const servico = ref(SERVICOS[0]!.id)
+const servicoAtual = computed(() => SERVICOS.find(s => s.id === servico.value))
+const variante = ref(servicoAtual.value?.variantes[0]?.id ?? '')
+const varianteAtual = computed(() => servicoAtual.value?.variantes.find(v => v.id === variante.value))
+
+watch(servico, () => {
+  variante.value = servicoAtual.value?.variantes[0]?.id ?? ''
+})
 </script>
 
 <style scoped>
 .chip { @apply text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary hover:text-primary dark:hover:text-white transition-colors inline-flex items-center gap-1.5; }
+.tab-btn { @apply text-sm font-semibold px-4 py-2 rounded-full border border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:text-primary dark:hover:text-white transition-colors; }
+.tab-btn-ativo { @apply bg-primary text-white border-primary; }
 </style>
