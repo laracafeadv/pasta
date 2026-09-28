@@ -1,7 +1,9 @@
 import { serverSupabaseServiceRole } from '#supabase/server'
+import { useRuntimeConfig } from '#imports'
 import { AREAS, URGENCIAS } from '../../../../shared/types/crm'
 import { contatoDoPreFormulario } from '../../../utils/formulario'
 import { notificarEquipe, registrarAtividade } from '../../../utils/crm'
+import { enviarEmailEquipe } from '../../../utils/email'
 
 const txt = (v: unknown, max = 500) => (typeof v === 'string' ? v.trim().slice(0, max) : '') || null
 
@@ -32,5 +34,13 @@ export default defineEventHandler(async (event) => {
 
   await registrarAtividade(event, c.id, 'Sistema', 'Formulário pré-consulta respondido.')
   await notificarEquipe(event, 'Formulário pré-consulta respondido', `${c.nome ?? 'Uma pessoa'} respondeu antes da consulta. Já dá para olhar o contexto na ficha.`, { contato_id: c.id })
+  const siteUrl = useRuntimeConfig().public.siteUrl
+  await enviarEmailEquipe(
+    event,
+    `Formulário pré-consulta respondido — ${c.nome ?? 'novo contato'}`,
+    `<p><b>${c.nome ?? 'Uma pessoa'}</b> respondeu o formulário antes da consulta.</p>
+     <p><b>Situação:</b> ${resumo}</p>
+     <p><a href="${siteUrl}/crm?abrir=${c.id}">Abrir a ficha no CRM</a></p>`,
+  )
   return { ok: true }
 })
