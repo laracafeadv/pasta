@@ -20,7 +20,10 @@
         >
           <span class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
                 :class="fase === f.id ? 'bg-white/20' : 'bg-secondary/20 text-secondary-dark'">{{ i + 1 }}</span>
-          <span class="text-sm font-semibold leading-tight">{{ f.nome }}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-semibold leading-tight truncate">{{ f.nome }}</span>
+            <span class="block text-[10px] mt-0.5" :class="fase === f.id ? 'text-white/70' : 'text-gray-400'">{{ f.passos.length }} passo(s) · {{ f.passos.filter(p => p.automatico).length }} automático(s)</span>
+          </span>
         </button>
       </nav>
 
@@ -31,9 +34,18 @@
           <p class="text-sm text-gray-500 mt-1">{{ atual.resumo }}</p>
         </div>
 
-        <ol class="space-y-4">
-          <li v-for="(passo, i) in atual.passos" :key="i" class="flex gap-4">
-            <span class="w-7 h-7 rounded-full bg-secondary/15 text-secondary-dark text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{{ i + 1 }}</span>
+        <div class="flex items-center gap-2 text-xs text-gray-500">
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-success" /> automático</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-secondary" /> você faz</span>
+          <span class="ml-auto font-semibold">{{ atual.passos.length }} passo(s)</span>
+        </div>
+
+        <ol class="space-y-2.5">
+          <li v-for="(passo, i) in atual.passos" :key="i"
+              class="rounded-2xl border-l-[3px] p-3.5 flex gap-3.5 bg-white dark:bg-zinc-800/60"
+              :class="passo.automatico ? 'border-success' : 'border-secondary'">
+            <span class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 mt-0.5"
+                  :class="passo.automatico ? 'bg-success/15 text-success-dark' : 'bg-secondary/15 text-secondary-dark'">{{ i + 1 }}</span>
             <div class="min-w-0">
               <p class="text-sm text-primary dark:text-zinc-100 font-semibold">{{ passo.titulo }}</p>
               <p class="text-sm text-gray-600 dark:text-zinc-300 mt-0.5 leading-relaxed">{{ passo.texto }}</p>
