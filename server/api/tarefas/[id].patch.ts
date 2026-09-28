@@ -1,7 +1,7 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { requireStaff } from '../../utils/security'
 
-const CAMPOS = ['titulo', 'descricao', 'coluna', 'concluida'] as const
+const CAMPOS = ['titulo', 'descricao', 'coluna', 'concluida', 'prazo', 'prioridade', 'contato_id', 'caso_id'] as const
 
 export default defineEventHandler(async (event) => {
   await requireStaff(event, 'tarefas/update')

@@ -374,14 +374,21 @@ export const FASES_PROCESSUAIS = ['Postulatória (petição inicial)', 'Instruç
 
 // Tarefas internas do escritório, sem vínculo com cliente ou caso.
 export const COLUNAS_TAREFA = { hoje: 'Hoje', semana: 'Essa semana', mes: 'Esse mês', quando_der: 'Quando der' } as const
+export const PRIORIDADES_TAREFA = { baixa: 'Baixa', media: 'Média', alta: 'Alta' } as const
 export interface TarefaInterna {
   id: number
   titulo: string
   descricao: string | null
   coluna: keyof typeof COLUNAS_TAREFA
   concluida: boolean
+  prazo: string | null
+  prioridade: keyof typeof PRIORIDADES_TAREFA
+  contato_id: number | null
+  caso_id: number | null
   created_at: string
   updated_at: string
+  contato?: Pick<Contato, 'id' | 'nome'> | null
+  caso?: Pick<Caso, 'id' | 'titulo'> | null
 }
 export interface Caso {
   id: number
