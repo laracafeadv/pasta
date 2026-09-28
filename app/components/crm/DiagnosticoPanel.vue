@@ -20,6 +20,7 @@
     <!-- 5 porquês -->
     <section class="card">
       <h3>Problema e causa raiz (5 porquês)</h3>
+      <p class="text-xs text-gray-500 -mt-1 mb-2">Pergunte "por quê" sucessivamente até chegar no motivo real — nem sempre o problema que ela conta de início é a causa.</p>
       <label class="field"><span>O que a cliente trouxe</span><textarea v-model="d.problema_relatado" rows="2" class="modal-input" placeholder="Com as palavras dela" /></label>
       <div class="space-y-2 mt-2">
         <label v-for="i in 5" :key="i" class="flex items-center gap-2">
@@ -37,6 +38,7 @@
     <!-- Viabilidade -->
     <section class="card">
       <h3>Viabilidade</h3>
+      <p class="text-xs text-gray-500 -mt-1 mb-2">Marque o que já foi checado antes de propor. Um "não" aqui pode virar ressalva na proposta ou motivo pra recusar o caso.</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
         <label v-for="v in VERIFICACOES_VIABILIDADE" :key="v.chave" class="flex items-start gap-2 cursor-pointer">
           <input v-model="d.verificacoes[v.chave]" type="checkbox" class="mt-0.5 accent-[#3c2923]" />
@@ -62,6 +64,7 @@
         <label class="field"><span>O quê</span><input v-model="d.descricao_em_jogo" class="modal-input" placeholder="Ex.: a meação do apartamento; 12 meses de pensão" /></label>
         <label class="field"><span>Valor aproximado (R$)</span><input v-model.number="d.valor_em_jogo" type="number" min="0" step="100" class="modal-input" /></label>
       </div>
+      <p v-if="!d.honorario_proposto" class="text-xs text-gray-400 mt-2">Ainda sem honorário registrado — registre a proposta na aba Financeiro pra ela aparecer aqui e calcular o percentual.</p>
       <div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
         <span>Honorário proposto: <b>{{ d.honorario_proposto ? brl(d.honorario_proposto) : '—' }}</b></span>
         <span v-if="percentual != null">= <b>{{ percentual }}%</b> do que está em jogo</span>
@@ -75,6 +78,7 @@
     <!-- Decisão -->
     <section class="card">
       <h3>Decisão</h3>
+      <p class="text-xs text-gray-500 -mt-1 mb-2">O veredito final da consulta, depois de olhar viabilidade e o que está em jogo. Fica no histórico do caso.</p>
       <div class="flex flex-wrap gap-2">
         <button v-for="(x, k) in DECISOES_DIAGNOSTICO" :key="k" type="button" class="px-4 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wider"
                 :class="d.decisao === k ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700'" @click="d.decisao = d.decisao === k ? null : k">

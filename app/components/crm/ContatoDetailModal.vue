@@ -28,6 +28,7 @@
 
       <!-- Caso -->
       <div v-if="aba === 'resumo'" class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <p class="md:col-span-2 text-xs text-gray-500 -mb-2">Visão geral: dados de contato, situação do caso, relacionamento e o que ela já contou com as próprias palavras.</p>
         <div class="card">
           <h3>Contato</h3>
           <p><b>WhatsApp:</b> <a :href="whatsappLink(dados.contato.telefone)" target="_blank" rel="noopener" class="text-primary">{{ telefoneFormatado(dados.contato.telefone) }}</a></p>
@@ -103,6 +104,7 @@
 
       <!-- Conversa -->
       <div v-else-if="aba === 'conversa'" class="flex flex-col">
+        <p class="px-5 pt-3 text-xs text-gray-500">O histórico de WhatsApp com ela. Mensagens marcadas "IA" foram respondidas automaticamente; "Você" foram enviadas daqui.</p>
         <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm" :class="dados.contato.ia_ativa ? 'bg-success/5' : 'bg-warning/10'">
           <span v-if="dados.contato.ia_ativa"><Icon name="ph:robot-bold" class="align-middle" /> A assistente de IA está respondendo este contato.</span>
           <span v-else><Icon name="ph:user-bold" class="align-middle" /> Você assumiu esta conversa. A IA não responde.</span>
@@ -175,6 +177,7 @@
 
       <!-- Atividades -->
       <div v-else-if="aba === 'atividades'" class="p-5">
+        <p class="text-xs text-gray-500 mb-3">Linha do tempo de tudo que foi feito ou decidido neste caso — registre ligações, decisões e combinados aqui pra não perder o fio depois.</p>
         <form class="flex flex-col sm:flex-row gap-2 mb-5" @submit.prevent="anotar">
           <select v-model="nota.tipo" class="modal-input sm:w-40">
             <option v-for="t in TIPOS_ATIVIDADE" :key="t">{{ t }}</option>
@@ -207,6 +210,7 @@
       <QualificacaoForm v-if="sub === 'qualificacao'" :key="dados.contato.id" :contato-id="dados.contato.id" :nome-sugerido="dados.contato.nome" />
 
       <div v-else-if="sub === 'casos'" class="p-5 space-y-5">
+        <p class="text-xs text-gray-500 -mt-1">O processo em si: número CNJ, fase, valor da causa, a pasta de documentos no Drive e os prazos vinculados.</p>
         <div v-if="dados.contato.etapa === 'ativo' && !dados.casos.length" class="rounded-2xl bg-secondary/10 border border-secondary/30 p-4 text-sm">
           Cliente ativo sem caso aberto. Abra o caso para registrar o processo, os prazos e gerar a procuração.
         </div>
@@ -265,6 +269,7 @@
 
       <!-- Documentos -->
       <div v-else-if="sub === 'documentos'" class="p-5 space-y-4">
+        <p class="text-xs text-gray-500 -mt-1">Checklist do que falta pedir pra cliente, já pronto por área de atuação — cobre quem ainda não mandou.</p>
         <div class="flex flex-wrap gap-2 items-center">
           <Button size="sm" variant="outline" icon="ph:list-checks-bold" :loading="gerandoDocs" @click="gerarChecklist">
             {{ dados.documentos.length ? 'Completar com a lista da área' : 'Gerar checklist da área' }}
@@ -297,6 +302,7 @@
 
       <!-- Honorários -->
       <div v-else-if="aba === 'honorarios'" class="p-5 space-y-3">
+        <p class="text-xs text-gray-500">Propostas e contratos de honorário fechados com esta cliente, e as parcelas em aberto — pra cobrança geral, use a tela Financeiro.</p>
         <div class="flex justify-end">
           <NuxtLink :to="`/honorarios?contato=${dados.contato.id}`" class="text-sm font-semibold text-primary">+ Registrar honorário</NuxtLink>
         </div>
