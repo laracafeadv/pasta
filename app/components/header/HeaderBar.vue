@@ -75,12 +75,13 @@ const navItems = computed(() => {
 
   const items: { label: string; path: string; badge?: number }[] = [
     { label: 'Hoje', path: '/crm', badge: crm.pendencias || undefined },
+    { label: 'Tarefas internas', path: '/tarefas' },
     { label: 'Funil e contatos', path: '/crm?aba=funil' },
+    { label: 'Casos', path: '/casos' },
     { label: 'Mensagens', path: '/mensagens' },
     { label: 'Remarketing', path: '/crm?aba=remarketing' },
     { label: role === 'admin' ? 'Financeiro' : 'Honorários', path: '/honorarios' },
     { label: 'Relatórios', path: '/relatorios' },
-    { label: 'Casos', path: '/casos' },
     { label: 'Padrões operacionais', path: '/manual' },
   ]
   if (role === 'admin') {

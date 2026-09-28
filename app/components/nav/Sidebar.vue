@@ -51,12 +51,14 @@ const grupos = computed(() => {
       titulo: 'O que fazer agora',
       itens: [
         { label: 'Hoje', path: '/crm', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
-      ],
+        { label: 'Tarefas internas', path: '/tarefas', icone: 'ph:check-square-bold' },
+      ] as { label: string; path: string; icone: string; badge?: number }[],
     },
     {
       titulo: 'Meus clientes',
       itens: [
         { label: 'Funil e contatos', path: '/crm?aba=funil', icone: 'ph:kanban-bold' },
+        { label: 'Casos', path: '/casos', icone: 'ph:briefcase-bold' },
         { label: 'Mensagens', path: '/mensagens', icone: 'ph:chat-circle-text-bold' },
         { label: 'Remarketing', path: '/crm?aba=remarketing', icone: 'ph:arrow-counter-clockwise-bold' },
       ],
@@ -71,12 +73,10 @@ const grupos = computed(() => {
     {
       titulo: 'Escritório',
       itens: [
-        { label: 'Casos', path: '/casos', icone: 'ph:briefcase-bold' },
-        { label: 'Tarefas internas', path: '/tarefas', icone: 'ph:check-square-bold' },
+        { label: 'Padrões operacionais', path: '/manual', icone: 'ph:list-checks-bold' },
       ] as { label: string; path: string; icone: string; badge?: number }[],
     },
   ]
-  lista[3]!.itens.push({ label: 'Padrões operacionais', path: '/manual', icone: 'ph:list-checks-bold' })
   if (role === 'admin') {
     lista[3]!.itens.push({ label: 'Ana (IA)', path: '/eva', icone: 'ph:robot-bold' })
     lista[3]!.itens.push({ label: 'Configurações', path: '/admin/escritorio', icone: 'ph:gear-bold' })

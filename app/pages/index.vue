@@ -109,6 +109,7 @@ const grupos = computed(() => {
       cor: 'danger',
       itens: [
         { nome: 'Hoje', to: '/crm', desc: 'Lista, calendário, prazos e audiências — tudo num só lugar.', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
+        { nome: 'Tarefas internas', to: '/tarefas', desc: 'Afazeres do escritório sem cliente vinculado.', icone: 'ph:check-square-bold' },
       ],
     },
     {
@@ -116,6 +117,7 @@ const grupos = computed(() => {
       cor: 'secondary',
       itens: [
         { nome: 'Funil e contatos', to: '/crm?aba=funil', desc: 'Todo o funil, de novo contato a cliente ativo.', icone: 'ph:kanban-bold' },
+        { nome: 'Casos', to: '/casos', desc: 'Processos ativos, número CNJ e partes.', icone: 'ph:briefcase-bold' },
         { nome: 'Mensagens', to: '/mensagens', desc: 'Biblioteca de mensagens prontas (/atalho).', icone: 'ph:chat-circle-text-bold' },
         { nome: 'Remarketing', to: '/crm?aba=remarketing', desc: 'Quem não fechou, por demanda e motivo.', icone: 'ph:arrow-counter-clockwise-bold' },
       ],
@@ -132,7 +134,6 @@ const grupos = computed(() => {
       titulo: 'Escritório',
       cor: 'primary',
       itens: [
-        { nome: 'Casos', to: '/casos', desc: 'Processos ativos, número CNJ e partes.', icone: 'ph:briefcase-bold' },
         { nome: 'Padrões operacionais', to: '/manual', desc: 'O passo a passo de cada etapa, e o que o sistema já faz sozinho.', icone: 'ph:list-checks-bold' },
       ],
     },
