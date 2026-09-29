@@ -50,6 +50,7 @@ const grupos = computed(() => {
     {
       titulo: 'O que fazer agora',
       itens: [
+        { label: 'Dashboard', path: '/', icone: 'ph:squares-four-bold' },
         { label: 'Hoje', path: '/crm', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
       ] as { label: string; path: string; icone: string; badge?: number }[],
     },

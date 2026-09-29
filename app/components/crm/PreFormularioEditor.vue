@@ -29,12 +29,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import type { Formulario } from '~~/shared/types/crm'
 
-defineProps<{ isOpen: boolean }>()
+const props = defineProps<{ isOpen: boolean }>()
 const emit = defineEmits<{ close: []; gerar: [formularioId: number | null] }>()
 
 const gerando = ref(false)
@@ -42,10 +42,15 @@ const formularios = ref<Formulario[]>([])
 const formularioId = ref<number | null>(null)
 const formularioEscolhido = computed(() => formularios.value.find(f => f.id === formularioId.value))
 
-onMounted(async () => {
+// A lista só é buscada na primeira vez que o editor abre (ele fica montado dentro da ficha, então
+// buscar ao montar gerava uma chamada à API em toda tela que tem a ficha, mesmo sem abri-la).
+let carregou = false
+watch(() => props.isOpen, async (aberto) => {
+  if (!aberto || carregou) return
+  carregou = true
   try {
     formularios.value = await $fetch<Formulario[]>('/api/formularios')
-  } catch { /* formulários são opcionais; se falhar, segue só com o resumo livre */ }
+  } catch { carregou = false /* formulários são opcionais; tenta de novo na próxima abertura */ }
 })
 
 async function gerar() {

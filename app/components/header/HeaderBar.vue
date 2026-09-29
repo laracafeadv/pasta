@@ -76,6 +76,7 @@ const navItems = computed(() => {
   if (role !== 'admin' && role !== 'equipe') return []
 
   const items: { label: string; path: string; badge?: number }[] = [
+    { label: 'Dashboard', path: '/' },
     { label: 'Hoje', path: '/crm', badge: crm.pendencias || undefined },
     { label: 'Leads', path: '/leads' },
     { label: 'Clientes', path: '/clientes' },

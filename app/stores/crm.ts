@@ -49,7 +49,12 @@ export const useCrmStore = defineStore('crm', () => {
   const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], aniversarios: [], compromissos: [], tarefas: [] })
   const agendaLoading = ref(false)
   // Contador do menu "Hoje": tudo que já venceu ou vence hoje (contatos, prazos e tarefas) + casos sem próxima ação.
+  // Quando o Dashboard é a tela aberta, o número vem dele (mesma conta), sem carregar a agenda inteira.
+  const agendaCarregada = ref(false)
+  const pendenciasDoDashboard = ref(0)
+  function definirPendencias(n: number) { pendenciasDoDashboard.value = n }
   const pendencias = computed(() => {
+    if (!agendaCarregada.value) return pendenciasDoDashboard.value
     const hoje = hojeISO()
     return agenda.value.atrasadas.length + agenda.value.hoje.length + agenda.value.semAcao.length
       + agenda.value.compromissos.filter(c => dataCompromisso(c) <= hoje).length
@@ -90,6 +95,7 @@ export const useCrmStore = defineStore('crm', () => {
     agendaLoading.value = true
     try {
       agenda.value = await $fetch<Agenda>('/api/crm/contatos/hoje')
+      agendaCarregada.value = true
     } catch (e) {
       error.value = erro(e, 'Erro ao carregar a agenda.')
     } finally {
@@ -158,7 +164,7 @@ export const useCrmStore = defineStore('crm', () => {
 
   return {
     records, total, loading, saving, error, currentPage, pageSize, totalPages, filtros,
-    funil, funilLoading, agenda, agendaLoading, pendencias,
+    funil, funilLoading, agenda, agendaLoading, pendencias, definirPendencias,
     fetchRecords, fetchFunil, fetchAgenda, refresh, salvar, registrarAndamento, adiar, excluir, setFiltro, goToPage,
   }
 })
