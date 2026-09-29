@@ -2,7 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { brlServidor } from '../../utils/formato'
 import { requireStaff } from '../../utils/security'
 import { registrarAtividade } from '../../utils/crm'
-import { limparHonorario } from '../../utils/honorarios'
+import { conferirDemanda, limparHonorario } from '../../utils/honorarios'
 import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
   if (!Number.isInteger(id) || id <= 0) throw createError({ statusCode: 400, message: 'ID inválido.' })
 
   const data = limparHonorario(await readBody(event))
-  const { data: anterior } = await client.from('honorarios').select('status').eq('id', id).single()
+  const { data: anterior } = await client.from('honorarios').select('status, contato_id').eq('id', id).single()
+  if (anterior) await conferirDemanda(client, anterior.contato_id, data.caso_id)
 
   const { data: updated, error } = await client.from('honorarios').update(data).eq('id', id).select().single()
   if (error) {

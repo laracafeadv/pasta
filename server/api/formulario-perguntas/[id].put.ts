@@ -13,7 +13,11 @@ export default defineEventHandler(async (event) => {
   // Trocar o tipo de uma pergunta já respondida deixaria respostas antigas incoerentes: só as opções e o texto mudam.
   const { data: atual } = await client.from('formulario_perguntas').select('tipo').eq('id', id).single()
   if (atual && atual.tipo !== d.tipo) {
-    const { count } = await client.from('contato_respostas').select('contato_id', { count: 'exact', head: true }).eq('pergunta_id', id)
+    const [a, b] = await Promise.all([
+      client.from('contato_respostas').select('contato_id', { count: 'exact', head: true }).eq('pergunta_id', id),
+      client.from('caso_respostas').select('caso_id', { count: 'exact', head: true }).eq('pergunta_id', id),
+    ])
+    const count = (a.count ?? 0) + (b.count ?? 0)
     if (count) throw createError({ statusCode: 409, message: `Essa pergunta já tem ${count} resposta(s): não dá para mudar o tipo. Crie uma nova pergunta e arquive esta.` })
   }
   const { data, error } = await client.from('formulario_perguntas').update(d).eq('id', id).select().single()

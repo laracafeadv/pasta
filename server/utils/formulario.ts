@@ -28,10 +28,10 @@ export async function envioDoPreFormulario(admin: SupabaseClient, token: string 
   if (!envio || new Date(envio.expira_em).getTime() < Date.now()) {
     throw createError({ statusCode: 404, message: 'Este link não é mais válido. Peça um novo ao escritório.' })
   }
-  let itens: { pergunta_id: number; obrigatoria: boolean; pergunta: { texto: string; tipo: string; opcoes: string[] } }[] = []
+  let itens: { pergunta_id: number; obrigatoria: boolean; pergunta: { texto: string; tipo: string; opcoes: string[]; escopo?: string } }[] = []
   if (envio.formulario_id) {
     const { data } = await admin.from('formulario_itens')
-      .select('pergunta_id, obrigatoria, ordem, pergunta:formulario_perguntas(texto, tipo, opcoes)')
+      .select('pergunta_id, obrigatoria, ordem, pergunta:formulario_perguntas(texto, tipo, opcoes, escopo)')
       .eq('formulario_id', envio.formulario_id).order('ordem')
     itens = (data ?? []) as any
   }

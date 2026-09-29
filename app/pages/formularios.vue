@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { definePageMeta, useHead, useRoute } from '#imports'
 import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
+import { PROCEDIMENTOS } from '~~/shared/data/checklist'
 import type { Formulario, FormularioEnvio, FormularioEnvioDetalhe, FormularioPergunta, TipoPergunta } from '~~/shared/types/crm'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
@@ -36,7 +37,7 @@ const perguntaAberta = ref(false)
 const perguntaSalvando = ref(false)
 const perguntaErro = ref<string | null>(null)
 const perguntaEditando = ref<FormularioPergunta | null>(null)
-const formPergunta = reactive<{ texto: string; tipo: TipoPergunta; opcoes: string[]; secao: string; ajuda: string }>({ texto: '', tipo: 'texto_curto', opcoes: [], secao: 'Geral', ajuda: '' })
+const formPergunta = reactive<{ texto: string; tipo: TipoPergunta; opcoes: string[]; secao: string; ajuda: string; escopo: 'cliente' | 'demanda'; procedimentos: string[] }>({ texto: '', tipo: 'texto_curto', opcoes: [], secao: 'Geral', ajuda: '', escopo: 'cliente', procedimentos: [] })
 
 function abrirPergunta(p?: FormularioPergunta) {
   perguntaEditando.value = p ?? null
@@ -46,13 +47,15 @@ function abrirPergunta(p?: FormularioPergunta) {
   formPergunta.opcoes = p?.opcoes?.length ? [...p.opcoes] : ['', '']
   formPergunta.secao = p?.secao ?? secoesExistentes.value[0] ?? 'Geral'
   formPergunta.ajuda = p?.ajuda ?? ''
+  formPergunta.escopo = p?.escopo ?? 'cliente'
+  formPergunta.procedimentos = [...(p?.procedimentos ?? [])]
   perguntaAberta.value = true
 }
 async function salvarPergunta() {
   perguntaSalvando.value = true
   perguntaErro.value = null
   try {
-    const body = { texto: formPergunta.texto, tipo: formPergunta.tipo, opcoes: formPergunta.opcoes, secao: formPergunta.secao, ajuda: formPergunta.ajuda }
+    const body = { texto: formPergunta.texto, tipo: formPergunta.tipo, opcoes: formPergunta.opcoes, secao: formPergunta.secao, ajuda: formPergunta.ajuda, escopo: formPergunta.escopo, procedimentos: formPergunta.procedimentos }
     if (perguntaEditando.value) await $fetch(`/api/formulario-perguntas/${perguntaEditando.value.id}`, { method: 'PUT', body })
     else await $fetch('/api/formulario-perguntas', { method: 'POST', body })
     perguntaAberta.value = false
@@ -72,7 +75,7 @@ async function arquivarPergunta() {
 async function restaurarPergunta() {
   const p = perguntaEditando.value
   if (!p) return
-  await $fetch(`/api/formulario-perguntas/${p.id}`, { method: 'PUT', body: { texto: p.texto, tipo: p.tipo, opcoes: p.opcoes, secao: p.secao, ajuda: p.ajuda, arquivada: false } })
+  await $fetch(`/api/formulario-perguntas/${p.id}`, { method: 'PUT', body: { texto: p.texto, tipo: p.tipo, opcoes: p.opcoes, secao: p.secao, ajuda: p.ajuda, escopo: p.escopo, procedimentos: p.procedimentos, arquivada: false } })
   perguntaAberta.value = false
   await carregarPerguntas()
 }
@@ -267,7 +270,7 @@ onMounted(async () => {
     <div v-else-if="aba === 'perguntas'" class="space-y-5">
       <div class="rounded-2xl border border-secondary/30 bg-secondary/10 p-4 text-sm text-gray-600 dark:text-zinc-300">
         <b>Fixo × seu.</b> Nome, telefone, e-mail, CPF, endereço e etapa são do CRM e ficam no Resumo e na Qualificação — não são criados aqui.
-        Tudo que você cria abaixo aparece <b>automaticamente</b> em <b>Informações do cliente</b>, na ficha, dentro da seção escolhida, e pode ser preenchido ou corrigido ali mesmo.
+        Tudo que você cria abaixo aparece <b>automaticamente</b> na ficha: perguntas do <b>cliente</b> em <i>Informações do cliente</i>, e perguntas da <b>demanda</b> dentro de cada demanda (pacto, planejamento, inventário…), na seção escolhida — e podem ser preenchidas ou corrigidas ali mesmo.
         <span class="block mt-1 text-xs text-gray-500"><b>Múltipla escolha</b> coleta informação (quais bens ela tem). <b>Checklist</b> acompanha o que já foi feito (documentos recebidos) e é só interno — não vai para a cliente.</span>
       </div>
       <div class="flex justify-end"><Button icon="ph:plus-bold" @click="abrirPergunta()">Nova pergunta</Button></div>
@@ -281,7 +284,7 @@ onMounted(async () => {
           <div v-for="(p, i) in sec.itens" :key="p.id" class="flex items-stretch rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 hover:border-primary">
             <button type="button" class="flex-1 min-w-0 text-left p-4" @click="abrirPergunta(p)">
               <p class="text-sm font-semibold text-primary dark:text-zinc-100">{{ p.texto }}</p>
-              <p class="text-xs text-gray-400 mt-0.5 truncate">{{ nomeTipo(p.tipo) }}<span v-if="p.opcoes.length"> — {{ p.opcoes.join(', ') }}</span></p>
+              <p class="text-xs text-gray-400 mt-0.5 truncate"><span v-if="p.escopo === 'demanda'" class="font-semibold text-secondary-dark">Demanda · </span>{{ nomeTipo(p.tipo) }}<span v-if="p.opcoes.length"> — {{ p.opcoes.join(', ') }}</span></p>
             </button>
             <div class="flex flex-col justify-center pr-2 text-gray-300">
               <button type="button" class="hover:text-primary disabled:opacity-30" :disabled="i === 0" aria-label="Subir" @click="mover(p, -1)"><Icon name="ph:caret-up-bold" /></button>
@@ -359,6 +362,22 @@ onMounted(async () => {
           <input v-model="formPergunta.secao" class="modal-input" list="secoes-lista" placeholder="Ex.: Patrimônio" />
           <datalist id="secoes-lista"><option v-for="n in secoesExistentes" :key="n" :value="n" /></datalist>
         </label>
+        <div class="field">
+          <span>Esta informação pertence a…</span>
+          <div class="flex gap-2">
+            <button type="button" class="px-4 py-1.5 rounded-full border text-xs font-semibold" :class="formPergunta.escopo === 'cliente' ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700'" @click="formPergunta.escopo = 'cliente'">Ao cliente (permanente)</button>
+            <button type="button" class="px-4 py-1.5 rounded-full border text-xs font-semibold" :class="formPergunta.escopo === 'demanda' ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700'" @click="formPergunta.escopo = 'demanda'">À demanda (cada contratação)</button>
+          </div>
+          <small class="text-gray-400">Cliente: vale para sempre (profissão, estado civil). Demanda: muda a cada serviço (regime de bens desejado no pacto, bens a partilhar no inventário).</small>
+        </div>
+        <div v-if="formPergunta.escopo === 'demanda'" class="field">
+          <span>Só para estes procedimentos (vazio = todas as demandas)</span>
+          <div class="flex flex-wrap gap-1.5">
+            <label v-for="pr in PROCEDIMENTOS" :key="pr.valor" class="text-xs px-2.5 py-1 rounded-full border cursor-pointer" :class="formPergunta.procedimentos.includes(pr.valor) ? 'bg-secondary/20 border-secondary' : 'border-gray-300 dark:border-zinc-700'">
+              <input v-model="formPergunta.procedimentos" type="checkbox" :value="pr.valor" class="sr-only" />{{ pr.rotulo }}
+            </label>
+          </div>
+        </div>
         <label class="field"><span>Ajuda (opcional)</span><input v-model="formPergunta.ajuda" class="modal-input" placeholder="Instrução curta que aparece junto da pergunta" /></label>
         <p v-if="perguntaErro" class="text-sm text-danger">{{ perguntaErro }}</p>
       </form>

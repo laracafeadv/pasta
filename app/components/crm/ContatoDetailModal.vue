@@ -40,9 +40,9 @@
           <p><b>Aviso LGPD:</b> {{ dados.contato.consentimento_em ? dataHora(dados.contato.consentimento_em) : 'não enviado' }}</p>
         </div>
         <div class="card">
-          <h3>Caso</h3>
+          <h3>Interesse inicial</h3>
           <p><b>Área:</b> {{ dados.contato.area || '—' }} <span v-if="dados.contato.demanda">· {{ dados.contato.demanda }}</span></p>
-          <p><b>Parte contrária:</b> {{ dados.contato.parte_contraria || '—' }}</p>
+          <p><b>Outra parte:</b> {{ dados.contato.parte_contraria || '—' }}</p>
           <p><b>Urgência:</b> {{ dados.contato.urgencia || '—' }} · <b>Sentimento:</b> {{ dados.contato.sentimento || '—' }}</p>
           <p v-if="etapa(dados.contato.etapa).aberta">
             <b>Próxima ação:</b>
@@ -209,12 +209,12 @@
       <QualificacaoForm v-if="sub === 'qualificacao'" :key="dados.contato.id" :contato-id="dados.contato.id" :nome-sugerido="dados.contato.nome" />
 
       <div v-else-if="sub === 'casos'" class="p-5 space-y-5">
-        <p class="text-xs text-gray-500 -mt-1">O processo em si: número CNJ, fase, valor da causa, a pasta de documentos no Drive e os prazos vinculados.</p>
+        <p class="text-xs text-gray-500 -mt-1">O que este cliente contratou: cada serviço é uma demanda (consultiva, cartório ou judicial). Só demanda judicial tem dados de processo. O cliente é o mesmo; uma nova contratação é uma nova demanda.</p>
         <div v-if="dados.contato.etapa === 'ativo' && !dados.casos.length" class="rounded-2xl bg-secondary/10 border border-secondary/30 p-4 text-sm">
-          Cliente ativo sem caso aberto. Abra o caso para registrar o processo, os prazos e gerar a procuração.
+          Cliente ativo sem demanda aberta. Abra a demanda para acompanhar as etapas, os prazos e gerar a procuração.
         </div>
         <div class="flex flex-wrap gap-2">
-          <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Abrir caso</Button>
+          <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Nova demanda</Button>
           <NuxtLink :to="`/crm?aba=hoje&ver=calendario&contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">+ Prazo ou compromisso</NuxtLink>
           <a v-if="dados.contato.drive_pasta_url" :href="dados.contato.drive_pasta_url" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"><Icon name="ph:google-drive-logo-bold" class="align-middle" /> Pasta no Drive</a>
           <button v-else-if="driveOk" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" :disabled="criandoPasta" @click="criarPastaDrive">
@@ -233,28 +233,41 @@
           {{ avisoDrive.texto }} <a v-if="avisoDrive.url" :href="avisoDrive.url" target="_blank" rel="noopener" class="underline">abrir</a>
         </p>
         <p v-if="avisoFormulario" class="text-xs" :class="avisoFormulario.erro ? 'text-danger' : 'text-success-dark'">{{ avisoFormulario.texto }}</p>
-        <p v-if="!dados.casos.length" class="text-sm text-gray-400">Nenhum caso aberto.</p>
-        <article v-for="k in dados.casos" :key="k.id" class="card">
+        <p v-if="!dados.casos.length" class="text-sm text-gray-400">Nenhuma demanda aberta. Este cliente está apenas cadastrado.</p>
+        <template v-for="k in demandasVisiveis" :key="k.id">
+        <article class="card" :class="k.status === 'encerrado' ? 'opacity-75' : ''">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
             <p class="font-semibold">{{ k.titulo }}</p>
             <span class="tag">{{ STATUS_CASO[k.status] }}</span>
           </div>
-          <p class="text-xs text-gray-500">{{ TIPOS_CASO[k.tipo] }}<span v-if="k.numero_processo"> · <span class="font-mono">{{ k.numero_processo }}</span></span><span v-if="k.orgao"> · {{ k.orgao }}</span><span v-if="k.comarca"> · {{ k.comarca }}/{{ k.uf }}</span></p>
-          <p v-if="k.fase_processual || k.valor_causa" class="text-xs text-gray-500">
-            <span v-if="k.fase_processual">Fase: {{ k.fase_processual }}</span>
-            <span v-if="k.fase_processual && k.valor_causa"> · </span>
-            <span v-if="k.valor_causa">Valor da causa: {{ brl(k.valor_causa) }}</span>
+          <p class="text-xs text-gray-500">
+            {{ TIPOS_CASO[k.tipo] }}<span v-if="k.procedimento"> · {{ PROCEDIMENTOS.find(p => p.valor === k.procedimento)?.rotulo }}</span>
+            <span v-if="k.tipo === 'extrajudicial' && k.orgao"> · {{ k.orgao }}</span>
           </p>
-          <p v-if="k.parte_contraria" class="text-xs">Parte contrária: {{ k.parte_contraria }}</p>
-          <div class="flex gap-3 pt-1 text-xs">
+          <!-- Dados de processo: só quando há processo -->
+          <template v-if="k.tipo === 'judicial'">
+            <p class="text-xs text-gray-500"><span v-if="k.numero_processo" class="font-mono">{{ k.numero_processo }}</span><span v-if="k.orgao"> · {{ k.orgao }}</span><span v-if="k.comarca"> · {{ k.comarca }}/{{ k.uf }}</span></p>
+            <p v-if="k.fase_processual || k.valor_causa" class="text-xs text-gray-500">
+              <span v-if="k.fase_processual">Fase: {{ k.fase_processual }}</span>
+              <span v-if="k.fase_processual && k.valor_causa"> · </span>
+              <span v-if="k.valor_causa">Valor da causa: {{ brl(k.valor_causa) }}</span>
+            </p>
+          </template>
+          <p v-if="k.parte_contraria" class="text-xs">{{ k.tipo === 'judicial' ? 'Parte contrária' : 'Outra parte' }}: {{ k.parte_contraria }}</p>
+          <div class="flex flex-wrap gap-3 pt-1 text-xs">
             <button class="underline underline-offset-2" @click="editarCaso(k)">Editar</button>
-            <NuxtLink :to="`/crm?aba=hoje&ver=calendario&contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo</NuxtLink>
-            <button v-if="ehAdmin" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração deste caso</button>
+            <NuxtLink :to="`/crm?aba=hoje&ver=calendario&contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">{{ k.tipo === 'judicial' ? 'Novo prazo' : 'Novo compromisso' }}</NuxtLink>
+            <button v-if="ehAdmin && k.tipo !== 'consultivo'" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração desta demanda</button>
             <a v-if="k.link_tribunal" :href="k.link_tribunal" target="_blank" rel="noopener" class="underline underline-offset-2">Ver no tribunal</a>
           </div>
           <ChecklistPainel v-if="dados.checklist?.casos[k.id]" class="mt-2" :escopo="dados.checklist.casos[k.id]!" @alternar="i => alternarChecklist(i, k.id)" />
-          <p v-else class="text-xs text-gray-400 pt-1">Sem procedimento definido. <button type="button" class="underline underline-offset-2 hover:text-primary" @click="editarCaso(k)">Escolha o procedimento</button> para acompanhar as etapas deste caso.</p>
+          <p v-else class="text-xs text-gray-400 pt-1">Sem procedimento definido. <button type="button" class="underline underline-offset-2 hover:text-primary" @click="editarCaso(k)">Escolha o procedimento</button> para acompanhar as etapas desta demanda.</p>
+          <InformacoesCliente :key="`d${k.id}`" class="mt-2" :contato-id="dados.contato.id" :caso-id="k.id" />
         </article>
+        </template>
+        <button v-if="encerradas.length" type="button" class="text-xs text-gray-500 underline underline-offset-2" @click="verEncerradas = !verEncerradas">
+          {{ verEncerradas ? 'Ocultar' : 'Mostrar' }} {{ encerradas.length }} demanda(s) encerrada(s)
+        </button>
         <div v-if="dados.compromissos.length">
           <h3 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Próximos prazos e compromissos</h3>
           <ul class="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
@@ -323,7 +336,7 @@
         <div v-for="h in dados.honorarios" :key="h.id" class="card flex flex-wrap items-center justify-between gap-3">
           <div>
             <p class="font-semibold">{{ brl(h.valor) }} <span class="text-xs text-gray-400">· {{ h.tipo }}<span v-if="h.parcelas > 1"> · {{ h.parcelas }}x</span></span></p>
-            <p class="text-xs text-gray-500">{{ h.descricao || '—' }}</p>
+            <p class="text-xs text-gray-500">{{ h.descricao || '—' }}<span v-if="h.caso_id && dados.casos.length > 1"> · demanda: {{ dados.casos.find(c => c.id === h.caso_id)?.titulo }}</span></p>
           </div>
           <div class="flex items-center gap-2">
             <button v-if="ehAdmin" type="button" class="text-xs underline underline-offset-2" title="Gerar contrato em Word" @click="peca(`/api/pecas/contrato?honorario=${h.id}`)">Contrato (.docx)</button>
@@ -346,6 +359,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import PreFormularioEditor from './PreFormularioEditor.vue'
+import { PROCEDIMENTOS } from '~~/shared/data/checklist'
 import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
@@ -379,12 +393,12 @@ const abas = computed(() => [
   { id: 'resumo', label: 'Resumo' },
   { id: 'conversa', label: 'Conversa', badge: dados.value?.mensagens.length || undefined },
   ...(emPreVenda.value || temAnalise.value ? [{ id: 'diagnostico', label: 'Consulta' }] : []),
-  { id: 'processo', label: 'Caso', badge: pendentes.value.length ? `${pendentes.value.length} doc.` : dados.value?.casos.length || undefined },
+  { id: 'processo', label: 'Demandas', badge: pendentes.value.length ? `${pendentes.value.length} doc.` : dados.value?.casos.length || undefined },
   { id: 'honorarios', label: 'Financeiro', badge: dados.value?.honorarios.length || undefined },
   { id: 'atividades', label: 'Histórico', badge: dados.value?.atividades.length || undefined },
 ])
 const subAbas = computed(() => [
-  { id: 'casos', label: 'Processos e prazos', badge: dados.value?.casos.length || undefined },
+  { id: 'casos', label: 'Demandas e prazos', badge: dados.value?.casos.length || undefined },
   { id: 'documentos', label: 'Documentos', badge: pendentes.value.length ? `${pendentes.value.length} pend.` : undefined },
   { id: 'qualificacao', label: 'Qualificação' },
 ])
@@ -515,6 +529,9 @@ const ehAdmin = computed(() => useProfileStore().profile?.role === 'admin')
 
 // ─── Casos ────────────────────────────────────────────────────────────────
 const casoAberto = ref(false)
+const verEncerradas = ref(false)
+const encerradas = computed(() => (dados.value?.casos ?? []).filter(c => c.status === 'encerrado'))
+const demandasVisiveis = computed(() => (dados.value?.casos ?? []).filter(c => c.status !== 'encerrado' || verEncerradas.value))
 const casoEditando = ref<Caso | null>(null)
 function editarCaso(k: Caso | null) {
   casoEditando.value = k

@@ -1,45 +1,58 @@
 <template>
-  <Modal :is-open="isOpen" :title="caso ? 'Editar caso' : 'Abrir caso'" max-width="2xl" :loading="salvando" @close="emit('close')">
+  <Modal :is-open="isOpen" :title="caso ? 'Editar demanda' : 'Nova demanda'" max-width="2xl" :loading="salvando" @close="emit('close')">
     <form id="caso-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4" @submit.prevent="salvar">
-      <label class="field sm:col-span-2"><span>Título *</span><input v-model="form.titulo" class="modal-input" required placeholder="Ex.: Divórcio consensual — Juliana x Marcos" /></label>
+      <label class="field sm:col-span-2"><span>Título *</span><input v-model="form.titulo" class="modal-input" required placeholder="Ex.: Pacto antenupcial — Juliana e Marcos" /></label>
       <label class="field">
-        <span>Tipo</span>
+        <span>Como o serviço é prestado</span>
         <select v-model="form.tipo" class="modal-input"><option v-for="(n, k) in TIPOS_CASO" :key="k" :value="k">{{ n }}</option></select>
       </label>
       <label class="field">
         <span>Área</span>
         <select v-model="form.area" class="modal-input"><option value="">—</option><option v-for="a in Object.keys(AREAS)" :key="a">{{ a }}</option></select>
       </label>
-      <label v-if="form.tipo === 'judicial'" class="field sm:col-span-2">
-        <span>Número do processo (CNJ)</span>
-        <input v-model="form.numero_processo" class="modal-input font-mono" placeholder="0000000-00.0000.0.00.0000" />
-        <small v-if="form.numero_processo" :class="cnjOk ? 'text-success-dark' : 'text-danger'">{{ cnjOk ? 'Número válido' : 'Dígito verificador não confere' }}</small>
-      </label>
-      <label class="field"><span>{{ form.tipo === 'extrajudicial' ? 'Cartório' : 'Vara / órgão' }}</span><input v-model="form.orgao" class="modal-input" /></label>
-      <div class="grid grid-cols-[1fr_90px] gap-2">
-        <label class="field"><span>Comarca</span><input v-model="form.comarca" class="modal-input" /></label>
-        <label class="field"><span>UF</span><select v-model="form.uf" class="modal-input"><option value="">—</option><option v-for="u in UFS" :key="u">{{ u }}</option></select></label>
-      </div>
       <label class="field sm:col-span-2">
-        <span>Procedimento (define as etapas do checklist do caso)</span>
+        <span>Procedimento (define as etapas do checklist e as perguntas da demanda)</span>
         <select v-model="form.procedimento" class="modal-input" @change="procedimentoTocado = true">
           <option value="">Nenhum</option>
           <option v-for="p in PROCEDIMENTOS" :key="p.valor" :value="p.valor">{{ p.rotulo }}</option>
         </select>
       </label>
-      <label class="field sm:col-span-2"><span>Parte contrária</span><input v-model="form.parte_contraria" class="modal-input" /></label>
       <label class="field">
         <span>Status</span>
         <select v-model="form.status" class="modal-input"><option v-for="(n, k) in STATUS_CASO" :key="k" :value="k">{{ n }}</option></select>
       </label>
-      <label class="field">
-        <span>Fase processual</span>
-        <input v-model="form.fase_processual" list="fases-processuais" class="modal-input" placeholder="Ex.: Instrução, Sentença, Recurso" />
-        <datalist id="fases-processuais"><option v-for="f in FASES_PROCESSUAIS" :key="f" :value="f" /></datalist>
-      </label>
-      <label class="field"><span>Abertura</span><input v-model="form.data_abertura" type="date" class="modal-input" /></label>
-      <label class="field"><span>Valor da causa</span><input v-model.number="form.valor_causa" type="number" step="0.01" min="0" class="modal-input" placeholder="0,00" /></label>
-      <label class="field sm:col-span-2"><span>Link do processo no tribunal</span><input v-model="form.link_tribunal" type="url" class="modal-input" placeholder="https://..." /></label>
+      <label class="field"><span>Início</span><input v-model="form.data_abertura" type="date" class="modal-input" /></label>
+      <label class="field sm:col-span-2"><span>{{ form.tipo === 'judicial' ? 'Parte contrária' : 'Outra parte envolvida (cônjuge, herdeiros…)' }}</span><input v-model="form.parte_contraria" class="modal-input" /></label>
+
+      <!-- Só existe quando há processo ou cartório -->
+      <template v-if="form.tipo === 'judicial'">
+        <p class="sm:col-span-2 text-[10px] font-bold uppercase tracking-widest text-primary border-t border-gray-100 dark:border-zinc-800 pt-3">Processo</p>
+        <label class="field sm:col-span-2">
+          <span>Número do processo (CNJ)</span>
+          <input v-model="form.numero_processo" class="modal-input font-mono" placeholder="0000000-00.0000.0.00.0000" />
+          <small v-if="form.numero_processo" :class="cnjOk ? 'text-success-dark' : 'text-danger'">{{ cnjOk ? 'Número válido' : 'Dígito verificador não confere' }}</small>
+        </label>
+        <label class="field"><span>Vara / órgão</span><input v-model="form.orgao" class="modal-input" /></label>
+        <div class="grid grid-cols-[1fr_90px] gap-2">
+          <label class="field"><span>Comarca</span><input v-model="form.comarca" class="modal-input" /></label>
+          <label class="field"><span>UF</span><select v-model="form.uf" class="modal-input"><option value="">—</option><option v-for="u in UFS" :key="u">{{ u }}</option></select></label>
+        </div>
+        <label class="field">
+          <span>Fase processual</span>
+          <input v-model="form.fase_processual" list="fases-processuais" class="modal-input" placeholder="Ex.: Instrução, Sentença, Recurso" />
+          <datalist id="fases-processuais"><option v-for="f in FASES_PROCESSUAIS" :key="f" :value="f" /></datalist>
+        </label>
+        <label class="field"><span>Valor da causa</span><input v-model.number="form.valor_causa" type="number" step="0.01" min="0" class="modal-input" placeholder="0,00" /></label>
+        <label class="field sm:col-span-2"><span>Link do processo no tribunal</span><input v-model="form.link_tribunal" type="url" class="modal-input" placeholder="https://..." /></label>
+      </template>
+      <template v-else-if="form.tipo === 'extrajudicial'">
+        <label class="field"><span>Cartório</span><input v-model="form.orgao" class="modal-input" /></label>
+        <div class="grid grid-cols-[1fr_90px] gap-2">
+          <label class="field"><span>Comarca</span><input v-model="form.comarca" class="modal-input" /></label>
+          <label class="field"><span>UF</span><select v-model="form.uf" class="modal-input"><option value="">—</option><option v-for="u in UFS" :key="u">{{ u }}</option></select></label>
+        </div>
+      </template>
+
       <template v-if="form.status === 'encerrado'">
         <label class="field">
           <span>Resultado</span>
@@ -76,21 +89,27 @@ const erro = ref<string | null>(null)
 const procedimentoTocado = ref(false)
 const cnjOk = computed(() => !form.numero_processo || numeroCnjValido(form.numero_processo))
 
+// Serviços de aconselhamento e instrumentos não nascem como processo.
+const DEMANDAS_CONSULTIVAS = ['Pacto antenupcial', 'Contrato de convivência', 'Regime de bens', 'Planejamento sucessório', 'Testamento', 'Parecer', 'Consultoria contínua']
+function tipoInicial(c: { area?: string | null; demanda?: string | null } | null) {
+  return DEMANDAS_CONSULTIVAS.includes(c?.demanda ?? '') || ['Planejamento Matrimonial', 'Consultoria Jurídica'].includes(c?.area ?? '') ? 'consultivo' : 'extrajudicial'
+}
+
 watch(() => props.isOpen, (open) => {
   if (!open) return
   erro.value = null
   const c = props.contato
   Object.assign(form, props.caso ?? {
-    titulo: c ? `${c.demanda || c.area || 'Caso'} — ${c.nome ?? ''}`.trim() : '',
-    tipo: 'extrajudicial', area: c?.area ?? '', numero_processo: '', orgao: '', comarca: '', uf: '',
+    titulo: c ? `${c.demanda || c.area || 'Demanda'} — ${c.nome ?? ''}`.trim() : '',
+    tipo: tipoInicial(c), area: c?.area ?? '', numero_processo: '', orgao: '', comarca: '', uf: '',
     parte_contraria: c?.parte_contraria ?? '', status: 'ativo', fase_processual: '', valor_causa: null, link_tribunal: '',
     data_abertura: hojeISO(), observacoes: '', resultado: null, data_encerramento: null,
-    procedimento: sugerirProcedimento(c?.demanda, 'extrajudicial') ?? '',
+    procedimento: sugerirProcedimento(c?.demanda, tipoInicial(c)) ?? '',
   })
   if (props.caso) form.procedimento = props.caso.procedimento ?? ''
   procedimentoTocado.value = !!props.caso
 })
-// Novo caso: a sugestão acompanha o tipo (judicial/extrajudicial) enquanto você não escolher outra.
+// Nova demanda: a sugestão acompanha o tipo (judicial/extrajudicial) enquanto você não escolher outra.
 watch(() => form.tipo, (tipo) => {
   if (props.caso || procedimentoTocado.value) return
   form.procedimento = sugerirProcedimento(props.contato?.demanda, tipo) ?? ''

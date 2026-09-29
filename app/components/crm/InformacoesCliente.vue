@@ -2,7 +2,7 @@
   <section class="rounded-2xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
     <button type="button" class="w-full flex items-center gap-3 p-4 text-left" :aria-expanded="aberto" @click="alternar">
       <span class="min-w-0 flex-1">
-        <span class="block text-[10px] font-bold uppercase tracking-widest text-primary dark:text-zinc-200">Informações do cliente</span>
+        <span class="block text-[10px] font-bold uppercase tracking-widest text-primary dark:text-zinc-200">{{ casoId ? 'Informações da demanda' : 'Informações do cliente' }}</span>
         <span v-if="secoes" class="block text-xs text-gray-500 mt-1">{{ respondidas }} de {{ total }} respondidas</span>
         <span v-else class="block text-xs text-gray-400 mt-1">Perguntas que você configura em Formulários</span>
       </span>
@@ -13,7 +13,7 @@
       <p v-if="carregando" class="text-sm text-gray-400">Carregando…</p>
       <p v-else-if="erro" class="text-sm text-danger">{{ erro }}</p>
       <p v-else-if="!secoes?.length" class="text-sm text-gray-400">
-        Nenhuma pergunta criada ainda. Crie em <NuxtLink to="/formularios?aba=perguntas" class="underline hover:text-primary">Formulários › Banco de perguntas</NuxtLink> e ela aparece aqui sozinha.
+        {{ casoId ? 'Nenhuma pergunta de demanda para este procedimento.' : 'Nenhuma pergunta criada ainda.' }} Crie em <NuxtLink to="/formularios?aba=perguntas" class="underline hover:text-primary">Formulários › Banco de perguntas</NuxtLink> e ela aparece aqui sozinha.
       </p>
       <div v-for="s in secoes" :key="s.nome">
         <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{{ s.nome }}</p>
@@ -64,7 +64,7 @@ import { computed, reactive, ref } from 'vue'
 import type { PerguntaDaFicha, SecaoDaFicha, ValorResposta } from '../../../shared/types/crm'
 
 // Carrega só quando a ficha abre este cartão (a ficha tem muito mais coisa que isso).
-const props = defineProps<{ contatoId: number }>()
+const props = defineProps<{ contatoId: number; casoId?: number | null }>()
 
 const TIPO_INPUT: Record<string, string> = { numero: 'text', data: 'date', email: 'email', telefone: 'tel' }
 const aberto = ref(false)
@@ -92,7 +92,8 @@ async function carregar() {
   carregando.value = true
   erro.value = null
   try {
-    secoes.value = await $fetch<SecaoDaFicha[]>(`/api/crm/contatos/${props.contatoId}/respostas`)
+    const url: string = `/api/crm/contatos/${props.contatoId}/respostas`
+    secoes.value = await $fetch<SecaoDaFicha[]>(url, { params: { caso_id: props.casoId || undefined } })
   } catch (e: any) {
     erro.value = e?.data?.message || 'Não foi possível carregar.'
   } finally {
@@ -112,7 +113,7 @@ async function salvar(p: PerguntaDaFicha, valor: ValorResposta) {
   delete msgErro[p.id]
   try {
     const url: string = `/api/crm/contatos/${props.contatoId}/respostas`
-    const r = await $fetch<{ resposta: ValorResposta }>(url, { method: 'PUT', body: { pergunta_id: p.id, resposta: valor } })
+    const r = await $fetch<{ resposta: ValorResposta }>(url, { method: 'PUT', body: { pergunta_id: p.id, caso_id: props.casoId || null, resposta: valor } })
     p.resposta = r.resposta
     editando.value = null
   } catch (e: any) {

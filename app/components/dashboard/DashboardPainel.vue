@@ -141,10 +141,10 @@
       <div v-if="visiveis.casos || visiveis.atividade" class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
         <section v-if="visiveis.casos" class="painel" :class="visiveis.atividade ? 'xl:col-span-2' : 'xl:col-span-3'">
           <div class="flex items-baseline justify-between mb-3">
-            <h2 class="titulo">Casos em andamento</h2>
+            <h2 class="titulo">Demandas em andamento</h2>
             <NuxtLink to="/clientes?aba=casos" class="text-xs text-gray-500 hover:text-primary underline underline-offset-2">Ver todos</NuxtLink>
           </div>
-          <p v-if="!data.casosAndamento.length" class="text-sm text-gray-500 py-2">Nenhum caso ativo.</p>
+          <p v-if="!data.casosAndamento.length" class="text-sm text-gray-500 py-2">Nenhuma demanda ativa.</p>
           <ul v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
             <li v-for="c in data.casosAndamento" :key="c.id">
               <button type="button" class="w-full text-left rounded-2xl px-2.5 py-2 hover:bg-gray-100/70 dark:hover:bg-zinc-800/70" @click="c.contato ? abrirFicha(c.contato.id, 'casos') : navigateTo('/clientes?aba=casos')">
@@ -278,7 +278,7 @@ const BLOCOS = [
   { id: 'agenda', nome: 'Próximos eventos' },
   { id: 'carga', nome: 'Carga de trabalho' },
   { id: 'funil', nome: 'Funil' },
-  { id: 'casos', nome: 'Casos em andamento' },
+  { id: 'casos', nome: 'Demandas em andamento' },
   { id: 'atividade', nome: 'Atividade recente' },
   { id: 'indicadores', nome: 'Indicadores' },
 ]
@@ -339,7 +339,7 @@ const kpis = computed(() => {
     { titulo: 'Hoje', icone: 'ph:sun-bold', valor: r.hoje.total, sub: partes(r.hoje) || 'Nada marcado para hoje', estado: (urgenteHoje ? 'atencao' : 'normal') as Estado, ir: () => navigateTo('/crm') },
     { titulo: 'Atrasado', icone: 'ph:warning-bold', valor: r.atrasado.total, sub: partes(r.atrasado) || 'Nada atrasado', estado: (r.atrasado.prazos ? 'urgente' : r.atrasado.total ? 'atrasado' : 'normal') as Estado, ir: () => { filtro.value = 'todos'; rolar('atencao') } },
     { titulo: 'Próximos 7 dias', icone: 'ph:calendar-blank-bold', valor: r.proximos7.total, sub: partes(r.proximos7) || 'Semana livre', estado: 'normal' as Estado, ir: () => { periodoAgenda.value = '7d'; visiveis.agenda = true; rolar('agenda') } },
-    { titulo: 'Carteira', icone: 'ph:users-bold', valor: r.carteira.clientesAtivos, sub: `${r.carteira.clientesAtivos === 1 ? 'cliente ativo' : 'clientes ativos'} · ${plural(r.carteira.casosAtivos, 'caso em andamento', 'casos em andamento')}`, estado: 'normal' as Estado, ir: () => navigateTo('/clientes') },
+    { titulo: 'Carteira', icone: 'ph:users-bold', valor: r.carteira.clientesAtivos, sub: `${r.carteira.clientesAtivos === 1 ? 'cliente ativo' : 'clientes ativos'} · ${plural(r.carteira.casosAtivos, 'demanda em andamento', 'demandas em andamento')}`, estado: 'normal' as Estado, ir: () => navigateTo('/clientes') },
   ]
 })
 const chips = computed(() => {

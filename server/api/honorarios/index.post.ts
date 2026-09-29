@@ -2,7 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { brlServidor } from '../../utils/formato'
 import { requireStaff } from '../../utils/security'
 import { registrarAtividade } from '../../utils/crm'
-import { limparHonorario } from '../../utils/honorarios'
+import { conferirDemanda, limparHonorario } from '../../utils/honorarios'
 import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
@@ -11,6 +11,7 @@ export default defineEventHandler(async (event) => {
   const data = limparHonorario(await readBody(event))
   if (!data.contato_id) throw createError({ statusCode: 400, message: 'Escolha o contato.' })
 
+  await conferirDemanda(client, data.contato_id, data.caso_id)
   const { data: created, error } = await client.from('honorarios').insert([{ responsavel_id: userId, ...data }]).select().single()
   if (error) {
     console.error('[honorarios] Erro ao criar:', error)

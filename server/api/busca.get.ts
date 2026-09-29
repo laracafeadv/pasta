@@ -24,7 +24,7 @@ export default defineEventHandler(async (event): Promise<Resultado[]> => {
     resultados.push({ tipo: 'contato', titulo: c.nome ?? 'Sem nome', subtitulo: [ehCliente ? 'Cliente' : 'Lead', c.demanda, c.parte_contraria ? `x ${c.parte_contraria}` : null].filter(Boolean).join(' · ') || c.telefone || '', link: `/crm?abrir=${c.id}` })
   }
   for (const c of casos.data ?? []) {
-    resultados.push({ tipo: 'caso', titulo: c.titulo ?? 'Caso sem título', subtitulo: [c.numero_processo, (c.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${c.contato_id}&ficha=casos` })
+    resultados.push({ tipo: 'caso', titulo: c.titulo ?? 'Demanda sem título', subtitulo: ['Demanda', c.numero_processo, (c.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${c.contato_id}&ficha=casos` })
   }
   for (const t of tarefas.data ?? []) {
     resultados.push({ tipo: 'tarefa', titulo: t.titulo, subtitulo: 'Tarefa', link: '/clientes?aba=tarefas' })

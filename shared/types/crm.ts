@@ -125,6 +125,7 @@ export interface Honorario {
   created_at: string
   updated_at: string
   contato_id: number
+  caso_id?: number | null
   descricao: string | null
   valor: number
   tipo: typeof TIPOS_HONORARIO[number]
@@ -144,7 +145,7 @@ export interface Honorario {
 }
 
 export const HONORARIO_CAMPOS_EDITAVEIS = [
-  'contato_id', 'descricao', 'valor', 'tipo', 'status', 'forma_pagamento', 'parcelas',
+  'contato_id', 'caso_id', 'descricao', 'valor', 'tipo', 'status', 'forma_pagamento', 'parcelas',
   'data_contratacao', 'responsavel_id', 'observacao', 'valor_mensal', 'meses', 'percentual_exito', 'validade_anos',
 ] as const
 
@@ -275,6 +276,8 @@ export interface FormularioPergunta {
   tipo: TipoPergunta
   opcoes: string[]
   arquivada: boolean
+  escopo: 'cliente' | 'demanda'
+  procedimentos: string[]
   secao: string
   ordem: number
   ajuda: string | null
@@ -381,7 +384,7 @@ export interface Qualificacao {
 export const QUALIFICACAO_CAMPOS = ['nome_completo', 'cpf', 'rg', 'orgao_emissor', 'nacionalidade', 'estado_civil', 'profissao', 'endereco', 'bairro', 'cep', 'cidade', 'uf'] as const
 export const CAMPOS_CONFIDENCIAIS = ['cpf', 'rg'] as const
 
-export const TIPOS_CASO = { judicial: 'Judicial', extrajudicial: 'Extrajudicial (cartório)', consultivo: 'Consultivo' } as const
+export const TIPOS_CASO = { consultivo: 'Consultiva (sem processo)', extrajudicial: 'Extrajudicial (cartório)', judicial: 'Judicial (processo)' } as const
 export const STATUS_CASO = { ativo: 'Ativo', suspenso: 'Suspenso', encerrado: 'Encerrado' } as const
 export const FASES_PROCESSUAIS = ['Postulatória (petição inicial)', 'Instrução', 'Sentença', 'Recurso', 'Execução/cumprimento de sentença', 'Arquivado aguardando'] as const
 

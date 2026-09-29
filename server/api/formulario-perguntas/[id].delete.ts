@@ -11,7 +11,11 @@ export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient(event)
   if (getQuery(event).definitivo === '1') {
     // Exclusão de verdade só para pergunta que nunca foi respondida na ficha; senão, arquivar.
-    const { count } = await client.from('contato_respostas').select('contato_id', { count: 'exact', head: true }).eq('pergunta_id', id)
+    const [a, b] = await Promise.all([
+      client.from('contato_respostas').select('contato_id', { count: 'exact', head: true }).eq('pergunta_id', id),
+      client.from('caso_respostas').select('caso_id', { count: 'exact', head: true }).eq('pergunta_id', id),
+    ])
+    const count = (a.count ?? 0) + (b.count ?? 0)
     if (count) throw createError({ statusCode: 409, message: `Essa pergunta tem ${count} resposta(s) guardadas em clientes. Arquive-a: ela some da ficha e dos formulários novos, e o histórico fica preservado.` })
     await client.from('formulario_itens').delete().eq('pergunta_id', id)
     const { error: e2 } = await client.from('formulario_perguntas').delete().eq('id', id)

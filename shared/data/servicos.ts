@@ -108,6 +108,28 @@ export const SERVICOS: Servico[] = [
     ],
   },
   {
+    id: 'pacto-antenupcial',
+    nome: 'Pacto Antenupcial',
+    resumo: 'Instrumento consultivo: regime de bens e cláusulas definidos antes do casamento, por escritura pública. Não envolve processo.',
+    variantes: [
+      {
+        id: 'padrao',
+        nome: 'Padrão',
+        fases: [
+          { titulo: '1. Levantamento da documentação e do patrimônio', texto: 'Peça os documentos das partes e a lista de bens (matrículas atualizadas, participações em empresas, investimentos). Confira com o formulário respondido pelo casal.' },
+          { titulo: '2. Análise patrimonial e reunião de alinhamento', texto: 'Analise o patrimônio de cada um e as consequências de cada regime. Alinhe com o casal o regime e as cláusulas desejadas (incomunicabilidade, administração, doação, sucessão).' },
+          { titulo: '3. Elaboração e ajustes da minuta', texto: 'Elabore a minuta, envie ao casal, colete os ajustes e guarde a versão final na pasta do cliente.' },
+          { titulo: '4. Escritura no cartório de notas', texto: 'Agende a lavratura da escritura pública com o casal. O pacto só vale por escritura pública, antes do casamento.' },
+          { titulo: '5. Registro após o casamento', texto: 'Depois da celebração, o pacto é averbado no registro civil e registrado no Registro de Imóveis do domicílio do casal (se houver imóveis). Confirme a conclusão com o casal e encerre a demanda.' },
+        ],
+      },
+    ],
+    documentos: [
+      { grupo: 'Das partes', itens: ['Documentos de identificação com RG e CPF', 'Certidão de nascimento ou casamento anterior (com averbação de divórcio, se houver)', 'Pacto antenupcial ou escritura de união estável anterior, se houver'] },
+      { grupo: 'Dos bens', itens: ['Lista dos bens e data de aquisição', 'Matrículas atualizadas (até 90 dias)', 'Extratos de bens mobiliários (contas, previdência, investimentos)', 'CNPJ e atos constitutivos, se houver empresa'] },
+    ],
+  },
+  {
     id: 'casamento',
     nome: 'Casamento Completo',
     resumo: 'Do pacto antenupcial (se houver) até o registro do pacto no cartório de imóveis, passando pela habilitação e celebração.',

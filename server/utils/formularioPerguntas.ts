@@ -1,4 +1,5 @@
 import type { TipoPergunta } from '../../shared/types/crm'
+import { PROCEDIMENTOS } from '../../shared/data/checklist'
 
 const TIPOS: TipoPergunta[] = ['texto_curto', 'texto_longo', 'numero', 'data', 'email', 'telefone', 'sim_nao', 'selecao_unica', 'selecao_multipla', 'checklist']
 export const TIPOS_COM_OPCOES: TipoPergunta[] = ['selecao_unica', 'selecao_multipla', 'checklist']
@@ -13,7 +14,10 @@ export function limparPergunta(body: any) {
   if (TIPOS_COM_OPCOES.includes(tipo) && opcoes.length < 2) throw createError({ statusCode: 400, message: 'Adicione pelo menos 2 opções (ou itens) para esse tipo de pergunta.' })
   const secao = String(body?.secao ?? '').trim().slice(0, 60) || 'Geral'
   const ajuda = String(body?.ajuda ?? '').trim().slice(0, 300) || null
-  return { texto, tipo, opcoes, secao, ajuda }
+  const escopo = body?.escopo === 'demanda' ? 'demanda' : 'cliente'
+  const validos = new Set(PROCEDIMENTOS.map(p => p.valor))
+  const procedimentos = escopo === 'demanda' && Array.isArray(body?.procedimentos) ? [...new Set<string>(body.procedimentos.map(String).filter((v: string) => validos.has(v)))] : []
+  return { texto, tipo, opcoes, secao, ajuda, escopo, procedimentos }
 }
 
 /**

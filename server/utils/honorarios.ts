@@ -10,6 +10,7 @@ export function limparHonorario(body: Record<string, any>) {
   if ('tipo' in data && !(TIPOS_HONORARIO as readonly string[]).includes(data.tipo)) throw createError({ statusCode: 400, message: 'Tipo de honorário inválido.' })
   if ('status' in data && !(STATUS_HONORARIO as readonly string[]).includes(data.status)) throw createError({ statusCode: 400, message: 'Status inválido.' })
   if ('contato_id' in data) data.contato_id = Number(data.contato_id)
+  if ('caso_id' in data) data.caso_id = data.caso_id === '' || data.caso_id == null ? null : Number(data.caso_id)
   for (const [k, max] of [['valor_mensal', 1e9], ['meses', 60], ['percentual_exito', 100], ['validade_anos', 20]] as const) {
     if (!(k in data)) continue
     if (data[k] === '' || data[k] == null) { data[k] = null; continue }
@@ -19,4 +20,11 @@ export function limparHonorario(body: Record<string, any>) {
   }
   for (const [k, v] of Object.entries(data)) if (v === '') data[k] = null
   return data
+}
+
+/** A demanda informada precisa ser do mesmo cliente do honorário. */
+export async function conferirDemanda(client: any, contatoId: number, casoId: number | null | undefined) {
+  if (!casoId) return
+  const { data } = await client.from('casos').select('id').eq('id', casoId).eq('contato_id', contatoId).maybeSingle()
+  if (!data) throw createError({ statusCode: 400, message: 'Essa demanda não pertence a este cliente.' })
 }

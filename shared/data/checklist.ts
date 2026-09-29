@@ -65,6 +65,7 @@ const SERVICO_POR_DEMANDA: Record<string, string> = {
   'Testamento': 'testamento',
   'Planejamento sucessório': 'planejamento',
   'Regime de bens': 'alteracao-regime-bens',
+  'Pacto antenupcial': 'pacto-antenupcial',
 }
 export function sugerirProcedimento(demanda: string | null | undefined, tipo: string | null | undefined): string | null {
   const servico = SERVICO_POR_DEMANDA[demanda ?? '']

@@ -40,7 +40,8 @@ export default defineEventHandler(async (event) => {
   const atuais = envio.itens.flatMap((item, i) => {
     const r = linhas[i]?.resposta
     const vazia = r == null || (Array.isArray(r) ? r.length === 0 : r === '')
-    return vazia ? [] : [{ contato_id: envio.contato_id, pergunta_id: item.pergunta_id, resposta: r, updated_at: new Date().toISOString() }]
+    // Só perguntas do cliente vão para a ficha dele; as da demanda ficam no envio até existir a demanda.
+    return vazia || item.pergunta.escopo === 'demanda' ? [] : [{ contato_id: envio.contato_id, pergunta_id: item.pergunta_id, resposta: r, updated_at: new Date().toISOString() }]
   })
   if (atuais.length) await admin.from('contato_respostas').upsert(atuais, { onConflict: 'contato_id,pergunta_id' })
 

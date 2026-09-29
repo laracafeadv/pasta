@@ -81,12 +81,19 @@ const erro = ref<string | null>(null)
 const editando = ref<Honorario | null>(null)
 const form = reactive<Record<string, any>>({})
 const buscaContato = ref('')
+// Demandas do cliente escolhido: o honorário pode ser de uma demanda específica (opcional).
+const demandas = ref<{ id: number; titulo: string }[]>([])
+watch(() => form.contato_id, async (id) => {
+  demandas.value = id ? await $fetch<{ id: number; titulo: string }[]>('/api/casos', { params: { contato: id } }).catch(() => []) : []
+  if (demandas.value.length === 1 && !form.caso_id && !editando.value) form.caso_id = demandas.value[0]!.id
+})
 const opcoesContato = ref<Contato[]>([])
 const contatoEscolhido = ref<Pick<Contato, 'id' | 'nome' | 'telefone'> | null>(null)
 
 function preencher(h?: Honorario, contatoId?: number) {
   Object.assign(form, {
     contato_id: h?.contato_id ?? contatoId ?? null,
+    caso_id: h?.caso_id ?? null,
     descricao: h?.descricao ?? '',
     valor: h?.valor ?? '',
     tipo: h?.tipo ?? 'Contrato fixo',
@@ -322,6 +329,10 @@ async function soltar(status: string, e: DragEvent) {
             </ul>
           </div>
         </div>
+        <label v-if="demandas.length" class="field sm:col-span-2">
+          <span>Demanda (opcional)</span>
+          <select v-model="form.caso_id" class="modal-input"><option :value="null">Nenhuma em especial</option><option v-for="d in demandas" :key="d.id" :value="d.id">{{ d.titulo }}</option></select>
+        </label>
         <label class="field sm:col-span-2"><span>Descrição</span><input v-model="form.descricao" class="modal-input" placeholder="Ex.: Divórcio consensual extrajudicial" /></label>
         <label class="field"><span>Valor (R$) *</span><input v-model="form.valor" type="number" min="0" step="0.01" class="modal-input" required /></label>
         <label class="field"><span>Parcelas</span><input v-model="form.parcelas" type="number" min="1" max="120" class="modal-input" /></label>
