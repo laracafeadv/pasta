@@ -46,7 +46,7 @@
                 </label>
               </div>
 
-              <div v-else-if="p.tipo === 'selecao_multipla'" class="flex flex-col gap-1.5 text-sm">
+              <div v-else-if="p.tipo === 'selecao_multipla' || p.tipo === 'checklist'" class="flex flex-col gap-1.5 text-sm">
                 <label v-for="op in p.opcoes" :key="op" class="flex items-center gap-1.5">
                   <input type="checkbox" :checked="((respostas[i] as string[] | undefined)?.includes(op))" class="accent-[#3c2923]" @change="alternarOpcao(i, op)" /> {{ op }}
                 </label>

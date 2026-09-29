@@ -8,7 +8,7 @@ const txt = (v: unknown, max = 500) => (typeof v === 'string' ? v.trim().slice(0
 
 /** Normaliza uma resposta conforme o tipo da pergunta: string p/ maioria, string[] p/ seleção múltipla. */
 function normalizarResposta(v: unknown, tipo: string): string | string[] | null {
-  if (tipo === 'selecao_multipla') return Array.isArray(v) ? v.map(x => String(x).trim()).filter(Boolean).slice(0, 20) : []
+  if (tipo === 'selecao_multipla' || tipo === 'checklist') return Array.isArray(v) ? v.map(x => String(x).trim()).filter(Boolean).slice(0, 20) : []
   return txt(Array.isArray(v) ? v[0] : v, 1000)
 }
 
@@ -35,6 +35,14 @@ export default defineEventHandler(async (event) => {
     const { error } = await admin.from('formulario_envio_respostas').insert(linhas)
     if (error) throw createError({ statusCode: 500, message: 'Não foi possível salvar as respostas.' })
   }
+
+  // A ficha do cliente mostra a resposta atual de cada pergunta: grava o que ele acabou de responder.
+  const atuais = envio.itens.flatMap((item, i) => {
+    const r = linhas[i]?.resposta
+    const vazia = r == null || (Array.isArray(r) ? r.length === 0 : r === '')
+    return vazia ? [] : [{ contato_id: envio.contato_id, pergunta_id: item.pergunta_id, resposta: r, updated_at: new Date().toISOString() }]
+  })
+  if (atuais.length) await admin.from('contato_respostas').upsert(atuais, { onConflict: 'contato_id,pergunta_id' })
 
   const agora = new Date().toISOString()
   await admin.from('formulario_envios').update({ respondido_em: agora, status: 'respondido' }).eq('id', envio.id)

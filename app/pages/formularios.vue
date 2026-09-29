@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { definePageMeta, useHead } from '#imports'
+import { definePageMeta, useHead, useRoute } from '#imports'
 import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
 import type { Formulario, FormularioEnvio, FormularioEnvioDetalhe, FormularioPergunta, TipoPergunta } from '~~/shared/types/crm'
@@ -16,13 +16,15 @@ const TIPOS: { valor: TipoPergunta; nome: string }[] = [
   { valor: 'email', nome: 'E-mail' },
   { valor: 'telefone', nome: 'Telefone' },
   { valor: 'sim_nao', nome: 'Sim/não' },
-  { valor: 'selecao_unica', nome: 'Seleção única' },
-  { valor: 'selecao_multipla', nome: 'Seleção múltipla' },
+  { valor: 'selecao_unica', nome: 'Escolha única' },
+  { valor: 'selecao_multipla', nome: 'Múltipla escolha (coleta de informação)' },
+  { valor: 'checklist', nome: 'Checklist (acompanhamento: o que já foi feito)' },
 ]
 const nomeTipo = (t: string) => TIPOS.find(x => x.valor === t)?.nome ?? t
-const TEM_OPCOES: TipoPergunta[] = ['selecao_unica', 'selecao_multipla']
+const TEM_OPCOES: TipoPergunta[] = ['selecao_unica', 'selecao_multipla', 'checklist']
 
-const aba = ref<'formularios' | 'perguntas' | 'respostas'>('formularios')
+const rota = useRoute()
+const aba = ref<'formularios' | 'perguntas' | 'respostas'>(rota.query.aba === 'perguntas' ? 'perguntas' : 'formularios')
 
 // ─── Perguntas (banco reutilizável) ─────────────────────────────────────────
 const perguntas = ref<FormularioPergunta[]>([])
@@ -34,7 +36,7 @@ const perguntaAberta = ref(false)
 const perguntaSalvando = ref(false)
 const perguntaErro = ref<string | null>(null)
 const perguntaEditando = ref<FormularioPergunta | null>(null)
-const formPergunta = reactive<{ texto: string; tipo: TipoPergunta; opcoes: string[] }>({ texto: '', tipo: 'texto_curto', opcoes: [] })
+const formPergunta = reactive<{ texto: string; tipo: TipoPergunta; opcoes: string[]; secao: string; ajuda: string }>({ texto: '', tipo: 'texto_curto', opcoes: [], secao: 'Geral', ajuda: '' })
 
 function abrirPergunta(p?: FormularioPergunta) {
   perguntaEditando.value = p ?? null
@@ -42,13 +44,15 @@ function abrirPergunta(p?: FormularioPergunta) {
   formPergunta.texto = p?.texto ?? ''
   formPergunta.tipo = p?.tipo ?? 'texto_curto'
   formPergunta.opcoes = p?.opcoes?.length ? [...p.opcoes] : ['', '']
+  formPergunta.secao = p?.secao ?? secoesExistentes.value[0] ?? 'Geral'
+  formPergunta.ajuda = p?.ajuda ?? ''
   perguntaAberta.value = true
 }
 async function salvarPergunta() {
   perguntaSalvando.value = true
   perguntaErro.value = null
   try {
-    const body = { texto: formPergunta.texto, tipo: formPergunta.tipo, opcoes: formPergunta.opcoes }
+    const body = { texto: formPergunta.texto, tipo: formPergunta.tipo, opcoes: formPergunta.opcoes, secao: formPergunta.secao, ajuda: formPergunta.ajuda }
     if (perguntaEditando.value) await $fetch(`/api/formulario-perguntas/${perguntaEditando.value.id}`, { method: 'PUT', body })
     else await $fetch('/api/formulario-perguntas', { method: 'POST', body })
     perguntaAberta.value = false
@@ -60,9 +64,58 @@ async function salvarPergunta() {
   }
 }
 async function arquivarPergunta() {
-  if (!perguntaEditando.value || !confirm(`Arquivar a pergunta "${perguntaEditando.value.texto}"? Ela some das opções pra novos formulários, mas continua nas respostas já recebidas.`)) return
+  if (!perguntaEditando.value || !confirm(`Arquivar a pergunta "${perguntaEditando.value.texto}"? Ela some da ficha e dos formulários novos; as respostas já guardadas continuam preservadas.`)) return
   await $fetch(`/api/formulario-perguntas/${perguntaEditando.value.id}`, { method: 'DELETE' })
   perguntaAberta.value = false
+  await carregarPerguntas()
+}
+async function restaurarPergunta() {
+  const p = perguntaEditando.value
+  if (!p) return
+  await $fetch(`/api/formulario-perguntas/${p.id}`, { method: 'PUT', body: { texto: p.texto, tipo: p.tipo, opcoes: p.opcoes, secao: p.secao, ajuda: p.ajuda, arquivada: false } })
+  perguntaAberta.value = false
+  await carregarPerguntas()
+}
+async function excluirPergunta() {
+  const p = perguntaEditando.value
+  if (!p || !confirm(`Excluir DEFINITIVAMENTE a pergunta "${p.texto}"? Não dá para desfazer. (Se algum cliente já respondeu, o sistema recusa e você pode arquivá-la.)`)) return
+  try {
+    await $fetch(`/api/formulario-perguntas/${p.id}`, { method: 'DELETE', params: { definitivo: '1' } })
+    perguntaAberta.value = false
+    await carregarPerguntas()
+  } catch (e: any) {
+    perguntaErro.value = e?.data?.message || 'Não foi possível excluir.'
+  }
+}
+async function duplicarPergunta() {
+  const p = perguntaEditando.value
+  if (!p) return
+  const url: string = `/api/formulario-perguntas/${p.id}/duplicar`
+  await $fetch(url, { method: 'POST' })
+  perguntaAberta.value = false
+  await carregarPerguntas()
+}
+
+// Seções = agrupamento das perguntas (mesma organização que a ficha do cliente usa).
+const secoesExistentes = computed(() => [...new Set(perguntasAtivas.value.map(p => p.secao))])
+const secoesComPerguntas = computed(() => secoesExistentes.value.map(nome => ({ nome, itens: perguntasAtivas.value.filter(p => p.secao === nome) })))
+const perguntasArquivadas = computed(() => perguntas.value.filter(p => p.arquivada))
+async function mover(p: FormularioPergunta, dir: -1 | 1) {
+  const grupo = perguntasAtivas.value.filter(x => x.secao === p.secao)
+  const i = grupo.findIndex(x => x.id === p.id)
+  const j = i + dir
+  if (j < 0 || j >= grupo.length) return
+  const [item] = grupo.splice(i, 1)
+  grupo.splice(j, 0, item!)
+  // Reescreve a ordem de todas, mantendo as seções na ordem atual.
+  const ids = secoesExistentes.value.flatMap(n => (n === p.secao ? grupo : perguntasAtivas.value.filter(x => x.secao === n)).map(x => x.id))
+  await $fetch('/api/formulario-perguntas/ordem', { method: 'PUT', body: { ids } })
+  await carregarPerguntas()
+}
+async function renomearSecao(de: string) {
+  const para = prompt('Novo nome da seção:', de)?.trim()
+  if (!para || para === de) return
+  await $fetch('/api/formulario-perguntas/ordem', { method: 'PUT', body: { renomear: { de, para } } })
   await carregarPerguntas()
 }
 
@@ -80,6 +133,7 @@ const formNome = ref('')
 const formAtivo = ref(true)
 const formItens = ref<{ pergunta_id: number; obrigatoria: boolean }[]>([])
 const perguntasAtivas = computed(() => perguntas.value.filter(p => !p.arquivada))
+const perguntasParaFormulario = computed(() => perguntasAtivas.value.filter(p => p.tipo !== 'checklist'))
 const perguntaPorId = (id: number) => perguntas.value.find(p => p.id === id)
 
 function abrirFormulario(f?: Formulario) {
@@ -210,15 +264,40 @@ onMounted(async () => {
     </div>
 
     <!-- BANCO DE PERGUNTAS -->
-    <div v-else-if="aba === 'perguntas'" class="space-y-4">
+    <div v-else-if="aba === 'perguntas'" class="space-y-5">
+      <div class="rounded-2xl border border-secondary/30 bg-secondary/10 p-4 text-sm text-gray-600 dark:text-zinc-300">
+        <b>Fixo × seu.</b> Nome, telefone, e-mail, CPF, endereço e etapa são do CRM e ficam no Resumo e na Qualificação — não são criados aqui.
+        Tudo que você cria abaixo aparece <b>automaticamente</b> em <b>Informações do cliente</b>, na ficha, dentro da seção escolhida, e pode ser preenchido ou corrigido ali mesmo.
+        <span class="block mt-1 text-xs text-gray-500"><b>Múltipla escolha</b> coleta informação (quais bens ela tem). <b>Checklist</b> acompanha o que já foi feito (documentos recebidos) e é só interno — não vai para a cliente.</span>
+      </div>
       <div class="flex justify-end"><Button icon="ph:plus-bold" @click="abrirPergunta()">Nova pergunta</Button></div>
       <p v-if="!perguntasAtivas.length" class="text-sm text-gray-400">Nenhuma pergunta ainda.</p>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <button v-for="p in perguntasAtivas" :key="p.id" type="button" class="text-left rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-4 hover:border-primary transition-colors" @click="abrirPergunta(p)">
-          <p class="text-sm font-semibold text-primary dark:text-zinc-100">{{ p.texto }}</p>
-          <p class="text-xs text-gray-400 mt-0.5">{{ nomeTipo(p.tipo) }}<span v-if="p.opcoes.length"> — {{ p.opcoes.join(', ') }}</span></p>
-        </button>
-      </div>
+      <section v-for="sec in secoesComPerguntas" :key="sec.nome" class="space-y-2">
+        <h2 class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-gray-500">
+          {{ sec.nome }} <span class="font-normal normal-case tracking-normal text-gray-400">· {{ sec.itens.length }}</span>
+          <button type="button" class="normal-case tracking-normal font-normal text-gray-400 hover:text-primary" title="Renomear seção" @click="renomearSecao(sec.nome)"><Icon name="ph:pencil-simple-bold" /></button>
+        </h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          <div v-for="(p, i) in sec.itens" :key="p.id" class="flex items-stretch rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 hover:border-primary">
+            <button type="button" class="flex-1 min-w-0 text-left p-4" @click="abrirPergunta(p)">
+              <p class="text-sm font-semibold text-primary dark:text-zinc-100">{{ p.texto }}</p>
+              <p class="text-xs text-gray-400 mt-0.5 truncate">{{ nomeTipo(p.tipo) }}<span v-if="p.opcoes.length"> — {{ p.opcoes.join(', ') }}</span></p>
+            </button>
+            <div class="flex flex-col justify-center pr-2 text-gray-300">
+              <button type="button" class="hover:text-primary disabled:opacity-30" :disabled="i === 0" aria-label="Subir" @click="mover(p, -1)"><Icon name="ph:caret-up-bold" /></button>
+              <button type="button" class="hover:text-primary disabled:opacity-30" :disabled="i === sec.itens.length - 1" aria-label="Descer" @click="mover(p, 1)"><Icon name="ph:caret-down-bold" /></button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <details v-if="perguntasArquivadas.length" class="text-sm">
+        <summary class="cursor-pointer text-gray-500">Arquivadas ({{ perguntasArquivadas.length }}) — fora da ficha e dos formulários novos, respostas preservadas</summary>
+        <div class="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-2">
+          <button v-for="p in perguntasArquivadas" :key="p.id" type="button" class="text-left rounded-2xl border border-dashed border-gray-300 dark:border-zinc-700 p-3 opacity-70 hover:opacity-100" @click="abrirPergunta(p)">
+            <p class="text-sm">{{ p.texto }}</p><p class="text-xs text-gray-400">{{ p.secao }} · {{ nomeTipo(p.tipo) }}</p>
+          </button>
+        </div>
+      </details>
     </div>
 
     <!-- RESPOSTAS -->
@@ -268,18 +347,29 @@ onMounted(async () => {
           </select>
         </label>
         <div v-if="TEM_OPCOES.includes(formPergunta.tipo)">
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400">Opções</span>
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400">{{ formPergunta.tipo === 'checklist' ? 'Itens do checklist' : 'Opções' }}</span>
           <div v-for="(_, i) in formPergunta.opcoes" :key="i" class="flex items-center gap-2 mt-2">
             <input v-model="formPergunta.opcoes[i]" type="text" class="modal-input flex-1" />
             <button type="button" class="text-gray-400 hover:text-danger" @click="formPergunta.opcoes.splice(i, 1)"><Icon name="ph:x-bold" /></button>
           </div>
           <button type="button" class="text-xs font-semibold text-secondary-dark hover:underline mt-2" @click="formPergunta.opcoes.push('')">+ adicionar opção</button>
         </div>
+        <label class="field">
+          <span>Seção da ficha</span>
+          <input v-model="formPergunta.secao" class="modal-input" list="secoes-lista" placeholder="Ex.: Patrimônio" />
+          <datalist id="secoes-lista"><option v-for="n in secoesExistentes" :key="n" :value="n" /></datalist>
+        </label>
+        <label class="field"><span>Ajuda (opcional)</span><input v-model="formPergunta.ajuda" class="modal-input" placeholder="Instrução curta que aparece junto da pergunta" /></label>
         <p v-if="perguntaErro" class="text-sm text-danger">{{ perguntaErro }}</p>
       </form>
       <template #footer>
         <div class="flex flex-col-reverse sm:flex-row gap-3 justify-between">
-          <Button v-if="perguntaEditando" variant="outline" icon="ph:archive-bold" @click="arquivarPergunta">Arquivar</Button>
+          <div v-if="perguntaEditando" class="flex flex-wrap gap-2">
+            <Button v-if="!perguntaEditando.arquivada" variant="outline" icon="ph:archive-bold" @click="arquivarPergunta">Arquivar</Button>
+            <Button v-else variant="outline" icon="ph:arrow-counter-clockwise-bold" @click="restaurarPergunta">Restaurar</Button>
+            <Button variant="outline" icon="ph:copy-bold" @click="duplicarPergunta">Duplicar</Button>
+            <Button variant="outline" icon="ph:trash-bold" @click="excluirPergunta">Excluir</Button>
+          </div>
           <div class="flex gap-3 sm:ml-auto">
             <Button variant="outline" @click="perguntaAberta = false">Cancelar</Button>
             <Button form="pergunta-form" type="submit" :loading="perguntaSalvando" icon="ph:check-bold">Salvar</Button>
@@ -309,7 +399,7 @@ onMounted(async () => {
         <div>
           <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400 mb-2">Adicionar do banco de perguntas</p>
           <div class="flex flex-wrap gap-2">
-            <button v-for="p in perguntasAtivas.filter(p => !formItens.some(i => i.pergunta_id === p.id))" :key="p.id" type="button" class="chip" @click="alternarPerguntaNoFormulario(p.id)">+ {{ p.texto }}</button>
+            <button v-for="p in perguntasParaFormulario.filter(p => !formItens.some(i => i.pergunta_id === p.id))" :key="p.id" type="button" class="chip" @click="alternarPerguntaNoFormulario(p.id)">+ {{ p.texto }}</button>
           </div>
         </div>
         <p v-if="formErro" class="text-sm text-danger">{{ formErro }}</p>

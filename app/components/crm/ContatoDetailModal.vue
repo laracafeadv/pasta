@@ -30,6 +30,7 @@
       <div v-if="aba === 'resumo'" class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <p class="md:col-span-2 text-xs text-gray-500 -mb-2">Visão geral: dados de contato, situação do caso, relacionamento e o que ela já contou com as próprias palavras.</p>
         <ChecklistPainel v-if="dados.checklist?.atendimento?.total" class="md:col-span-2" :escopo="dados.checklist.atendimento" @alternar="i => alternarChecklist(i, null)" />
+        <InformacoesCliente :key="`i${dados.contato.id}`" class="md:col-span-2" :contato-id="dados.contato.id" />
         <div class="card">
           <h3>Contato</h3>
           <p><b>WhatsApp:</b> <a :href="whatsappLink(dados.contato.telefone)" target="_blank" rel="noopener" class="text-primary">{{ telefoneFormatado(dados.contato.telefone) }}</a></p>
@@ -349,6 +350,7 @@ import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIP
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
 import ChecklistPainel from './ChecklistPainel.vue'
+import InformacoesCliente from './InformacoesCliente.vue'
 import type { ChecklistFicha, ItemChecklist } from '../../../shared/types/checklist'
 import DiagnosticoPanel from './DiagnosticoPanel.vue'
 import { useProfileStore } from '../../stores/profile'

@@ -267,7 +267,7 @@ export interface ModeloMensagem {
   ativo: boolean
 }
 
-export type TipoPergunta = 'texto_curto' | 'texto_longo' | 'numero' | 'data' | 'email' | 'telefone' | 'sim_nao' | 'selecao_unica' | 'selecao_multipla'
+export type TipoPergunta = 'texto_curto' | 'texto_longo' | 'numero' | 'data' | 'email' | 'telefone' | 'sim_nao' | 'selecao_unica' | 'selecao_multipla' | 'checklist'
 
 export interface FormularioPergunta {
   id: number
@@ -275,7 +275,20 @@ export interface FormularioPergunta {
   tipo: TipoPergunta
   opcoes: string[]
   arquivada: boolean
+  secao: string
+  ordem: number
+  ajuda: string | null
 }
+
+/** Resposta atual de um cliente a uma pergunta (string, lista de opções marcadas ou nada). */
+export type ValorResposta = string | string[] | null
+
+/** Uma pergunta na ficha: a definição (do construtor) + a resposta atual do cliente. */
+export interface PerguntaDaFicha extends Pick<FormularioPergunta, 'id' | 'texto' | 'tipo' | 'opcoes' | 'ajuda' | 'arquivada'> {
+  resposta: ValorResposta
+  respondido_em: string | null
+}
+export interface SecaoDaFicha { nome: string; perguntas: PerguntaDaFicha[] }
 
 export interface FormularioItem {
   id: number
