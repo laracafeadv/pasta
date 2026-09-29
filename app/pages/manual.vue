@@ -150,7 +150,7 @@ const FASES: Fase[] = [
     nome: '1. Atendimento inicial',
     resumo: 'Do primeiro "oi" no WhatsApp até a consulta agendada e paga.',
     passos: [
-      { titulo: 'A cliente escreve no WhatsApp', texto: 'A conversa entra no CRM e o contato é criado. A triagem automática por IA (5 porquês, sem orientação jurídica) só roda se você configurar a chave da OpenAI — como você optou por não pagar por isso, hoje essa parte é manual: é você (ou a equipe) que responde.', automatico: 'avisa' },
+      { titulo: 'A cliente escreve no WhatsApp', texto: 'A conversa entra no CRM, o contato é criado e você recebe um aviso. Quem responde é você (ou a equipe), pelo CRM, com as mensagens prontas.', automatico: 'avisa' },
       { titulo: 'Triagem x consulta', texto: 'A triagem é gratuita e só entende os fatos. A partir do momento em que se analisa direitos, riscos e estratégia do caso concreto, é consulta — e é paga.' },
       { titulo: 'Convite para a consulta', texto: 'Depois da triagem, o sistema sugere convidar para a consulta estratégica (mensagem /consulta) e move o contato para "Em qualificação".', automatico: 'avisa' },
       { titulo: 'Pagamento e agendamento', texto: 'Confirma o pagamento (PIX) e agenda o horário. Ao registrar, o contato vai para "Consulta agendada" e entra na Agenda.' },

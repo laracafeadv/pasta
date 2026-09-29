@@ -94,7 +94,7 @@
         </div>
         <div class="card md:col-span-2">
           <h3>Resumo do caso</h3>
-          <p class="whitespace-pre-wrap">{{ dados.contato.resumo || 'Sem resumo ainda. A assistente preenche durante a conversa, ou edite a ficha.' }}</p>
+          <p class="whitespace-pre-wrap">{{ dados.contato.resumo || 'Sem resumo ainda. Edite a ficha para escrever.' }}</p>
           <div v-if="dados.contato.interesses?.length" class="mt-3">
             <b class="text-xs uppercase tracking-wider text-gray-400">Pontos de atenção</b>
             <div class="flex flex-wrap gap-1.5 mt-1"><span v-for="t in dados.contato.interesses" :key="t" class="tag">{{ t }}</span></div>
@@ -108,14 +108,7 @@
 
       <!-- Conversa -->
       <div v-else-if="aba === 'conversa'" class="flex flex-col">
-        <p class="px-5 pt-3 text-xs text-gray-500">O histórico de WhatsApp com ela. Mensagens marcadas "IA" foram respondidas automaticamente; "Você" foram enviadas daqui.</p>
-        <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm" :class="dados.contato.ia_ativa ? 'bg-success/5' : 'bg-warning/10'">
-          <span v-if="dados.contato.ia_ativa"><Icon name="ph:robot-bold" class="align-middle" /> A assistente de IA está respondendo este contato.</span>
-          <span v-else><Icon name="ph:user-bold" class="align-middle" /> Você assumiu esta conversa. A IA não responde.</span>
-          <Button size="sm" variant="outline" :loading="alternandoIa" @click="alternarIa">
-            {{ dados.contato.ia_ativa ? 'Assumir conversa' : 'Devolver para a IA' }}
-          </Button>
-        </div>
+        <p class="px-5 pt-3 text-xs text-gray-500">O histórico de WhatsApp com ela. Mensagens marcadas "Você" foram enviadas daqui.</p>
         <div ref="scrollBox" class="flex flex-col gap-3 p-5 max-h-[50vh] overflow-y-auto">
           <p v-if="!dados.mensagens.length" class="text-center text-sm text-gray-400 py-10">Nenhuma mensagem de WhatsApp.</p>
           <div
@@ -176,7 +169,7 @@
           </form>
         </div>
         <p v-if="erroEnvio" class="px-5 pb-3 text-sm text-danger">{{ erroEnvio }}</p>
-        <p class="px-5 pb-4 text-xs text-gray-400">Ao enviar uma mensagem, a IA é pausada neste contato automaticamente. O WhatsApp só permite mensagens livres até 24h após a última mensagem do cliente.</p>
+        <p class="px-5 pb-4 text-xs text-gray-400">O WhatsApp só permite mensagens livres até 24h após a última mensagem do cliente.</p>
       </div>
 
       <!-- Atividades -->
@@ -433,7 +426,6 @@ defineExpose({ recarregar: carregar })
 const resposta = ref('')
 const enviando = ref(false)
 const erroEnvio = ref<string | null>(null)
-const alternandoIa = ref(false)
 
 async function enviar() {
   if (!resposta.value.trim() || !dados.value) return
@@ -450,17 +442,6 @@ async function enviar() {
     erroEnvio.value = e?.data?.message || 'Não foi possível enviar a mensagem.'
   } finally {
     enviando.value = false
-  }
-}
-
-async function alternarIa() {
-  if (!dados.value) return
-  alternandoIa.value = true
-  try {
-    await crm.salvar(dados.value.contato.id, { ia_ativa: !dados.value.contato.ia_ativa })
-    await carregar()
-  } finally {
-    alternandoIa.value = false
   }
 }
 

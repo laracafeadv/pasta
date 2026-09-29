@@ -27,7 +27,7 @@ async function salvar() {
   mensagem.value = null
   try {
     await $fetch('/api/escritorio', { method: 'PUT', body: form })
-    mensagem.value = 'Salvo. A Ana e os documentos já usam os dados novos.'
+    mensagem.value = 'Salvo. As peças e as mensagens prontas já usam os dados novos.'
   } catch (e: any) {
     mensagem.value = e?.data?.message || 'Não foi possível salvar.'
   } finally {

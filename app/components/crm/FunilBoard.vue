@@ -34,7 +34,6 @@
         <p class="text-xs" :class="textoProximo(c).classe">{{ textoProximo(c).texto }}</p>
         <div class="flex items-center justify-between pt-0.5">
           <span class="text-[10px] text-gray-400">há {{ dias(c) }} dia(s)</span>
-          <span v-if="!c.ia_ativa" class="text-[10px] font-semibold uppercase tracking-wider text-warning-dark dark:text-warning-300">Aguardando você</span>
         </div>
       </article>
     </section>

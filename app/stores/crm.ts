@@ -9,7 +9,6 @@ export interface Agenda {
   hoje: Contato[]
   semAcao: Contato[]
   semana: Contato[]
-  transferidas: Contato[]
   sugestoes?: Contato[]
   compromissos: Compromisso[]
   tarefas: TarefaInterna[]
@@ -47,7 +46,7 @@ export const useCrmStore = defineStore('crm', () => {
   const funilLoading = ref(false)
 
   // ─── Agenda "Hoje" ───────────────────────────────────────────────────────
-  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], transferidas: [], aniversarios: [], compromissos: [], tarefas: [] })
+  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], aniversarios: [], compromissos: [], tarefas: [] })
   const agendaLoading = ref(false)
   // Contador do menu "Hoje": tudo que já venceu ou vence hoje (contatos, prazos e tarefas) + casos sem próxima ação.
   const pendencias = computed(() => {
