@@ -1,120 +1,48 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onMounted, ref, watch } from 'vue'
-import { definePageMeta, useHead } from '#imports'
-import Button from '~/components/Button.vue'
-import DataTable, { type ColumnDef } from '~/components/DataTable.vue'
-const ContatoFormModal = defineAsyncComponent(() => import('~/components/crm/ContatoFormModal.vue'))
-const ContatoDetailModal = defineAsyncComponent(() => import('~/components/crm/ContatoDetailModal.vue'))
-const AndamentoModal = defineAsyncComponent(() => import('~/components/crm/AndamentoModal.vue'))
-import { useCrmStore, type AndamentoPayload } from '~/stores/crm'
-import { etapa, type Contato, type ContatoInput } from '~~/shared/types/crm'
-import { dataCurta, telefoneFormatado } from '~/utils/formatadores'
+import { computed, defineAsyncComponent } from 'vue'
+import { definePageMeta, useHead, useRoute, navigateTo } from '#imports'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
-useHead({ title: 'Clientes' })
 
-// Clientes: quem já fechou contrato (etapa ativo ou concluído). Perfil completo — casos,
-// documentos, financeiro, histórico — fica na ficha (mesmo modal usado em Leads).
-const clientes = ref<Contato[]>([])
-const carregando = ref(false)
-const busca = ref('')
-let debounce: ReturnType<typeof setTimeout> | undefined
-async function carregar() {
-  carregando.value = true
-  try {
-    const r = await $fetch<{ records: Contato[] }>('/api/crm/contatos', { params: { clientes: '1', pageSize: '200', search: busca.value || undefined } })
-    clientes.value = r.records
-  } finally {
-    carregando.value = false
-  }
-}
-watch(busca, () => {
-  clearTimeout(debounce)
-  debounce = setTimeout(carregar, 300)
-})
-onMounted(carregar)
+// Clientes, Casos, Tarefas e Prazos numa tela só — cada aba é um painel. A aba fica na URL
+// (?aba=casos) pra dar pra voltar direto nela e pros links antigos (/casos, /tarefas, /prazos).
+const ABAS = [
+  { id: 'clientes', label: 'Clientes', icone: 'ph:users-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelClientes.vue')) },
+  { id: 'casos', label: 'Casos', icone: 'ph:briefcase-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelCasos.vue')) },
+  { id: 'tarefas', label: 'Tarefas', icone: 'ph:check-square-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelTarefas.vue')) },
+  { id: 'prazos', label: 'Prazos', icone: 'ph:hourglass-high-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelPrazos.vue')) },
+] as const
 
-const columns: ColumnDef[] = [
-  { key: 'nome', label: 'Cliente' },
-  { key: 'caso', label: 'Área · Demanda' },
-  { key: 'situacao', label: 'Situação' },
-  { key: 'cliente_desde', label: 'Cliente desde' },
-]
+const route = useRoute()
+const aba = computed(() => ABAS.find(a => a.id === route.query.aba) ?? ABAS[0])
+useHead(() => ({ title: aba.value.label }))
 
-const crm = useCrmStore()
-const formAberto = ref(false)
-const emEdicao = ref<Contato | null>(null)
-function editar(c: Contato) { emEdicao.value = c; formAberto.value = true }
-async function salvar(data: ContatoInput) {
-  try {
-    await crm.salvar(emEdicao.value?.id ?? null, data)
-    formAberto.value = false
-    if (detalheAberto.value) detalhe.value?.recarregar()
-    await carregar()
-  } catch (e: any) {
-    alert(e?.data?.message || 'Não foi possível salvar.')
-  }
-}
-
-const detalhe = ref<{ recarregar: () => void } | null>(null)
-const detalheAberto = ref(false)
-const detalheId = ref<number | null>(null)
-function abrir(c: Contato) { detalheId.value = c.id; detalheAberto.value = true }
-
-const andamentoAberto = ref(false)
-const andamentoContato = ref<Contato | null>(null)
-function andamento(c: Contato) {
-  andamentoContato.value = c
-  crm.error = null
-  andamentoAberto.value = true
-}
-async function concluirAndamento(data: AndamentoPayload) {
-  if (!andamentoContato.value) return
-  try {
-    await crm.registrarAndamento(andamentoContato.value.id, data)
-    andamentoAberto.value = false
-    if (detalheAberto.value) detalhe.value?.recarregar()
-    await carregar()
-  } catch { /* mensagem exibida no modal via crm.error */ }
+function trocar(id: string) {
+  navigateTo({ path: '/clientes', query: id === 'clientes' ? {} : { aba: id } }, { replace: true })
 }
 </script>
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p class="eyebrow">Carteira ativa</p>
-        <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Clientes</h1>
-        <p class="text-sm text-gray-500 mt-2 max-w-2xl">Quem já fechou contrato. Clique num cliente pra abrir a ficha completa: casos, documentos, financeiro e histórico.</p>
-      </div>
-      <Button icon="ph:plus-bold" @click="() => { emEdicao = null; formAberto = true }">Novo cliente</Button>
+    <div>
+      <p class="eyebrow">Carteira</p>
+      <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Clientes</h1>
     </div>
 
-    <input v-model="busca" type="search" class="w-full max-w-md rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm" placeholder="Buscar por nome, telefone ou e-mail…" />
+    <nav class="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-zinc-800 -mx-1 px-1" aria-label="Seções">
+      <button
+        v-for="a in ABAS" :key="a.id" type="button"
+        class="inline-flex items-center gap-2 px-4 py-2.5 -mb-px border-b-2 text-sm font-semibold whitespace-nowrap transition-colors"
+        :class="aba.id === a.id ? 'border-primary text-primary dark:text-zinc-100 dark:border-zinc-100' : 'border-transparent text-gray-500 hover:text-primary'"
+        :aria-current="aba.id === a.id ? 'page' : undefined"
+        @click="trocar(a.id)"
+      >
+        <Icon :name="a.icone" class="text-base" />{{ a.label }}
+      </button>
+    </nav>
 
-    <DataTable :columns="columns" :data="clientes" :loading="carregando" :total="clientes.length" :page-size="200" @row-click="abrir">
-      <template #cell-nome="{ item }">
-        <p class="font-semibold">{{ item.nome || 'Sem nome' }}</p>
-        <p class="text-xs text-gray-500">{{ telefoneFormatado(item.telefone) }}<span v-if="item.cidade"> · {{ item.cidade }}</span></p>
-      </template>
-      <template #cell-caso="{ item }">
-        <p>{{ item.area || '—' }}</p>
-        <p class="text-xs text-gray-500">{{ item.demanda }}</p>
-      </template>
-      <template #cell-situacao="{ item }">
-        <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" :class="item.etapa === 'ativo' ? 'bg-success/15 text-success-dark' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500'">{{ etapa(item.etapa).nome }}</span>
-      </template>
-      <template #cell-cliente_desde="{ item }">{{ dataCurta(item.etapa_desde) }}</template>
-    </DataTable>
-
-    <ContatoFormModal :is-open="formAberto" :contato="emEdicao" :loading="crm.saving" @close="formAberto = false" @submit="salvar" />
-    <ContatoDetailModal
-      ref="detalhe" :is-open="detalheAberto" :contato-id="detalheId"
-      @close="detalheAberto = false" @editar="editar" @andamento="andamento"
-    />
-    <AndamentoModal
-      :is-open="andamentoAberto" :contato="andamentoContato" :etapa-destino="null"
-      :loading="crm.saving" :erro="crm.error" @close="andamentoAberto = false" @submit="concluirAndamento"
-    />
+    <KeepAlive>
+      <component :is="aba.painel" :key="aba.id" />
+    </KeepAlive>
   </div>
 </template>

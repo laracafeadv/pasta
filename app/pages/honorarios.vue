@@ -6,7 +6,6 @@ import Modal from '~/components/Modal.vue'
 import KpiCard from '~/components/KpiCard.vue'
 import DataTable, { type ColumnDef } from '~/components/DataTable.vue'
 import { STATUS_HONORARIO, TIPOS_HONORARIO, type Contato, type Honorario } from '~~/shared/types/crm'
-import ReciboModal from '~/components/gestao/ReciboModal.vue'
 import { brl, dataCurta, telefoneFormatado } from '~/utils/formatadores'
 import FinanceiroContas from '~/components/gestao/FinanceiroContas.vue'
 import FinanceiroPainel from '~/components/gestao/FinanceiroPainel.vue'
@@ -176,11 +175,6 @@ async function excluir() {
   await $fetch(`/api/honorarios/${editando.value.id}`, { method: 'DELETE' })
   aberto.value = false
   carregar()
-}
-
-const reciboAberto = ref(false)
-function abrirRecibo() {
-  reciboAberto.value = true
 }
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
@@ -356,7 +350,6 @@ async function soltar(status: string, e: DragEvent) {
           <div class="flex gap-3">
             <Button v-if="editando" variant="outline" icon="ph:trash-bold" @click="excluir">Excluir</Button>
             <Button v-if="editando && ehAdmin && ['Contratado', 'Pago'].includes(editando.status)" variant="outline" icon="ph:calendar-plus-bold" :loading="gerandoParcelas" @click="gerarParcelas">Lançar parcelas</Button>
-            <Button v-if="editando" variant="outline" icon="ph:receipt-bold" @click="abrirRecibo">Gerar recibo</Button>
           </div>
           <div class="flex gap-3 sm:ml-auto">
             <Button variant="outline" @click="aberto = false">Cancelar</Button>
@@ -365,14 +358,6 @@ async function soltar(status: string, e: DragEvent) {
         </div>
       </template>
     </Modal>
-
-    <ReciboModal
-      v-if="editando"
-      :is-open="reciboAberto"
-      :contato-id="editando.contato_id"
-      :honorario-id="editando.id"
-      @close="reciboAberto = false"
-    />
   </div>
 </template>
 

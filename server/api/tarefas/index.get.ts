@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   await requireStaff(event, 'tarefas/list')
   const client = await serverSupabaseClient(event)
   const q = getQuery(event)
-  // ?todas=1 traz concluídas também, com cliente/caso vinculados — usado na tela /tarefas.
+  // ?todas=1 traz concluídas também, com cliente/caso vinculados — usado na aba Tarefas de /clientes.
   let query = q.todas === '1'
     ? client.from('tarefas_internas').select('*, contato:contatos(id, nome), caso:casos(id, titulo)').order('concluida').order('prazo', { nullsFirst: false }).order('created_at')
     : client.from('tarefas_internas').select('*').eq('concluida', false).order('created_at')

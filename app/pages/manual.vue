@@ -196,7 +196,7 @@ const FASES: Fase[] = [
       { titulo: 'Abrir o caso', texto: 'Cadastre o número do processo (validado no padrão CNJ), a vara ou o cartório e a parte contrária.' },
       { titulo: 'Checklist de documentos', texto: 'A lista de documentos por área já vem pronta; cobre os pendentes em um clique.' },
     ],
-    links: [{ nome: 'Ir para Casos', to: '/casos' }],
+    links: [{ nome: 'Ir para Casos', to: '/clientes?aba=casos' }],
   },
   {
     id: 'acompanhamento',
