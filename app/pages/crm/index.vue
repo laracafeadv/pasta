@@ -29,13 +29,13 @@ function carregarAba() {
   if (aba.value === 'hoje') crm.fetchAgenda()
 }
 onMounted(() => {
-  if (route.query.abrir) abrir({ id: Number(route.query.abrir) } as Contato, String(route.query.ficha || 'casos'))
+  if (route.query.abrir) abrir({ id: Number(route.query.abrir) } as Contato, String(route.query.ficha || 'demandas'))
   carregarAba()
   if (aba.value !== 'hoje') crm.fetchAgenda() // alimenta o contador do menu
 })
 watch(aba, carregarAba)
 // Vindo do sino/busca com a tela já aberta: abre a ficha pedida.
-watch(() => route.query.abrir, (v) => { if (v) abrir({ id: Number(v) } as Contato, String(route.query.ficha || 'casos')) })
+watch(() => route.query.abrir, (v) => { if (v) abrir({ id: Number(v) } as Contato, String(route.query.ficha || 'demandas')) })
 
 // ─── Ficha (criar / editar) ─────────────────────────────────────────────────
 const formAberto = ref(false)
@@ -83,9 +83,9 @@ async function concluirAndamento(data: AndamentoPayload) {
   try {
     const salvo = await crm.registrarAndamento(andamentoContato.value.id, data)
     andamentoAberto.value = false
-    // Virou cliente: próximo passo natural é abrir o caso (dossiê, procuração, prazos).
+    // Virou cliente: próximo passo natural é abrir a demanda (dossiê, procuração, prazos).
     remarketing.value?.recarregar()
-    if (data.etapa === 'ativo' && andamentoContato.value.etapa !== 'ativo') abrir(salvo, 'casos')
+    if (data.etapa === 'ativo' && andamentoContato.value.etapa !== 'ativo') abrir(salvo, 'demandas')
     else if (detalheAberto.value) detalhe.value?.recarregar()
   } catch { /* mensagem exibida no modal via crm.error */ }
 }

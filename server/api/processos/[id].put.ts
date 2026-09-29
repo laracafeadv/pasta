@@ -1,7 +1,7 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { requireStaff } from '../../utils/security'
 import { limparProcesso } from '../../utils/processos'
-import { sincronizarAtuacao } from '../../utils/casos'
+import { sincronizarAtuacao } from '../../utils/demandas'
 import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {

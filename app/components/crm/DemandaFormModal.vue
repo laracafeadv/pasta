@@ -1,10 +1,10 @@
 <template>
-  <Modal :is-open="isOpen" :title="caso ? 'Editar demanda' : 'Nova demanda'" max-width="2xl" :loading="salvando" @close="emit('close')">
+  <Modal :is-open="isOpen" :title="demanda ? 'Editar demanda' : 'Nova demanda'" max-width="2xl" :loading="salvando" @close="emit('close')">
     <form id="caso-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4" @submit.prevent="salvar">
       <label class="field sm:col-span-2"><span>Título *</span><input v-model="form.titulo" class="modal-input" required placeholder="Ex.: Pacto antenupcial — Juliana e Marcos" /></label>
       <label class="field">
         <span>Atuação</span>
-        <select v-model="form.tipo" class="modal-input"><option v-for="(n, k) in TIPOS_CASO" :key="k" :value="k">{{ n }}</option></select>
+        <select v-model="form.tipo" class="modal-input"><option v-for="(n, k) in TIPOS_DEMANDA" :key="k" :value="k">{{ n }}</option></select>
         <small class="text-gray-400">Processo ou procedimento, se houver, é registrado depois, dentro da demanda; a atuação acompanha.</small>
       </label>
       <label class="field">
@@ -20,13 +20,13 @@
       </label>
       <label class="field">
         <span>Status</span>
-        <select v-model="form.status" class="modal-input"><option v-for="(n, k) in STATUS_CASO" :key="k" :value="k">{{ n }}</option></select>
+        <select v-model="form.status" class="modal-input"><option v-for="(n, k) in STATUS_DEMANDA" :key="k" :value="k">{{ n }}</option></select>
       </label>
       <label class="field"><span>Início</span><input v-model="form.data_abertura" type="date" class="modal-input" /></label>
       <template v-if="form.status === 'encerrado'">
         <label class="field">
           <span>Resultado</span>
-          <select v-model="form.resultado" class="modal-input"><option :value="null">—</option><option v-for="(n, k) in RESULTADOS_CASO" :key="k" :value="k">{{ n }}</option></select>
+          <select v-model="form.resultado" class="modal-input"><option :value="null">—</option><option v-for="(n, k) in RESULTADOS_DEMANDA" :key="k" :value="k">{{ n }}</option></select>
         </label>
         <label class="field"><span>Encerramento</span><input v-model="form.data_encerramento" type="date" class="modal-input" /></label>
       </template>
@@ -46,12 +46,12 @@
 import { computed, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
-import { AREAS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, type Caso, type Contato } from '../../../shared/types/crm'
+import { AREAS, RESULTADOS_DEMANDA, STATUS_DEMANDA, TIPOS_DEMANDA, type Demanda, type Contato } from '../../../shared/types/crm'
 import { hojeISO } from '../../stores/crm'
 import { PROCEDIMENTOS, sugerirProcedimento } from '~~/shared/data/checklist'
 
-const props = defineProps<{ isOpen: boolean; contato: Pick<Contato, 'id' | 'nome' | 'area' | 'demanda' | 'parte_contraria'> | null; caso?: Caso | null }>()
-const emit = defineEmits<{ close: []; salvo: [c: Caso] }>()
+const props = defineProps<{ isOpen: boolean; contato: Pick<Contato, 'id' | 'nome' | 'area' | 'demanda' | 'parte_contraria'> | null; demanda?: Demanda | null }>()
+const emit = defineEmits<{ close: []; salvo: [c: Demanda] }>()
 
 const form = reactive<Record<string, any>>({})
 const salvando = ref(false)
@@ -68,19 +68,19 @@ watch(() => props.isOpen, (open) => {
   if (!open) return
   erro.value = null
   const c = props.contato
-  Object.assign(form, props.caso ?? {
+  Object.assign(form, props.demanda ?? {
     titulo: c ? `${c.demanda || c.area || 'Demanda'} — ${c.nome ?? ''}`.trim() : '',
     tipo: tipoInicial(c), area: c?.area ?? '',
     status: 'ativo',
     data_abertura: hojeISO(), observacoes: '', resultado: null, data_encerramento: null,
     procedimento: sugerirProcedimento(c?.demanda, tipoInicial(c)) ?? '',
   })
-  if (props.caso) form.procedimento = props.caso.procedimento ?? ''
-  procedimentoTocado.value = !!props.caso
+  if (props.demanda) form.procedimento = props.demanda.procedimento ?? ''
+  procedimentoTocado.value = !!props.demanda
 })
 // Nova demanda: a sugestão acompanha o tipo (judicial/extrajudicial) enquanto você não escolher outra.
 watch(() => form.tipo, (tipo) => {
-  if (props.caso || procedimentoTocado.value) return
+  if (props.demanda || procedimentoTocado.value) return
   form.procedimento = sugerirProcedimento(props.contato?.demanda, tipo) ?? ''
 })
 
@@ -89,9 +89,9 @@ async function salvar() {
   erro.value = null
   try {
     const body = { ...form, contato_id: props.contato?.id }
-    const r = props.caso
-      ? await $fetch<Caso>(`/api/casos/${props.caso.id}`, { method: 'PUT', body })
-      : await $fetch<Caso>('/api/casos', { method: 'POST', body })
+    const r = props.demanda
+      ? await $fetch<Demanda>(`/api/demandas/${props.demanda.id}`, { method: 'PUT', body })
+      : await $fetch<Demanda>('/api/demandas', { method: 'POST', body })
     emit('salvo', r)
   } catch (e: any) {
     erro.value = e?.data?.message || 'Não foi possível salvar.'

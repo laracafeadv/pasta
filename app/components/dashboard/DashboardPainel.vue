@@ -107,7 +107,7 @@
               <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{{ rotuloDia(g.dia) }}</p>
               <ul class="space-y-1.5">
                 <li v-for="ev in g.eventos" :key="ev.id">
-                  <button type="button" class="w-full text-left flex items-start gap-3 rounded-2xl px-2.5 py-2 hover:bg-gray-100/70 dark:hover:bg-zinc-800/70" @click="ev.contato ? abrirFicha(ev.contato.id, 'casos') : navigateTo('/crm?aba=hoje&ver=calendario')">
+                  <button type="button" class="w-full text-left flex items-start gap-3 rounded-2xl px-2.5 py-2 hover:bg-gray-100/70 dark:hover:bg-zinc-800/70" @click="ev.contato ? abrirFicha(ev.contato.id, 'demandas') : navigateTo('/crm?aba=hoje&ver=calendario')">
                     <span class="w-14 shrink-0 text-xs font-semibold tabular-nums text-gray-500 pt-0.5">{{ ev.hora ?? 'dia todo' }}</span>
                     <span class="min-w-0 flex-1">
                       <span class="flex items-center gap-1.5 text-sm font-semibold text-primary dark:text-zinc-100"><Icon :name="iconeTipo(ev.tipo)" class="shrink-0 text-secondary" /><span class="truncate">{{ ev.titulo }}</span></span>
@@ -148,7 +148,7 @@
           <p v-if="!data.casosAndamento.length" class="text-sm text-gray-500 py-2">Nenhuma demanda ativa.</p>
           <ul v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
             <li v-for="c in data.casosAndamento" :key="c.id">
-              <button type="button" class="w-full text-left rounded-2xl px-2.5 py-2 hover:bg-gray-100/70 dark:hover:bg-zinc-800/70" @click="c.contato ? abrirFicha(c.contato.id, 'casos') : navigateTo('/clientes?aba=casos')">
+              <button type="button" class="w-full text-left rounded-2xl px-2.5 py-2 hover:bg-gray-100/70 dark:hover:bg-zinc-800/70" @click="c.contato ? abrirFicha(c.contato.id, 'demandas') : navigateTo('/clientes?aba=casos')">
                 <span class="block text-sm font-semibold text-primary dark:text-zinc-100 truncate">{{ c.titulo }}</span>
                 <span class="block text-xs text-gray-500 truncate">{{ [c.contato?.nome, c.fase].filter(Boolean).join(' · ') }}</span>
                 <span class="block text-[11px] mt-0.5" :class="c.proximoPrazo ? 'text-gray-600 dark:text-zinc-300' : 'text-gray-400'">

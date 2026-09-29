@@ -88,7 +88,7 @@ function insight(titulo: string, linhas: Linha[]): string | null {
       <KpiCard title="Taxa de fechamento" :value="stats?.taxaFechamento != null ? `${stats.taxaFechamento}%` : '—'" :sub-value="`${stats?.ganhos ?? 0} de ${stats?.decididos ?? 0} decididos`" icon="ph:target-bold" color="success" :loading="loading" />
       <KpiCard title="Honorários fechados" :value="brl(stats?.receita)" icon="ph:handshake-bold" color="neutral" :loading="loading" />
       <KpiCard title="Em proposta" :value="brl(stats?.emProposta)" icon="ph:hourglass-bold" color="warning" :loading="loading" />
-      <KpiCard title="Casos travados" :value="stats?.travados ?? 0" sub-value="atrasados ou sem próxima ação" icon="ph:warning-bold" color="danger" :loading="loading" />
+      <KpiCard title="Demandas travadas" :value="stats?.travados ?? 0" sub-value="atrasados ou sem próxima ação" icon="ph:warning-bold" color="danger" :loading="loading" />
     </div>
 
     <!-- Caça aos gargalos (playbook "WhatsApp Otimizado", parte 3) -->

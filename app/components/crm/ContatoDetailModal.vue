@@ -187,7 +187,7 @@
 
       <!-- Atividades -->
       <div v-else-if="aba === 'atividades'" class="p-5">
-        <p class="text-xs text-gray-500 mb-3">Linha do tempo de tudo que foi feito ou decidido neste caso — registre ligações, decisões e combinados aqui pra não perder o fio depois.</p>
+        <p class="text-xs text-gray-500 mb-3">Linha do tempo de tudo que foi feito ou decidido com este cliente (filtre por demanda acima) — registre ligações, decisões e combinados aqui pra não perder o fio depois.</p>
         <form class="flex flex-col sm:flex-row gap-2 mb-5" @submit.prevent="anotar">
           <select v-model="nota.tipo" class="modal-input sm:w-40">
             <option v-for="t in TIPOS_ATIVIDADE" :key="t">{{ t }}</option>
@@ -243,18 +243,18 @@
             <p class="font-semibold">{{ k.titulo }}</p>
             <span class="flex items-center gap-2">
               <span v-if="k.status !== 'encerrado'" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" :class="situacaoComercial(k.id).cor">{{ situacaoComercial(k.id).nome }}</span>
-              <span class="tag">{{ STATUS_CASO[k.status] }}</span>
+              <span class="tag">{{ STATUS_DEMANDA[k.status] }}</span>
             </span>
           </div>
           <p class="text-xs text-gray-500">
-            Atuação {{ TIPOS_CASO[k.tipo].toLowerCase() }}<span v-if="k.procedimento"> · {{ PROCEDIMENTOS.find(p => p.valor === k.procedimento)?.rotulo }}</span>
+            Atuação {{ TIPOS_DEMANDA[k.tipo].toLowerCase() }}<span v-if="k.procedimento"> · {{ PROCEDIMENTOS.find(p => p.valor === k.procedimento)?.rotulo }}</span>
           </p>
           <div class="flex flex-wrap gap-3 pt-1 text-xs">
             <button class="underline underline-offset-2" @click="editarCaso(k)">Editar demanda</button>
             <button type="button" class="underline underline-offset-2" @click="novoProcesso(k, 'judicial')">+ Processo judicial</button>
             <button type="button" class="underline underline-offset-2" @click="novoProcesso(k, 'extrajudicial')">+ Procedimento extrajudicial</button>
-            <NuxtLink :to="`/agenda?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo / compromisso</NuxtLink>
-            <NuxtLink v-if="k.status !== 'encerrado' && situacaoComercial(k.id).nome === 'Sem proposta'" :to="`/honorarios?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Registrar proposta</NuxtLink>
+            <NuxtLink :to="`/agenda?contato=${dados.contato.id}&demanda=${k.id}`" class="underline underline-offset-2">Novo prazo / compromisso</NuxtLink>
+            <NuxtLink v-if="k.status !== 'encerrado' && situacaoComercial(k.id).nome === 'Sem proposta'" :to="`/honorarios?contato=${dados.contato.id}&demanda=${k.id}`" class="underline underline-offset-2">Registrar proposta</NuxtLink>
             <button v-if="ehAdmin && k.tipo !== 'consultivo'" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração desta demanda</button>
           </div>
           <div v-if="processosDaDemanda(k.id).length" class="mt-3 space-y-2">
@@ -267,7 +267,7 @@
           </details>
           <details class="mt-3" :open="!!(k.analise || k.riscos || k.decisao)">
             <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Análise do escritório <span v-if="k.decisao" class="normal-case tracking-normal font-normal">· {{ DECISOES_DEMANDA[k.decisao].nome }}</span></summary>
-            <AnaliseDemanda class="mt-2" :caso="k" @mudou="carregar" />
+            <AnaliseDemanda class="mt-2" :demanda="k" @mudou="carregar" />
           </details>
           <ChecklistPainel v-if="dados.checklist?.casos[k.id]" class="mt-2" :escopo="dados.checklist.casos[k.id]!" @alternar="i => alternarChecklist(i, k.id)" />
           <p v-else class="text-xs text-gray-400 pt-1">Sem procedimento definido. <button type="button" class="underline underline-offset-2 hover:text-primary" @click="editarCaso(k)">Escolha o procedimento</button> para acompanhar as etapas desta demanda.</p>
@@ -297,7 +297,7 @@
           <DocumentosDemanda v-if="docsGerais.length" :docs="docsGerais" :contato-id="dados.contato.id" :caso-id="null" @mudou="carregar" @cobrar="cobrarDocs" />
         </div>
         <ProcessoFormModal :is-open="processoAberto" :caso-id="processoCaso" :natureza="processoNatureza" :processo="processoEditando" @close="processoAberto = false" @salvo="processoAberto = false; carregar()" />
-        <CasoFormModal :is-open="casoAberto" :contato="dados.contato" :caso="casoEditando" @close="casoAberto = false" @salvo="casoAberto = false; carregar()" />
+        <DemandaFormModal :is-open="casoAberto" :contato="dados.contato" :demanda="casoEditando" @close="casoAberto = false" @salvo="casoAberto = false; carregar()" />
       </div>
 
       <!-- Honorários -->
@@ -356,9 +356,9 @@ import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import PreFormularioEditor from './PreFormularioEditor.vue'
 import { PROCEDIMENTOS } from '~~/shared/data/checklist'
-import { CADENCIA, CLASSIFICACOES, DECISOES_DEMANDA, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Movimentacao, type Parte, type Processo, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, DECISOES_DEMANDA, STATUS_DEMANDA, TIPOS_ATIVIDADE, TIPOS_DEMANDA, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Demanda, type Compromisso, type Contato, type Movimentacao, type Parte, type Processo, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
-import CasoFormModal from './CasoFormModal.vue'
+import DemandaFormModal from './DemandaFormModal.vue'
 import ChecklistPainel from './ChecklistPainel.vue'
 import InformacoesCliente from './InformacoesCliente.vue'
 import type { ChecklistFicha, ItemChecklist } from '../../../shared/types/checklist'
@@ -373,7 +373,7 @@ import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
+interface Detalhe { processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Demanda[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string; modeloInicial?: string | null }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
@@ -396,8 +396,8 @@ const qualificacaoAberta = ref(false)
 // Nomes antigos de abas (links e atalhos) continuam funcionando.
 function irPara(destino: string) {
   // Nomes antigos (links e atalhos) continuam levando ao lugar certo.
-  if (['casos', 'documentos', 'diagnostico', 'caso_demanda'].includes(destino)) aba.value = 'processo'
-  else if (['qualificacao', 'caso'].includes(destino)) aba.value = 'resumo'
+  if (['demandas', 'casos', 'documentos', 'diagnostico'].includes(destino)) aba.value = 'processo'
+  else if (['qualificacao'].includes(destino)) aba.value = 'resumo'
   else aba.value = destino
 }
 
@@ -527,7 +527,7 @@ const processoAberto = ref(false)
 const processoCaso = ref<number>(0)
 const processoNatureza = ref<'judicial' | 'extrajudicial'>('judicial')
 const processoEditando = ref<Processo | null>(null)
-function novoProcesso(k: Caso, natureza: 'judicial' | 'extrajudicial') { processoCaso.value = k.id; processoNatureza.value = natureza; processoEditando.value = null; processoAberto.value = true }
+function novoProcesso(k: Demanda, natureza: 'judicial' | 'extrajudicial') { processoCaso.value = k.id; processoNatureza.value = natureza; processoEditando.value = null; processoAberto.value = true }
 function editarProcesso(p: Processo) { processoCaso.value = p.caso_id; processoNatureza.value = p.natureza; processoEditando.value = p; processoAberto.value = true }
 // Resumo do cliente: só números e o próximo passo; o detalhe fica nas abas.
 const resumoFicha = computed(() => {
@@ -555,7 +555,7 @@ async function abrirDemandaDeConsulta() {
   if (!d) return
   abrindoConsulta.value = true
   try {
-    await $fetch('/api/casos', { method: 'POST', body: { contato_id: d.contato.id, titulo: `Consulta — ${d.contato.demanda || d.contato.area || d.contato.nome || 'análise inicial'}`, tipo: 'consultivo', area: d.contato.area || null, status: 'ativo', data_abertura: hojeIso } })
+    await $fetch('/api/demandas', { method: 'POST', body: { contato_id: d.contato.id, titulo: `Consulta — ${d.contato.demanda || d.contato.area || d.contato.nome || 'análise inicial'}`, tipo: 'consultivo', area: d.contato.area || null, status: 'ativo', data_abertura: hojeIso } })
     await carregar()
   } finally {
     abrindoConsulta.value = false
@@ -585,8 +585,8 @@ function situacaoComercial(casoId: number) {
 const verEncerradas = ref(false)
 const encerradas = computed(() => (dados.value?.casos ?? []).filter(c => c.status === 'encerrado'))
 const demandasVisiveis = computed(() => (dados.value?.casos ?? []).filter(c => c.status !== 'encerrado' || verEncerradas.value))
-const casoEditando = ref<Caso | null>(null)
-function editarCaso(k: Caso | null) {
+const casoEditando = ref<Demanda | null>(null)
+function editarCaso(k: Demanda | null) {
   casoEditando.value = k
   casoAberto.value = true
 }

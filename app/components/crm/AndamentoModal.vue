@@ -2,7 +2,7 @@
   <Modal
     :is-open="isOpen"
     :title="contato?.nome || 'Registrar andamento'"
-    description="Registre o que aconteceu e decida o próximo passo — ou encerre o caso."
+    description="Registre o que aconteceu e decida o próximo passo — ou encerre o atendimento."
     :loading="loading"
     max-width="lg"
     @close="emit('close')"

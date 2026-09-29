@@ -80,7 +80,7 @@ async function concluir(c: Compromisso) {
               <span class="text-[10px] text-gray-400 shrink-0">{{ dataCurta(dataDo(c)) }}</span>
             </div>
             <p v-if="c.contato || c.caso" class="text-xs text-secondary-dark">
-              <NuxtLink v-if="c.contato" :to="`/crm?abrir=${c.contato.id}&ficha=casos`" class="hover:underline">{{ c.contato.nome }}</NuxtLink>
+              <NuxtLink v-if="c.contato" :to="`/crm?abrir=${c.contato.id}&ficha=demandas`" class="hover:underline">{{ c.contato.nome }}</NuxtLink>
               <span v-if="c.caso"> · {{ c.caso.titulo }}{{ (c.processo?.numero || c.caso.numero_processo) ? ` (${c.processo?.numero || c.caso.numero_processo})` : '' }}</span>
             </p>
             <p v-if="c.observacao" class="text-xs text-gray-500">{{ c.observacao }}</p>

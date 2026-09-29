@@ -144,7 +144,7 @@ async function openNotification(
   const contatoId = metadata?.contato_id
   if (contatoId) {
     close()
-    const ficha = metadata?.compromisso_id ? 'casos' : metadata?.tipo === 'mensagem' ? 'conversa' : 'resumo'
+    const ficha = metadata?.compromisso_id ? 'demandas' : metadata?.tipo === 'mensagem' ? 'conversa' : 'resumo'
     await navigateTo({ path: '/crm', query: { abrir: String(contatoId), ficha } })
   } else if (metadata?.compromisso_id) {
     close()

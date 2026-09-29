@@ -24,7 +24,7 @@
         </div>
       </div>
       <label v-if="casos.length" class="field">
-        <span>Caso vinculado (opcional)</span>
+        <span>Demanda vinculada (opcional)</span>
         <select v-model="casoId" class="modal-input">
           <option :value="null">Nenhum</option>
           <option v-for="c in casos" :key="c.id" :value="c.id">{{ c.titulo }}</option>
@@ -44,7 +44,7 @@
 import { reactive, ref, watch } from 'vue'
 import Button from '../Button.vue'
 import Modal from '../Modal.vue'
-import { PRIORIDADES_TAREFA, type Caso, type Contato, type TarefaInterna } from '../../../shared/types/crm'
+import { PRIORIDADES_TAREFA, type Demanda, type Contato, type TarefaInterna } from '../../../shared/types/crm'
 import { hojeISO } from '../../stores/crm'
 
 // Criar ou editar uma tarefa. Único formulário de tarefa do CRM: a tela Tarefas e o Dashboard usam este.
@@ -83,11 +83,11 @@ function limparContato() {
   casos.value = []
   casoId.value = null
 }
-const casos = ref<Caso[]>([])
+const casos = ref<Demanda[]>([])
 const casoId = ref<number | null>(null)
 async function carregarCasos() {
   if (!contatoSelecionado.value) return
-  casos.value = await $fetch<Caso[]>('/api/casos', { params: { contato: contatoSelecionado.value.id } })
+  casos.value = await $fetch<Demanda[]>('/api/demandas', { params: { contato: contatoSelecionado.value.id } })
 }
 
 function abrir(t?: TarefaInterna) {

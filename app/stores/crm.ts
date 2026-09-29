@@ -40,7 +40,7 @@ export const useCrmStore = defineStore('crm', () => {
   // ─── Agenda "Hoje" ───────────────────────────────────────────────────────
   const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], aniversarios: [], compromissos: [], tarefas: [] })
   const agendaLoading = ref(false)
-  // Contador do menu "Hoje": tudo que já venceu ou vence hoje (contatos, prazos e tarefas) + casos sem próxima ação.
+  // Contador do menu "Hoje": tudo que já venceu ou vence hoje (contatos, prazos e tarefas) + contatos sem próxima ação.
   // Quando o Dashboard é a tela aberta, o número vem dele (mesma conta), sem carregar a agenda inteira.
   const agendaCarregada = ref(false)
   const pendenciasDoDashboard = ref(0)

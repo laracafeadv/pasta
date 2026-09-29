@@ -14,7 +14,7 @@ export interface DefinicaoItem {
 
 export const NOMES_FASES: Record<number, string> = {
   1: 'Atendimento inicial',
-  2: 'Consulta e diagnóstico',
+  2: 'Consulta e análise',
   3: 'Proposta e fechamento',
   4: 'Abertura do caso',
   6: 'Encerramento e pós-venda',
@@ -32,9 +32,9 @@ export const ITENS_ATENDIMENTO: DefinicaoItem[] = [
   { chave: 'contrato_enviado', fase: 3, titulo: 'Contrato e procuração enviados para assinatura', tipo: 'manual', dica: 'Gerar o Word não prova que foi enviado. Marque quando mandar.' },
   { chave: 'contrato_assinado', fase: 3, titulo: 'Contrato e procuração assinados', tipo: 'auto', dica: 'Vem do checklist de Documentos: "Procuração assinada" e "Contrato de honorários assinado" como recebidos.' },
   { chave: 'pasta_drive', fase: 4, titulo: 'Pasta do cliente no Drive', tipo: 'auto', dica: 'Vem da pasta criada para o cliente.' },
-  { chave: 'caso_aberto', fase: 4, titulo: 'Caso aberto', tipo: 'auto', dica: 'Vem do caso cadastrado na aba Caso.' },
+  { chave: 'caso_aberto', fase: 4, titulo: 'Demanda aberta', tipo: 'auto', dica: 'Vem da demanda cadastrada na aba Demandas.' },
   { chave: 'docs_obrigatorios', fase: 4, titulo: 'Documentos obrigatórios recebidos', tipo: 'auto', dica: 'Vem do checklist de Documentos: todos os obrigatórios recebidos ou dispensados.' },
-  { chave: 'caso_encerrado', fase: 6, titulo: 'Caso encerrado com resultado', tipo: 'auto', dica: 'Vem do caso encerrado, com o resultado registrado.' },
+  { chave: 'caso_encerrado', fase: 6, titulo: 'Demanda encerrada com resultado', tipo: 'auto', dica: 'Vem da demanda encerrada, com o resultado registrado.' },
   { chave: 'pesquisa_enviada', fase: 6, titulo: 'Pesquisa de satisfação enviada', tipo: 'manual', dica: 'Marque quando enviar o convite da pesquisa.' },
   { chave: 'nps', fase: 6, titulo: 'Nota NPS registrada', tipo: 'auto', dica: 'Vem da nota de 0 a 10 registrada na ficha.' },
   { chave: 'avaliacao_pedida', fase: 6, titulo: 'Pedido de avaliação no Google enviado', tipo: 'manual', dica: 'Só para quem deu nota 9 ou 10 (mensagem /avaliacao).' },

@@ -2,7 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { requireStaff } from '../utils/security'
 import { sanitizarBusca } from '../utils/crm'
 
-interface Resultado { tipo: 'contato' | 'caso' | 'processo' | 'parte' | 'documento' | 'tarefa'; titulo: string; subtitulo: string; link: string }
+interface Resultado { tipo: 'contato' | 'demanda' | 'processo' | 'parte' | 'documento' | 'tarefa'; titulo: string; subtitulo: string; link: string }
 
 /** Busca global: pessoa, demanda, processo/procedimento (por número), parte/interessado e tarefa. Tudo leva à ficha do cliente. */
 export default defineEventHandler(async (event): Promise<Resultado[]> => {
@@ -28,14 +28,14 @@ export default defineEventHandler(async (event): Promise<Resultado[]> => {
     r.push({ tipo: 'contato', titulo: c.nome ?? 'Sem nome', subtitulo: [ehCliente ? 'Cliente' : 'Lead', c.demanda].filter(Boolean).join(' · ') || c.telefone || '', link: `/crm?abrir=${c.id}` })
   }
   for (const c of casos.data ?? []) {
-    r.push({ tipo: 'caso', titulo: c.titulo ?? 'Demanda sem título', subtitulo: ['Demanda', (c.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${c.contato_id}&ficha=casos` })
+    r.push({ tipo: 'demanda', titulo: c.titulo ?? 'Demanda sem título', subtitulo: ['Demanda', (c.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${c.contato_id}&ficha=demandas` })
   }
   for (const p of processos.data ?? []) {
-    r.push({ tipo: 'processo', titulo: p.numero || p.orgao || 'Processo', subtitulo: [p.natureza === 'judicial' ? 'Processo judicial' : 'Procedimento extrajudicial', (p.caso as any)?.titulo, (p.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${p.contato_id}&ficha=casos` })
+    r.push({ tipo: 'processo', titulo: p.numero || p.orgao || 'Processo', subtitulo: [p.natureza === 'judicial' ? 'Processo judicial' : 'Procedimento extrajudicial', (p.caso as any)?.titulo, (p.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${p.contato_id}&ficha=demandas` })
   }
   for (const p of partes.data ?? []) {
     const caso = p.caso as any
-    if (caso?.contato_id) r.push({ tipo: 'parte', titulo: p.nome, subtitulo: [p.papel, caso.titulo, caso.contato?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${caso.contato_id}&ficha=casos` })
+    if (caso?.contato_id) r.push({ tipo: 'parte', titulo: p.nome, subtitulo: [p.papel, caso.titulo, caso.contato?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${caso.contato_id}&ficha=demandas` })
   }
   for (const d of documentos.data ?? []) r.push({ tipo: 'documento', titulo: d.descricao, subtitulo: [d.status === 'pendente' ? 'Documento pendente' : 'Documento', (d.caso as any)?.titulo, (d.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${d.contato_id}&ficha=documentos` })
   for (const t of tarefas.data ?? []) r.push({ tipo: 'tarefa', titulo: t.titulo, subtitulo: 'Tarefa', link: '/tarefas' })

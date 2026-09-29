@@ -53,7 +53,7 @@ const GUIA = [
       { texto: 'Achou caro pagar pela consulta', atalho: '/obj-caro-consulta' },
       { texto: 'Disse que vai pensar antes de marcar', atalho: '/obj-pensar-consulta' },
       { texto: 'Diz que não tem dinheiro agora', atalho: '/obj-sem-dinheiro' },
-      { texto: 'Caso é fora da sua área de atuação', atalho: '/fora-da-area' },
+      { texto: 'Demanda fora da sua área de atuação', atalho: '/fora-da-area' },
       { texto: 'Quer entender a diferença entre triagem e consulta', atalho: '/triagem-x-consulta' },
       { texto: 'Já entendeu a situação, hora de convidar para a consulta', atalho: '/consulta' },
     ],
@@ -63,7 +63,7 @@ const GUIA = [
     situacoes: [
       { texto: 'Informar seus horários livres', atalho: '/disponibilidade ou /opcoes' },
       { texto: 'Confirmar que o agendamento foi feito', atalho: '/agendado' },
-      { texto: 'Preparar antes da consulta (contexto do caso)', atalho: '/pre-consulta' },
+      { texto: 'Preparar antes da consulta (contexto da demanda)', atalho: '/pre-consulta' },
       { texto: 'Um dia antes da consulta', atalho: '/lembrete' },
       { texto: 'Orientações no dia (link, regras)', atalho: '/regras-consulta' },
     ],
@@ -111,12 +111,12 @@ const GUIA = [
   {
     fase: 'Encerramento e relacionamento',
     situacoes: [
-      { texto: 'Encerrou o caso — pedir avaliação no Google', atalho: '/avaliacao' },
+      { texto: 'Encerrou a demanda — pedir avaliação no Google', atalho: '/avaliacao' },
       { texto: 'Rodar a pesquisa de satisfação (NPS)', atalho: '/nps-convite → /nps-nota → /nps-motivo' },
       { texto: 'Nota 9–10 (promotora)', atalho: '/nps-promotora, depois /reconhecimento' },
       { texto: 'Nota 7–8 (neutra)', atalho: '/nps-neutra, depois /reconexao' },
       { texto: 'Nota 0–6 (detratora)', atalho: '/nps-detratora, depois /reparacao se for recente' },
-      { texto: '30 dias após encerrar o caso', atalho: '/pos-venda-30' },
+      { texto: '30 dias após encerrar a demanda', atalho: '/pos-venda-30' },
       { texto: '1 ano depois', atalho: '/pos-venda-1ano' },
       { texto: 'Aniversário da cliente', atalho: '/aniversario' },
       { texto: 'Cliente esfriando, sem gancho comercial', atalho: '/reconexao ou /reaquecer' },

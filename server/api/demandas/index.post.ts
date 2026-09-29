@@ -1,12 +1,12 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { requireStaff } from '../../utils/security'
-import { limparCaso, sincronizarClienteComDemandas } from '../../utils/casos'
+import { limparDemanda, sincronizarClienteComDemandas } from '../../utils/demandas'
 import { registrarAtividade } from '../../utils/crm'
 import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'casos/create')
-  const d = limparCaso(await readBody(event))
+  const d = limparDemanda(await readBody(event))
   if (!d.contato_id) throw createError({ statusCode: 400, message: 'Escolha o cliente.' })
   const { data, error } = await (await serverSupabaseClient(event)).from('casos').insert({ responsavel_id: userId, ...d }).select().single()
   if (error) {
@@ -15,6 +15,6 @@ export default defineEventHandler(async (event) => {
   }
   await registrarAtividade(event, data.contato_id, 'Sistema', `Demanda aberta: ${data.titulo}.`, userId, null, data.id)
   await sincronizarClienteComDemandas(event, await serverSupabaseClient(event), data.contato_id, userId)
-  await auditar(event, 'abriu demanda', 'caso', data.id, { contato_id: data.contato_id })
+  await auditar(event, 'abriu demanda', 'demanda', data.id, { contato_id: data.contato_id })
   return data
 })

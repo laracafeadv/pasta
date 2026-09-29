@@ -107,7 +107,7 @@ export function montarDashboard(e: EntradaDashboard): DashboardData {
     itens.push({
       id: `prazo-${c.id}`, grupo: 'prazos', origem: 'prazo', severidade: sev, titulo: c.titulo, data: c.data,
       detalhe: [dias < 0 ? `Prazo atrasado há ${plural(-dias, 'dia', 'dias')}` : dias === 0 ? 'Prazo vence hoje' : `Prazo em ${plural(dias, 'dia', 'dias')}`, ctx(c.contato, c.caso)].filter(Boolean).join(' · '),
-      contatoId: c.contato_id, compromissoId: c.id, link: '/prazos', aba: 'casos',
+      contatoId: c.contato_id, compromissoId: c.id, link: '/prazos', aba: 'demandas',
     })
   }
   for (const c of agendaC) {
@@ -118,7 +118,7 @@ export function montarDashboard(e: EntradaDashboard): DashboardData {
     itens.push({
       id: `comp-${c.id}`, grupo: 'prazos', origem: 'compromisso', severidade: dias < 0 ? 'atrasado' : 'atencao', titulo: c.titulo, data: c.data,
       detalhe: [dias < 0 ? `${rotulo} passou e segue pendente` : `${rotulo} ${dias === 0 ? 'hoje' : 'amanhã'}${h ? ` às ${h}` : ''}`, ctx(c.contato, c.caso)].filter(Boolean).join(' · '),
-      contatoId: c.contato_id, compromissoId: c.id, link: '/agenda', aba: 'casos',
+      contatoId: c.contato_id, compromissoId: c.id, link: '/agenda', aba: 'demandas',
     })
   }
   for (const t of e.tarefas) {

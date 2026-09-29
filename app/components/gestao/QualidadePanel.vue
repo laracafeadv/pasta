@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="kpi"><span>Tempo médio de solução</span><b>{{ k?.tempoMedioSolucao != null ? `${k.tempoMedioSolucao} dias` : '—' }}</b><small>{{ k?.encerrados ?? 0 }} caso(s) encerrado(s)</small></div>
+      <div class="kpi"><span>Tempo médio de solução</span><b>{{ k?.tempoMedioSolucao != null ? `${k.tempoMedioSolucao} dias` : '—' }}</b><small>{{ k?.encerrados ?? 0 }} demanda(s) encerrada(s)</small></div>
       <div class="kpi"><span>Taxa de êxito</span><b>{{ k?.taxaExito != null ? `${k.taxaExito}%` : '—' }}</b><small>êxito, acordo ou parcial</small></div>
       <div class="kpi"><span>NPS</span><b>{{ k?.nps != null ? k.nps : '—' }}</b><small>{{ k?.respostasNps ?? 0 }} resposta(s)</small></div>
       <div class="kpi"><span>Prazos cumpridos no prazo</span><b>{{ k?.prazosNoPrazo != null ? `${k.prazosNoPrazo}%` : '—' }}</b><small :class="k?.prazosVencidos ? 'text-danger font-semibold' : ''">{{ k?.prazosVencidos ?? 0 }} vencido(s) em aberto</small></div>
@@ -15,16 +15,16 @@
       <div class="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <h2 class="text-2xl text-primary dark:text-zinc-100">Revisão semanal</h2>
-          <p class="text-xs text-gray-500">Toda sexta, sorteie alguns casos ativos e confira o checklist com calma. O que falhar vira tarefa com data na agenda.</p>
+          <p class="text-xs text-gray-500">Toda sexta, sorteie algumas demandas ativas e confira o checklist com calma. O que falhar vira tarefa com data na agenda.</p>
         </div>
-        <Button size="sm" icon="ph:shuffle-bold" :loading="sorteando" @click="sortear">Sortear 3 casos</Button>
+        <Button size="sm" icon="ph:shuffle-bold" :loading="sorteando" @click="sortear">Sortear 3 demandas</Button>
       </div>
       <div v-if="amostra.length" class="flex flex-wrap gap-2 mt-3">
         <button v-for="c in amostra" :key="c.id" class="px-4 py-2 rounded-2xl border text-left text-sm hover:border-primary" :class="revisando?.id === c.id ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-zinc-700'" @click="abrirRevisao(c)">
           <b>{{ c.titulo }}</b><span class="block text-xs text-gray-500">{{ c.contato?.nome }}</span>
         </button>
       </div>
-      <p v-else-if="sorteado" class="text-sm text-gray-400 mt-3">Todos os casos ativos foram revisados nos últimos 30 dias.</p>
+      <p v-else-if="sorteado" class="text-sm text-gray-400 mt-3">Todas as demandas ativas foram revisadas nos últimos 30 dias.</p>
 
       <form v-if="revisando" class="mt-4 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4 space-y-3" @submit.prevent="salvarRevisao">
         <p class="font-semibold">{{ revisando.titulo }}</p>
@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import Button from '../Button.vue'
-import { ITENS_REVISAO, type Caso, type Contato, type ResultadoItem, type Revisao } from '../../../shared/types/crm'
+import { ITENS_REVISAO, type Demanda, type Contato, type ResultadoItem, type Revisao } from '../../../shared/types/crm'
 import { dataCurta } from '../../utils/formatadores'
 import { hojeISO } from '../../stores/crm'
 
@@ -69,7 +69,7 @@ interface Kpis {
   tempoMedioSolucao: number | null; encerrados: number; taxaExito: number | null; nps: number | null; respostasNps: number
   prazosNoPrazo: number | null; prazosVencidos: number; diasAteConsulta: number | null; revisoes90: number; revisoesAprovadas: number | null
 }
-type CasoAmostra = Pick<Caso, 'id' | 'titulo'> & { contato?: Pick<Contato, 'id' | 'nome'> | null }
+type CasoAmostra = Pick<Demanda, 'id' | 'titulo'> & { contato?: Pick<Contato, 'id' | 'nome'> | null }
 
 const k = ref<Kpis | null>(null)
 const revisoes = ref<Revisao[]>([])

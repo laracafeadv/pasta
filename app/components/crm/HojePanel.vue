@@ -63,7 +63,7 @@
 
     <button type="button" class="text-xs text-gray-500 hover:text-primary flex items-center gap-1.5 px-1" @click="mostrarSemAcao = !mostrarSemAcao">
       <Icon :name="mostrarSemAcao ? 'ph:caret-down-bold' : 'ph:caret-right-bold'" />
-      {{ agenda.semAcao.length }} caso(s) sem próxima ação definida
+      {{ agenda.semAcao.length }} contato(s) sem próxima ação definida
     </button>
     <section v-if="mostrarSemAcao" class="painel">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
@@ -171,7 +171,7 @@ const proximos = computed(() => {
 const avisos = computed(() => {
   const lista: { chave: string; texto: string; itens: Contato[]; aba: string; modelo?: string }[] = []
   if (props.agenda.sugestoes?.length) lista.push({ chave: 'sugestoes', texto: 'resposta sugerida, revise e envie:', itens: props.agenda.sugestoes, aba: 'conversa' })
-  if (props.agenda.semRelatorio?.length) lista.push({ chave: 'semRelatorio', texto: 'sem notícia do caso há 7+ dias:', itens: props.agenda.semRelatorio, aba: 'conversa', modelo: '/relatorio-semanal' })
+  if (props.agenda.semRelatorio?.length) lista.push({ chave: 'semRelatorio', texto: 'sem notícia da demanda há 7+ dias:', itens: props.agenda.semRelatorio, aba: 'conversa', modelo: '/relatorio-semanal' })
   if (props.agenda.aniversarios?.length) lista.push({ chave: 'aniversarios', texto: 'aniversário hoje:', itens: props.agenda.aniversarios as Contato[], aba: 'conversa', modelo: '/aniversario' })
   return lista
 })

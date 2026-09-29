@@ -38,3 +38,20 @@ Hierarquia: **Pessoa → Cliente → Demanda → Processo/Procedimento → Movim
 - **Hoje**: trabalho executável do dia. **Tarefas / Prazos / Agenda**: gestão completa de cada um.
 - **Notificações**: avisos que levam ao registro (um por assunto; urgente em destaque).
 - **Pesquisa global** (lupa): cliente, demanda, processo, parte, documento, tarefa → abre a ficha. Filtros de lista ficam em cada módulo.
+
+## Nomes físicos e legado (leia antes de mexer no banco)
+"Caso" **não é conceito de negócio**. Por compatibilidade e para não perder dados, o banco mantém nomes antigos; a interface, os tipos (`Demanda`) e a API (`/api/demandas`) só usam "Demanda".
+
+| Nome físico | O que é de fato | Situação |
+|---|---|---|
+| tabela `casos` | **Demandas / Serviços** (comentário na tabela) | ativa; renomear exige migração de todas as FKs — adiado de propósito |
+| colunas `caso_id` (processos, partes, documentos, honorarios, lancamentos, atividades, tarefas_internas, compromissos, caso_respostas) | FK para a demanda | ativas |
+| `casos.numero_processo/orgao/comarca/uf/fase_processual/valor_causa/link_tribunal/parte_contraria` | dados de processo que antes ficavam na demanda; hoje moram em `processos`/`partes` | **somente leitura**: o trigger `trg_campos_obsoletos` bloqueia novos valores; dados antigos preservados |
+| tabela `diagnosticos` e etapa `diagnostico` | legado; a etapa aparece na UI como "Consulta realizada". Não há módulo Diagnóstico | mantidas por compatibilidade |
+| tabelas `eva_*` | legado da antiga assistente; sem uso na UI | avaliar remoção com o escritório |
+| "Buscar contatos" | não é módulo: é a pesquisa global e os filtros de cada lista | — |
+
+## Integridade garantida pelo banco (triggers)
+- `trg_demanda_da_pessoa`: em processos, documentos, honorários, tarefas, compromissos, atividades e lançamentos, a demanda (`caso_id`) tem de pertencer à **mesma pessoa** (`contato_id`); se `contato_id` vier vazio, herda da demanda.
+- `trg_vinculos_da_demanda`: processo e parte ligados a um documento/compromisso têm de ser da **mesma demanda**.
+- Testes executáveis: `supabase/tests/fase1_modelo_conceitual.sql` (7 cenários do modelo + triggers; roda em transação com rollback).

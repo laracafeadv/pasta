@@ -53,8 +53,8 @@ import { storeToRefs } from 'pinia'
 import { useSupabaseUser } from '#imports'
 import { useProfileStore } from '../../stores/profile'
 
-interface Resultado { tipo: 'contato' | 'caso' | 'processo' | 'parte' | 'documento' | 'tarefa'; titulo: string; subtitulo: string; link: string }
-const ICONE: Record<string, string> = { contato: 'ph:user-bold', caso: 'ph:briefcase-bold', processo: 'ph:gavel-bold', parte: 'ph:users-three-bold', documento: 'ph:file-text-bold', tarefa: 'ph:check-square-bold' }
+interface Resultado { tipo: 'contato' | 'demanda' | 'processo' | 'parte' | 'documento' | 'tarefa'; titulo: string; subtitulo: string; link: string }
+const ICONE: Record<string, string> = { contato: 'ph:user-bold', demanda: 'ph:briefcase-bold', processo: 'ph:gavel-bold', parte: 'ph:users-three-bold', documento: 'ph:file-text-bold', tarefa: 'ph:check-square-bold' }
 
 const user = useSupabaseUser()
 const profileStore = useProfileStore()

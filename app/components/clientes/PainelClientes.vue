@@ -9,7 +9,7 @@ import { useCrmStore, type AndamentoPayload } from '~/stores/crm'
 import { type Contato, type ContatoInput } from '~~/shared/types/crm'
 import { dataCurta, telefoneFormatado } from '~/utils/formatadores'
 
-// Clientes: quem já fechou contrato (etapa ativo ou concluído). Perfil completo — casos,
+// Clientes: quem já fechou contrato (etapa ativo ou concluído). Perfil completo — demandas,
 // documentos, financeiro, histórico — fica na ficha (mesmo modal usado em Leads).
 type ClienteComDemandas = Contato & { demandas?: { id: number; titulo: string; tipo: string; status: string }[] }
 const clientes = ref<ClienteComDemandas[]>([])

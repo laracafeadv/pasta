@@ -55,7 +55,7 @@ async function carregar() {
 }
 onMounted(() => {
   carregar()
-  if (route.query.contato) novo(Number(route.query.contato), route.query.caso ? Number(route.query.caso) : undefined)
+  if (route.query.contato) novo(Number(route.query.contato), route.query.demanda ? Number(route.query.demanda) : undefined)
 })
 watch(filtros, () => { page.value = 1; carregar() })
 watch(visao, carregar)
@@ -84,7 +84,7 @@ const buscaContato = ref('')
 // Demandas do cliente escolhido: o honorário pode ser de uma demanda específica (opcional).
 const demandas = ref<{ id: number; titulo: string }[]>([])
 watch(() => form.contato_id, async (id) => {
-  demandas.value = id ? await $fetch<{ id: number; titulo: string }[]>('/api/casos', { params: { contato: id } }).catch(() => []) : []
+  demandas.value = id ? await $fetch<{ id: number; titulo: string }[]>('/api/demandas', { params: { contato: id } }).catch(() => []) : []
   if (demandas.value.length === 1 && !form.caso_id && !editando.value) form.caso_id = demandas.value[0]!.id
 })
 const opcoesContato = ref<Contato[]>([])

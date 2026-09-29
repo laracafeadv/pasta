@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
       conflitos.push({ id: c.id, nome: c.nome, motivo: `A parte contrária já está cadastrada como contato/cliente (${etapa(c.etapa).nome}).` })
     }
     if (n && normalizarNome(c.parte_contraria) === n) {
-      conflitos.push({ id: c.id, nome: c.nome, motivo: 'Este nome consta como parte contrária no caso deste contato.' })
+      conflitos.push({ id: c.id, nome: c.nome, motivo: 'Este nome consta como parte contrária numa demanda deste contato.' })
     }
     if ((telefone.length >= 10 && c.telefone === telefone) || (email && c.email?.toLowerCase() === email) || (n && normalizarNome(c.nome) === n)) {
       duplicados.push({ id: c.id, nome: c.nome })

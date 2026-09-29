@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
   }
   blocos.push({ negrito: 'O que foi feito nesta semana', espaco: 80 })
   if (feitos.length) for (const c of feitos) blocos.push({ texto: `• ${br(c.concluido_em!.slice(0, 10))} — ${c.titulo}`, espaco: 40 })
-  else blocos.push({ texto: '[DESCREVA O ANDAMENTO DA SEMANA, OU: "Sem movimentação processual nesta semana; o caso segue em acompanhamento."]' })
+  else blocos.push({ texto: '[DESCREVA O ANDAMENTO DA SEMANA, OU: "Sem movimentação processual nesta semana; a demanda segue em acompanhamento."]' })
   blocos.push({ negrito: 'Próximos passos', espaco: 80 })
   if (proximos.length) for (const c of proximos) blocos.push({ texto: `• ${br(dataCompromisso(c))} — ${TIPOS_COMPROMISSO[c.tipo].nome}: ${c.titulo}${c.local ? ` (${c.local})` : ''}`, espaco: 40 })
   else blocos.push({ texto: 'Nenhum prazo ou audiência marcado para os próximos 30 dias.' })

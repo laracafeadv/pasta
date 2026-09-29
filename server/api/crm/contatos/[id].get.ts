@@ -1,5 +1,5 @@
 import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
-import { dataCompromisso, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp, type Movimentacao, type Parte, type Processo } from '../../../../shared/types/crm'
+import { dataCompromisso, type Atividade, type Demanda, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp, type Movimentacao, type Parte, type Processo } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { montarChecklist } from '../../../utils/checklist'
 
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     mensagens: ((mensagens.data ?? []) as MensagemWhatsapp[]).reverse(),
     atividades: (atividades.data ?? []) as Atividade[],
     documentos: (documentos.data ?? []) as Documento[],
-    casos: (casos.data ?? []) as Caso[],
+    casos: (casos.data ?? []) as Demanda[],
     processos: (processos.data ?? []) as Processo[],
     partes: (partes.data ?? []) as Parte[],
     movimentacoes: (movimentacoes.data ?? []) as Movimentacao[],

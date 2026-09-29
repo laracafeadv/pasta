@@ -19,15 +19,15 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import Button from '../Button.vue'
-import { DECISOES_DEMANDA, type Caso } from '../../../shared/types/crm'
+import { DECISOES_DEMANDA, type Demanda } from '../../../shared/types/crm'
 
 // Análise jurídica produzida pelo escritório, dentro da demanda. Não é resposta de formulário:
 // o formulário coleta dados; aqui fica o que o escritório conclui a partir deles.
-const props = defineProps<{ caso: Caso }>()
+const props = defineProps<{ demanda: Demanda }>()
 const emit = defineEmits<{ mudou: [] }>()
 const f = reactive<{ analise: string; riscos: string; decisao: keyof typeof DECISOES_DEMANDA | null }>({ analise: '', riscos: '', decisao: null })
 const original = ref('')
-watch(() => props.caso, (c) => { f.analise = c.analise ?? ''; f.riscos = c.riscos ?? ''; f.decisao = c.decisao ?? null; original.value = JSON.stringify(f) }, { immediate: true })
+watch(() => props.demanda, (c) => { f.analise = c.analise ?? ''; f.riscos = c.riscos ?? ''; f.decisao = c.decisao ?? null; original.value = JSON.stringify(f) }, { immediate: true })
 const alterado = computed(() => JSON.stringify(f) !== original.value)
 const salvando = ref(false)
 const msg = ref('')
@@ -36,7 +36,7 @@ async function salvar() {
   salvando.value = true
   msg.value = ''
   try {
-    const url: string = `/api/casos/${props.caso.id}`
+    const url: string = `/api/demandas/${props.demanda.id}`
     await $fetch(url, { method: 'PUT', body: { analise: f.analise, riscos: f.riscos, decisao: f.decisao } })
     original.value = JSON.stringify(f)
     erro.value = false

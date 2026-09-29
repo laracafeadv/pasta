@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'qualidade/revisao')
   const body = await readBody<{ caso_id?: number; itens?: Record<string, ResultadoItem>; observacao?: string; plano_acao?: string; prazo?: string; responsavel_id?: string | null }>(event)
   const casoId = Number(body?.caso_id)
-  if (!Number.isInteger(casoId) || casoId <= 0) throw createError({ statusCode: 400, message: 'Caso inválido.' })
+  if (!Number.isInteger(casoId) || casoId <= 0) throw createError({ statusCode: 400, message: 'Demanda inválida.' })
   const itens = Object.fromEntries(ITENS_REVISAO.map(i => [i.chave, (['ok', 'falha', 'na'] as const).includes(body.itens?.[i.chave] as ResultadoItem) ? body.itens![i.chave] : 'na']))
   const falhas = ITENS_REVISAO.filter(i => itens[i.chave] === 'falha')
   const plano = body.plano_acao?.trim().slice(0, 1000) || null
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const client = await serverSupabaseClient(event)
   const { data: caso } = await client.from('casos').select('id, titulo, contato_id').eq('id', casoId).single()
-  if (!caso) throw createError({ statusCode: 404, message: 'Caso não encontrado.' })
+  if (!caso) throw createError({ statusCode: 404, message: 'Demanda não encontrada.' })
 
   let compromissoId: number | null = null
   if (plano) {
@@ -41,6 +41,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: 'Erro interno ao salvar a revisão.' })
   }
   await registrarAtividade(event, caso.contato_id, 'Sistema', `Revisão interna de "${caso.titulo}": ${falhas.length ? `${falhas.length} ponto(s) a corrigir até ${plano ? body.prazo!.split('-').reverse().join('/') : hojeBR()}` : 'aprovada'}.`, userId)
-  await auditar(event, 'revisou caso', 'caso', caso.id, { aprovado: falhas.length === 0 })
+  await auditar(event, 'revisou demanda', 'demanda', caso.id, { aprovado: falhas.length === 0 })
   return data
 })

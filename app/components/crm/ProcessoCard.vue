@@ -4,7 +4,7 @@
       <span class="text-[10px] font-bold uppercase tracking-widest" :class="processo.natureza === 'judicial' ? 'text-primary' : 'text-secondary-dark'">{{ NATUREZAS_PROCESSO[processo.natureza] }}</span>
       <span v-if="processo.numero" class="font-mono text-xs">{{ processo.numero }}</span>
       <span v-if="processo.tipo_procedimento" class="text-xs text-gray-500">{{ processo.tipo_procedimento }}</span>
-      <span class="tag ml-auto">{{ STATUS_CASO[processo.status] }}</span>
+      <span class="tag ml-auto">{{ STATUS_DEMANDA[processo.status] }}</span>
     </div>
     <p class="text-xs text-gray-500 mt-0.5">
       {{ [processo.tribunal, processo.orgao, processo.comarca && `${processo.comarca}${processo.uf ? '/' + processo.uf : ''}`].filter(Boolean).join(' · ') || 'Órgão não informado' }}
@@ -40,7 +40,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import Button from '../Button.vue'
-import { NATUREZAS_PROCESSO, STATUS_CASO, TIPOS_MOVIMENTACAO, type Movimentacao, type Processo } from '../../../shared/types/crm'
+import { NATUREZAS_PROCESSO, STATUS_DEMANDA, TIPOS_MOVIMENTACAO, type Movimentacao, type Processo } from '../../../shared/types/crm'
 import { brl, dataCurta } from '../../utils/formatadores'
 import { hojeISO } from '../../stores/crm'
 

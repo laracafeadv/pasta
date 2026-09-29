@@ -239,7 +239,7 @@ onMounted(async () => {
       <p class="eyebrow">Pré-consulta</p>
       <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Formulários</h1>
       <p class="text-sm text-gray-500 mt-2 max-w-2xl">
-        Crie suas perguntas, monte formulários com elas (ex.: "Pré-consulta — Divórcio"), envie pra cliente na ficha do caso,
+        Crie suas perguntas, monte formulários com elas (ex.: "Pré-consulta — Divórcio"), envie pra cliente na ficha da demanda,
         e acompanhe aqui quem respondeu. O resumo livre da cliente vai sempre, em todo envio.
       </p>
     </div>

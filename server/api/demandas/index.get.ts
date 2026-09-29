@@ -1,5 +1,5 @@
 import { serverSupabaseClient } from '#supabase/server'
-import type { Caso } from '../../../shared/types/crm'
+import type { Demanda } from '../../../shared/types/crm'
 import { requireStaff } from '../../utils/security'
 import { sanitizarBusca } from '../../utils/crm'
 
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const { data, error } = await query
   if (error) {
     console.error('[casos] Erro:', error)
-    throw createError({ statusCode: 500, message: 'Erro ao carregar casos.' })
+    throw createError({ statusCode: 500, message: 'Erro ao carregar as demandas.' })
   }
-  return (data ?? []) as Caso[]
+  return (data ?? []) as Demanda[]
 })

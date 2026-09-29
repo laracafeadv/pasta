@@ -41,7 +41,7 @@
         </select>
       </label>
 
-      <p class="section-label">Caso</p>
+      <p class="section-label">Interesse inicial</p>
       <label class="field">
         <span>Área</span>
         <select v-model="form.area" class="modal-input" @change="form.demanda = ''">
@@ -61,7 +61,7 @@
         <input v-model="form.parte_contraria" class="modal-input" placeholder="Usado para checar conflito de interesses" @input="checarDepois" />
       </label>
       <label class="field md:col-span-2">
-        <span>Resumo do caso</span>
+        <span>Resumo do atendimento</span>
         <textarea v-model="form.resumo" rows="3" class="modal-input resize-y" placeholder="O que a pessoa precisa, em 2–3 linhas." />
       </label>
       <label class="field">

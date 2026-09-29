@@ -18,11 +18,11 @@ export default defineEventHandler(async (event) => {
   if (!chave || typeof body?.concluido !== 'boolean') throw createError({ statusCode: 400, message: 'Item inválido.' })
 
   const client = await serverSupabaseClient(event)
-  // A chave precisa existir na definição atual: ou é um item manual do atendimento, ou uma etapa do procedimento do caso.
+  // A chave precisa existir na definição atual: ou é um item manual do atendimento, ou uma etapa do procedimento da demanda.
   if (casoId) {
     const { data: caso } = await client.from('casos').select('id, contato_id, procedimento').eq('id', casoId).maybeSingle()
-    if (!caso || caso.contato_id !== contatoId) throw createError({ statusCode: 404, message: 'Caso não encontrado.' })
-    if (!itensDoProcedimento(caso.procedimento).some(i => i.chave === chave)) throw createError({ statusCode: 400, message: 'Esta etapa não faz parte do procedimento do caso.' })
+    if (!caso || caso.contato_id !== contatoId) throw createError({ statusCode: 404, message: 'Demanda não encontrada.' })
+    if (!itensDoProcedimento(caso.procedimento).some(i => i.chave === chave)) throw createError({ statusCode: 400, message: 'Esta etapa não faz parte do procedimento da demanda.' })
   } else if (!CHAVES_MANUAIS_ATENDIMENTO.has(chave)) {
     throw createError({ statusCode: 400, message: 'Este item é automático e não pode ser marcado à mão.' })
   }

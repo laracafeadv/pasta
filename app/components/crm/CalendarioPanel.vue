@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from '#imports'
 import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
-import { TIPOS_COMPROMISSO, dataCompromisso, type Caso, type Compromisso, type Contato } from '~~/shared/types/crm'
+import { TIPOS_COMPROMISSO, dataCompromisso, type Demanda, type Compromisso, type Contato } from '~~/shared/types/crm'
 import { dataCurta } from '~/utils/formatadores'
 import { hojeISO, somarDias } from '~/stores/crm'
 
@@ -24,7 +24,7 @@ async function carregar() {
 }
 onMounted(() => {
   carregar()
-  if (route.query.contato) novo(Number(route.query.contato), route.query.caso ? Number(route.query.caso) : null)
+  if (route.query.contato) novo(Number(route.query.contato), route.query.demanda ? Number(route.query.demanda) : null)
 })
 watch(filtroTipo, carregar)
 
@@ -86,7 +86,7 @@ const form = reactive<Record<string, any>>({})
 const contatos = ref<Pick<Contato, 'id' | 'nome'>[]>([])
 // A agenda tem prazos, audiências, consultas e reuniões; tarefas vivem em Tarefas.
 const TIPOS_AGENDA = Object.fromEntries(Object.entries(TIPOS_COMPROMISSO).filter(([k]) => k !== 'tarefa')) as Omit<typeof TIPOS_COMPROMISSO, 'tarefa'>
-const casos = ref<Caso[]>([])
+const casos = ref<Demanda[]>([])
 const processosDaDemanda = computed(() => casos.value.find(k => k.id === form.caso_id)?.processos ?? [])
 
 async function carregarOpcoes() {
@@ -96,7 +96,7 @@ async function carregarOpcoes() {
   }
 }
 watch(() => form.contato_id, async (id) => {
-  casos.value = id ? await $fetch<Caso[]>('/api/casos', { params: { contato: id } }) : []
+  casos.value = id ? await $fetch<Demanda[]>('/api/demandas', { params: { contato: id } }) : []
 })
 
 async function novo(contatoId: number | null = null, casoId: number | null = null) {

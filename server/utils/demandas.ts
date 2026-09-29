@@ -1,15 +1,15 @@
-import { AREAS, CASO_CAMPOS, DECISOES_DEMANDA, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, pick } from '../../shared/types/crm'
+import { AREAS, DEMANDA_CAMPOS, DECISOES_DEMANDA, RESULTADOS_DEMANDA, STATUS_DEMANDA, TIPOS_DEMANDA, pick } from '../../shared/types/crm'
 import { PROCEDIMENTOS } from '../../shared/data/checklist'
 import { registrarAtividade } from './crm'
 
 /** Valida os campos da DEMANDA (os dados de processo/procedimento vivem em processos). */
-export function limparCaso(body: Record<string, any>) {
-  const d = pick(body ?? {}, CASO_CAMPOS) as Record<string, any>
+export function limparDemanda(body: Record<string, any>) {
+  const d = pick(body ?? {}, DEMANDA_CAMPOS) as Record<string, any>
   for (const [k, v] of Object.entries(d)) if (typeof v === 'string') d[k] = v.trim() || null
   if ('titulo' in d && !d.titulo) throw createError({ statusCode: 400, message: 'Dê um título à demanda.' })
-  if (d.tipo && !(d.tipo in TIPOS_CASO)) throw createError({ statusCode: 400, message: 'Tipo inválido.' })
-  if (d.status && !(d.status in STATUS_CASO)) throw createError({ statusCode: 400, message: 'Status inválido.' })
-  if (d.resultado && !(d.resultado in RESULTADOS_CASO)) throw createError({ statusCode: 400, message: 'Resultado inválido.' })
+  if (d.tipo && !(d.tipo in TIPOS_DEMANDA)) throw createError({ statusCode: 400, message: 'Tipo inválido.' })
+  if (d.status && !(d.status in STATUS_DEMANDA)) throw createError({ statusCode: 400, message: 'Status inválido.' })
+  if (d.resultado && !(d.resultado in RESULTADOS_DEMANDA)) throw createError({ statusCode: 400, message: 'Resultado inválido.' })
   if (d.decisao && !(d.decisao in DECISOES_DEMANDA)) throw createError({ statusCode: 400, message: 'Decisão inválida.' })
   if ('analise' in d && d.analise) d.analise = String(d.analise).slice(0, 8000)
   if ('riscos' in d && d.riscos) d.riscos = String(d.riscos).slice(0, 4000)

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { navigateTo } from '#imports'
 import DataTable, { type ColumnDef } from '~/components/DataTable.vue'
-import { FASES_EXTRAJUDICIAIS, FASES_PROCESSUAIS, NATUREZAS_PROCESSO, STATUS_CASO, type Processo } from '~~/shared/types/crm'
+import { FASES_EXTRAJUDICIAIS, FASES_PROCESSUAIS, NATUREZAS_PROCESSO, STATUS_DEMANDA, type Processo } from '~~/shared/types/crm'
 import { brl, dataCurta } from '~/utils/formatadores'
 
 // Processos judiciais e procedimentos extrajudiciais de todas as demandas, num só lugar de acompanhamento.
@@ -48,7 +48,7 @@ async function soltar(fase: string, e: DragEvent) {
   const url: string = `/api/processos/${id}`
   await $fetch(url, { method: 'PUT', body: { fase: nova } })
 }
-const abrir = (p: Processo) => navigateTo({ path: '/crm', query: { abrir: p.contato_id, ficha: 'casos' } })
+const abrir = (p: Processo) => navigateTo({ path: '/crm', query: { abrir: p.contato_id, ficha: 'demandas' } })
 </script>
 
 <template>
@@ -65,7 +65,7 @@ const abrir = (p: Processo) => navigateTo({ path: '/crm', query: { abrir: p.cont
       <input v-model="busca" type="search" class="flex-1 min-w-[220px] rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm" placeholder="Buscar por número, órgão ou cliente…" />
       <select v-model="status" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm">
         <option value="">Todos</option>
-        <option v-for="(n, k) in STATUS_CASO" :key="k" :value="k">{{ n }}</option>
+        <option v-for="(n, k) in STATUS_DEMANDA" :key="k" :value="k">{{ n }}</option>
       </select>
     </div>
 
@@ -74,7 +74,7 @@ const abrir = (p: Processo) => navigateTo({ path: '/crm', query: { abrir: p.cont
       <template #cell-demanda="{ item }"><p class="font-semibold">{{ item.caso?.titulo }}</p><p class="text-xs text-gray-500">{{ item.contato?.nome }}</p></template>
       <template #cell-orgao="{ item }"><p class="text-xs">{{ item.orgao || '—' }}</p><p class="text-xs text-gray-500">{{ item.comarca ? `${item.comarca}${item.uf ? '/' + item.uf : ''}` : '' }}</p></template>
       <template #cell-fase="{ item }"><p class="text-xs">{{ item.fase || '—' }}</p><p class="text-xs text-gray-500">{{ item.valor ? brl(item.valor) : '' }}</p></template>
-      <template #cell-status="{ item }"><span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800">{{ STATUS_CASO[item.status as keyof typeof STATUS_CASO] }}</span></template>
+      <template #cell-status="{ item }"><span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800">{{ STATUS_DEMANDA[item.status as keyof typeof STATUS_DEMANDA] }}</span></template>
     </DataTable>
 
     <div v-else class="flex gap-4 overflow-x-auto pb-4">

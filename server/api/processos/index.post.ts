@@ -2,7 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { NATUREZAS_PROCESSO } from '../../../shared/types/crm'
 import { requireStaff } from '../../utils/security'
 import { limparProcesso } from '../../utils/processos'
-import { sincronizarAtuacao } from '../../utils/casos'
+import { sincronizarAtuacao } from '../../utils/demandas'
 import { registrarAtividade } from '../../utils/crm'
 import { auditar } from '../../utils/auditoria'
 

@@ -55,7 +55,7 @@
     <template v-if="modo === 'precos'">
       <section class="painel">
         <h2 class="text-2xl text-primary dark:text-zinc-100">Quanto custa uma hora do escritório</h2>
-        <p class="text-xs text-gray-500">Custo operacional mensal (despesas fixas + seu pró-labore) ÷ horas produtivas. É a base do preço mínimo: abaixo dele, o caso dá prejuízo.</p>
+        <p class="text-xs text-gray-500">Custo operacional mensal (despesas fixas + seu pró-labore) ÷ horas produtivas. É a base do preço mínimo: abaixo dele, a demanda dá prejuízo.</p>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
           <div class="kpi"><span>Custo mensal</span><b>{{ brl(r.custos.custoMensal) }}</b></div>
           <label class="kpi"><span>Horas produtivas/mês</span><input v-model="config.horas_produtivas_mes" type="number" min="1" class="bg-transparent text-xl font-semibold w-full" @change="salvarConfig" /></label>

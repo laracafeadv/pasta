@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import Button from '~/components/Button.vue'
 import TarefaFormModal from '~/components/crm/TarefaFormModal.vue'
-import { PRIORIDADES_TAREFA, situacaoData, type Caso, type Contato, type SituacaoData, type TarefaInterna } from '~~/shared/types/crm'
+import { PRIORIDADES_TAREFA, situacaoData, type Demanda, type Contato, type SituacaoData, type TarefaInterna } from '~~/shared/types/crm'
 import { hojeISO } from '~/stores/crm'
 
 const tarefas = ref<TarefaInterna[]>([])
@@ -98,7 +98,7 @@ function dataCurta(iso: string) {
           <tr class="text-left text-[10px] uppercase tracking-wider text-gray-400">
             <th class="px-4 py-3 font-semibold">Data</th>
             <th class="px-4 py-3 font-semibold">Tarefa</th>
-            <th class="px-4 py-3 font-semibold">Cliente · Caso</th>
+            <th class="px-4 py-3 font-semibold">Cliente · Demanda</th>
             <th class="px-4 py-3 font-semibold">Prioridade</th>
             <th class="px-4 py-3 font-semibold">Situação</th>
             <th class="px-4 py-3" />

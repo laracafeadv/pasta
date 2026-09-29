@@ -104,7 +104,7 @@ onMounted(async () => {
       primeiroNome: 'Maria', advogada: 'a advogada', respondido: false,
       perguntas: [
         { texto: 'Há medida protetiva em vigor?', tipo: 'sim_nao', opcoes: [], obrigatoria: true },
-        { texto: 'Área do caso', tipo: 'selecao_unica', opcoes: ['Divórcio', 'Inventário', 'Guarda e alimentos'], obrigatoria: false },
+        { texto: 'Área da demanda', tipo: 'selecao_unica', opcoes: ['Divórcio', 'Inventário', 'Guarda e alimentos'], obrigatoria: false },
       ],
     }
     return

@@ -4,7 +4,7 @@
  * mudar etapas, áreas ou listas em todo o sistema.
  */
 
-// Etapas espelham o "Como funciona" do site: contato → diagnóstico → acompanhamento → solução.
+// Etapas espelham o "Como funciona" do site: contato → consulta → acompanhamento → solução.
 export const ETAPAS = [
   { id: 'novo', nome: 'Novo contato', hint: 'Responder em minutos', aberta: true },
   { id: 'qualificacao', nome: 'Em qualificação', hint: 'Entender e convidar p/ consulta', aberta: true },
@@ -403,8 +403,8 @@ export interface Qualificacao {
 export const QUALIFICACAO_CAMPOS = ['nome_completo', 'cpf', 'rg', 'orgao_emissor', 'nacionalidade', 'estado_civil', 'profissao', 'endereco', 'bairro', 'cep', 'cidade', 'uf'] as const
 export const CAMPOS_CONFIDENCIAIS = ['cpf', 'rg'] as const
 
-export const TIPOS_CASO = { consultivo: 'Consultiva / documental', extrajudicial: 'Extrajudicial', judicial: 'Judicial' } as const
-export const STATUS_CASO = { ativo: 'Ativo', suspenso: 'Suspenso', encerrado: 'Encerrado' } as const
+export const TIPOS_DEMANDA = { consultivo: 'Consultiva / documental', extrajudicial: 'Extrajudicial', judicial: 'Judicial' } as const
+export const STATUS_DEMANDA = { ativo: 'Ativo', suspenso: 'Suspenso', encerrado: 'Encerrado' } as const
 export const FASES_PROCESSUAIS = ['Postulatória (petição inicial)', 'Instrução', 'Sentença', 'Recurso', 'Execução/cumprimento de sentença', 'Arquivado aguardando'] as const
 
 // Tarefas internas do escritório, sem vínculo com cliente ou caso.
@@ -422,25 +422,25 @@ export interface TarefaInterna {
   created_at: string
   updated_at: string
   contato?: Pick<Contato, 'id' | 'nome'> | null
-  caso?: Pick<Caso, 'id' | 'titulo'> | null
+  caso?: Pick<Demanda, 'id' | 'titulo'> | null
 }
 /**
  * Demanda/serviço contratado por um cliente (tabela `casos`, nome mantido por compatibilidade).
  * `tipo` é a atuação da demanda: consultiva/documental (sem processo), extrajudicial ou judicial.
  * Os dados formais (número, órgão, fase…) ficam nos Processos/Procedimentos da demanda.
  */
-export interface Caso {
+export interface Demanda {
   id: number
   created_at: string
   contato_id: number
   titulo: string
   area: string | null
-  tipo: keyof typeof TIPOS_CASO
-  status: keyof typeof STATUS_CASO
+  tipo: keyof typeof TIPOS_DEMANDA
+  status: keyof typeof STATUS_DEMANDA
   data_abertura: string
   data_encerramento: string | null
   observacoes: string | null
-  resultado?: keyof typeof RESULTADOS_CASO | null
+  resultado?: keyof typeof RESULTADOS_DEMANDA | null
   /** 'servico/variante' do Padrão Operacional; define as etapas do checklist da demanda. */
   procedimento?: string | null
   /** Análise jurídica do escritório (estratégia, fundamentos), separada das respostas do formulário. */
@@ -452,7 +452,7 @@ export interface Caso {
   processos?: Pick<Processo, 'id' | 'natureza' | 'numero' | 'orgao' | 'fase' | 'status'>[]
   partes?: Pick<Parte, 'id' | 'nome' | 'papel'>[]
 }
-export const CASO_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'status', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado', 'procedimento', 'analise', 'riscos', 'decisao'] as const
+export const DEMANDA_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'status', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado', 'procedimento', 'analise', 'riscos', 'decisao'] as const
 /** Decisão do escritório depois de analisar a demanda (não é resposta de formulário). */
 export const DECISOES_DEMANDA = {
   viavel: { nome: 'Viável', dica: 'Seguir para a proposta.' },
@@ -477,13 +477,13 @@ export interface Processo {
   comarca: string | null
   uf: string | null
   fase: string | null
-  status: keyof typeof STATUS_CASO
+  status: keyof typeof STATUS_DEMANDA
   valor: number | null
   link: string | null
   data_inicio: string
   data_encerramento: string | null
   observacoes: string | null
-  caso?: Pick<Caso, 'id' | 'titulo' | 'tipo'> | null
+  caso?: Pick<Demanda, 'id' | 'titulo' | 'tipo'> | null
   contato?: Pick<Contato, 'id' | 'nome'> | null
 }
 export const PROCESSO_CAMPOS = ['caso_id', 'natureza', 'numero', 'responsavel_nome', 'tipo_procedimento', 'tribunal', 'orgao', 'comarca', 'uf', 'fase', 'status', 'valor', 'link', 'data_inicio', 'data_encerramento', 'observacoes'] as const
@@ -517,7 +517,7 @@ export interface Movimentacao {
 }
 
 /** Resultado do caso encerrado (base da taxa de êxito no painel de qualidade). */
-export const RESULTADOS_CASO = { exito: 'Êxito', acordo: 'Acordo', parcial: 'Êxito parcial', sem_exito: 'Sem êxito', desistencia: 'Desistência do cliente' } as const
+export const RESULTADOS_DEMANDA = { exito: 'Êxito', acordo: 'Acordo', parcial: 'Êxito parcial', sem_exito: 'Sem êxito', desistencia: 'Desistência do cliente' } as const
 
 export const TIPOS_COMPROMISSO = {
   prazo: { nome: 'Prazo processual', icone: 'ph:hourglass-high-bold' },
@@ -540,7 +540,7 @@ export interface Compromisso {
   status: 'pendente' | 'concluido' | 'cancelado'
   observacao: string | null
   contato?: Pick<Contato, 'id' | 'nome'> | null
-  caso?: (Pick<Caso, 'id' | 'titulo'> & { numero_processo?: string | null }) | null
+  caso?: (Pick<Demanda, 'id' | 'titulo'> & { numero_processo?: string | null }) | null
   processo_id?: number | null
   processo?: { id: number; numero: string | null; natureza: string } | null
 }
@@ -640,7 +640,7 @@ export interface Revisao {
   aprovado: boolean
   observacao: string | null
   plano_acao: string | null
-  caso?: Pick<Caso, 'id' | 'titulo'> & { contato?: Pick<Contato, 'id' | 'nome'> | null } | null
+  caso?: Pick<Demanda, 'id' | 'titulo'> & { contato?: Pick<Contato, 'id' | 'nome'> | null } | null
   revisor?: { name: string } | null
 }
 
