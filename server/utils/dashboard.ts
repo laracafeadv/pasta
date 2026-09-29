@@ -15,7 +15,7 @@ export interface EntradaDashboard {
     id: number; nome: string | null; etapa: string; created_at: string; proxima_acao: string | null; proxima_data: string | null
     ultima_mensagem_em: string | null; nao_contatar: boolean | null; sugestao_resposta: string | null
   }[]
-  casos: { id: number; titulo: string; status: string; fase_processual: string | null; contato: Pessoa }[]
+  casos: { id: number; titulo: string; status: string; processos?: { fase: string | null; status: string }[]; contato: Pessoa }[]
   compromissos: {
     id: number; tipo: string; titulo: string; inicio: string | null; data_limite: string | null; local: string | null
     contato_id: number | null; caso_id: number | null; contato: Pessoa; caso: { id: number; titulo: string } | null
@@ -107,7 +107,7 @@ export function montarDashboard(e: EntradaDashboard): DashboardData {
     itens.push({
       id: `prazo-${c.id}`, grupo: 'prazos', origem: 'prazo', severidade: sev, titulo: c.titulo, data: c.data,
       detalhe: [dias < 0 ? `Prazo atrasado há ${plural(-dias, 'dia', 'dias')}` : dias === 0 ? 'Prazo vence hoje' : `Prazo em ${plural(dias, 'dia', 'dias')}`, ctx(c.contato, c.caso)].filter(Boolean).join(' · '),
-      contatoId: c.contato_id, compromissoId: c.id, link: '/clientes?aba=prazos', aba: 'casos',
+      contatoId: c.contato_id, compromissoId: c.id, link: '/prazos', aba: 'casos',
     })
   }
   for (const c of agendaC) {
@@ -118,7 +118,7 @@ export function montarDashboard(e: EntradaDashboard): DashboardData {
     itens.push({
       id: `comp-${c.id}`, grupo: 'prazos', origem: 'compromisso', severidade: dias < 0 ? 'atrasado' : 'atencao', titulo: c.titulo, data: c.data,
       detalhe: [dias < 0 ? `${rotulo} passou e segue pendente` : `${rotulo} ${dias === 0 ? 'hoje' : 'amanhã'}${h ? ` às ${h}` : ''}`, ctx(c.contato, c.caso)].filter(Boolean).join(' · '),
-      contatoId: c.contato_id, compromissoId: c.id, link: '/crm?aba=hoje&ver=calendario', aba: 'casos',
+      contatoId: c.contato_id, compromissoId: c.id, link: '/agenda', aba: 'casos',
     })
   }
   for (const t of e.tarefas) {
@@ -128,7 +128,7 @@ export function montarDashboard(e: EntradaDashboard): DashboardData {
     itens.push({
       id: `tarefa-${t.id}`, grupo: 'tarefas', origem: 'tarefa', severidade: sit === 'atrasado' ? 'atrasado' : 'atencao', titulo: t.titulo, data: t.prazo,
       detalhe: [sit === 'atrasado' ? `Atrasada há ${plural(-diasEntre(hoje, t.prazo), 'dia', 'dias')}` : 'Hoje · prioridade alta', ctx(t.contato, t.caso)].filter(Boolean).join(' · '),
-      contatoId: t.contato_id, tarefaId: t.id, link: '/clientes?aba=tarefas',
+      contatoId: t.contato_id, tarefaId: t.id, link: '/tarefas',
     })
   }
   for (const c of tarefasC) {
@@ -136,7 +136,7 @@ export function montarDashboard(e: EntradaDashboard): DashboardData {
     itens.push({
       id: `comp-${c.id}`, grupo: 'tarefas', origem: 'compromisso', severidade: 'atrasado', titulo: c.titulo, data: c.data,
       detalhe: [`Atrasada há ${plural(-diasEntre(hoje, c.data), 'dia', 'dias')}`, nomeDe(c.contato)].filter(Boolean).join(' · '),
-      contatoId: c.contato_id, compromissoId: c.id, link: '/crm?aba=hoje&ver=calendario',
+      contatoId: c.contato_id, compromissoId: c.id, link: '/agenda',
     })
   }
   for (const c of retornosAtrasados) {
@@ -227,7 +227,7 @@ export function montarDashboard(e: EntradaDashboard): DashboardData {
   const tarefasPorCaso = new Map<number, number>()
   for (const t of e.tarefas) if (t.caso_id) tarefasPorCaso.set(t.caso_id, (tarefasPorCaso.get(t.caso_id) ?? 0) + 1)
   const casosAndamento: CasoAndamento[] = casosAtivos
-    .map(c => ({ id: c.id, titulo: c.titulo, contato: c.contato, fase: c.fase_processual, proximoPrazo: proximoPorCaso.get(c.id) ?? null, tarefasAbertas: tarefasPorCaso.get(c.id) ?? 0 }))
+    .map(c => ({ id: c.id, titulo: c.titulo, contato: c.contato, fase: c.processos?.find(p => p.status === 'ativo' && p.fase)?.fase ?? null, proximoPrazo: proximoPorCaso.get(c.id) ?? null, tarefasAbertas: tarefasPorCaso.get(c.id) ?? 0 }))
     .sort((a, b) => (a.proximoPrazo?.data ?? '9999').localeCompare(b.proximoPrazo?.data ?? '9999'))
     .slice(0, 6)
 

@@ -148,7 +148,7 @@ async function openNotification(
     await navigateTo({ path: '/crm', query: { abrir: String(contatoId), ficha } })
   } else if (metadata?.compromisso_id) {
     close()
-    await navigateTo('/clientes?aba=prazos')
+    await navigateTo('/prazos')
   }
 }
 

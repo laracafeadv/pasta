@@ -8,7 +8,7 @@ export function limparCompromisso(body: Record<string, any>) {
   if ('titulo' in d && !String(d.titulo ?? '').trim()) throw createError({ statusCode: 400, message: 'Descreva o compromisso.' })
   if (d.titulo) d.titulo = String(d.titulo).trim().slice(0, 200)
   if (d.status && !['pendente', 'concluido', 'cancelado'].includes(d.status)) throw createError({ statusCode: 400, message: 'Status inválido.' })
-  for (const k of ['contato_id', 'caso_id', 'dias_prazo']) if (d[k] != null) d[k] = Number(d[k]) || null
+  for (const k of ['contato_id', 'caso_id', 'processo_id', 'dias_prazo']) if (d[k] != null) d[k] = Number(d[k]) || null
   for (const k of ['data_limite', 'data_publicacao']) {
     if (d[k] && !/^\d{4}-\d{2}-\d{2}$/.test(d[k])) throw createError({ statusCode: 400, message: 'Data inválida.' })
   }

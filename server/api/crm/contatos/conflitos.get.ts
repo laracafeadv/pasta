@@ -53,5 +53,14 @@ export default defineEventHandler(async (event) => {
       duplicados.push({ id: c.id, nome: c.nome })
     }
   }
+  // Partes e interessados cadastrados nas demandas (parte contrária, herdeiros…): o nome informado já aparece em outra demanda?
+  if (n.length >= 3) {
+    const { data: partes } = await client.from('partes').select('nome, papel, caso:casos(titulo, contato_id, contato:contatos(id, nome))').ilike('nome', `%${nome}%`).limit(20)
+    for (const p of partes ?? []) {
+      const caso = p.caso as any
+      if (!caso?.contato || caso.contato.id === excluir || normalizarNome(p.nome) !== n) continue
+      conflitos.push({ id: caso.contato.id, nome: caso.contato.nome, motivo: `Este nome consta como "${p.papel}" na demanda "${caso.titulo}".` })
+    }
+  }
   return { conflitos, duplicados }
 })

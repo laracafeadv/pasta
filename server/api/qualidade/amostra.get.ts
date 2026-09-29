@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient(event)
   const desde = new Date(Date.now() - 30 * 864e5).toISOString()
   const [{ data: casos }, { data: recentes }] = await Promise.all([
-    client.from('casos').select('id, titulo, numero_processo, contato_id, contato:contatos(id, nome)').eq('status', 'ativo').limit(1000),
+    client.from('casos').select('id, titulo, contato_id, contato:contatos(id, nome), processos(numero)').eq('status', 'ativo').limit(1000),
     client.from('revisoes').select('caso_id').gte('created_at', desde).limit(1000),
   ])
   const revisados = new Set((recentes ?? []).map(r => r.caso_id))
@@ -17,5 +17,5 @@ export default defineEventHandler(async (event) => {
     const j = Math.floor(Math.random() * (i + 1));
     [candidatos[i], candidatos[j]] = [candidatos[j]!, candidatos[i]!]
   }
-  return candidatos.slice(0, n)
+  return candidatos.slice(0, n).map(c => ({ ...c, numero_processo: (c as any).processos?.find((p: { numero: string | null }) => p.numero)?.numero ?? null }))
 })

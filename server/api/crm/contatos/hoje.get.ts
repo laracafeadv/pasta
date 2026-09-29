@@ -1,3 +1,4 @@
+import { comNumeroDoProcesso } from '../../../utils/compatCaso'
 import { serverSupabaseClient } from '#supabase/server'
 import { dataCompromisso, type Compromisso, type Contato, type TarefaInterna } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
@@ -19,7 +20,7 @@ export default defineEventHandler(async (event) => {
       .limit(500),
     client.from('contatos').select('id, nome, telefone, data_nascimento, classificacao').not('data_nascimento', 'is', null).limit(2000),
     client.from('compromissos')
-      .select('*, contato:contatos(id, nome), caso:casos(id, titulo, numero_processo)')
+      .select('*, contato:contatos(id, nome), caso:casos(id, titulo, processos(numero))')
       .eq('status', 'pendente').limit(300),
     // Tarefas em aberto até a próxima semana: as de hoje/atrasadas são o trabalho do dia; o resto só entra na contagem.
     client.from('tarefas_internas').select('*, contato:contatos(id, nome), caso:casos(id, titulo)')
@@ -41,7 +42,7 @@ export default defineEventHandler(async (event) => {
   const semAcao = (c: Contato) => !c.proxima_acao || !c.proxima_data
 
   // Prazos e compromissos: vencidos, de hoje e dos próximos 7 dias (mesma janela do quadro de tarefas).
-  const compromissos = ((agenda ?? []) as Compromisso[])
+  const compromissos = (comNumeroDoProcesso(agenda as any[]) as Compromisso[])
     .filter(c => { const d = dataCompromisso(c); return d && d <= em7 })
     .sort((a, b) => dataCompromisso(a).localeCompare(dataCompromisso(b)))
 

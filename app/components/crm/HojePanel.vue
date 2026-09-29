@@ -47,7 +47,7 @@
               <button class="btn-mini bg-primary text-white hover:bg-primary-light" @click.stop="concluirTarefa(it.tarefa)">Feita</button>
               <button class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-primary" @click.stop="adiarTarefa(it.tarefa)">Amanhã</button>
             </div>
-            <NuxtLink v-else-if="it.compromisso" to="/clientes?aba=prazos" class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-primary" @click.stop>Ver prazos</NuxtLink>
+            <NuxtLink v-else-if="it.compromisso" to="/prazos" class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-primary" @click.stop>Ver prazos</NuxtLink>
           </div>
         </article>
       </section>
@@ -56,8 +56,8 @@
     <!-- Só uma contagem: a lista completa do que vem depois fica nas abas Tarefas e Prazos. -->
     <p v-if="proximos.total" class="text-xs text-gray-500 px-1">
       Próximos 7 dias:
-      <NuxtLink v-if="proximos.tarefas" to="/clientes?aba=tarefas" class="underline underline-offset-2 hover:text-primary">{{ proximos.tarefas }} tarefa(s)</NuxtLink><template v-if="proximos.tarefas && (proximos.prazos || proximos.contatos)"> · </template>
-      <NuxtLink v-if="proximos.prazos" to="/clientes?aba=prazos" class="underline underline-offset-2 hover:text-primary">{{ proximos.prazos }} prazo(s)</NuxtLink><template v-if="proximos.prazos && proximos.contatos"> · </template>
+      <NuxtLink v-if="proximos.tarefas" to="/tarefas" class="underline underline-offset-2 hover:text-primary">{{ proximos.tarefas }} tarefa(s)</NuxtLink><template v-if="proximos.tarefas && (proximos.prazos || proximos.contatos)"> · </template>
+      <NuxtLink v-if="proximos.prazos" to="/prazos" class="underline underline-offset-2 hover:text-primary">{{ proximos.prazos }} prazo(s)</NuxtLink><template v-if="proximos.prazos && proximos.contatos"> · </template>
       <span v-if="proximos.contatos">{{ proximos.contatos }} retorno(s) de contato</span>
     </p>
 

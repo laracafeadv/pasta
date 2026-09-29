@@ -11,7 +11,6 @@ export default defineEventHandler(async (event) => {
   delete d.contato_id
   const { data, error } = await (await serverSupabaseClient(event)).from('casos').update(d).eq('id', id).select().single()
   if (error) {
-    if (error.code === '23505') throw createError({ statusCode: 409, message: 'Já existe um caso com este número de processo.' })
     throw createError({ statusCode: 500, message: 'Erro ao salvar o caso.' })
   }
   await auditar(event, 'editou caso', 'caso', id, { campos: Object.keys(d) })

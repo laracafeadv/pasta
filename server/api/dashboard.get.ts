@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
 
   const [contatos, casos, compromissos, tarefas, docs, honorarios, atividades, envios, mensagens, tarefasConcluidas, prazosCumpridos, lancamentos] = await Promise.all([
     ler(client.from('contatos').select('id, nome, etapa, created_at, proxima_acao, proxima_data, ultima_mensagem_em, nao_contatar, sugestao_resposta').limit(2000), 'contatos'),
-    ler(client.from('casos').select('id, titulo, status, fase_processual, contato:contatos(id, nome)').limit(1000), 'casos'),
+    ler(client.from('casos').select('id, titulo, status, contato:contatos(id, nome), processos(fase, status)').limit(1000), 'casos'),
     ler(client.from('compromissos')
       .select('id, tipo, titulo, inicio, data_limite, local, contato_id, caso_id, contato:contatos(id, nome), caso:casos(id, titulo)')
       .eq('status', 'pendente').limit(500), 'compromissos'),

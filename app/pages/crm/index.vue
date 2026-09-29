@@ -3,7 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { definePageMeta, useHead, useRoute, useRouter } from '#imports'
 import Button from '~/components/Button.vue'
 import HojePanel from '~/components/crm/HojePanel.vue'
-import CalendarioPanel from '~/components/crm/CalendarioPanel.vue'
 import RemarketingBoard from '~/components/crm/RemarketingBoard.vue'
 import ContatoFormModal from '~/components/crm/ContatoFormModal.vue'
 import ContatoDetailModal from '~/components/crm/ContatoDetailModal.vue'
@@ -25,8 +24,6 @@ const abas = [
 const aba = computed(() => (abas.some(a => a.id === route.query.aba) ? String(route.query.aba) : 'hoje'))
 const dataHoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
 
-// ─── Hoje: lista (kanban, já com as tarefas internas juntas) ou calendário ───
-const visaoHoje = ref<'kanban' | 'calendario'>(route.query.ver === 'calendario' || route.query.contato ? 'calendario' : 'kanban')
 
 function carregarAba() {
   if (aba.value === 'hoje') crm.fetchAgenda()
@@ -107,7 +104,7 @@ async function adiar(c: Contato) {
           {{ aba === 'hoje' ? 'O que precisa de você hoje' : 'Remarketing' }}
         </h1>
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">
-          <template v-if="aba === 'hoje'">{{ visaoHoje === 'kanban' ? 'Casos com próxima ação e tarefas internas, lado a lado — tudo que precisa de você.' : 'Prazos processuais, audiências, consultas e tarefas — contados em dias úteis (CPC), com feriados nacionais e recesso forense.' }}</template>
+          <template v-if="aba === 'hoje'">Contatos com próxima ação, prazos e tarefas que vencem hoje ou já passaram — o que precisa de você agora. O calendário completo está em Agenda.</template>
           <template v-else>Quem procurou e não fechou, por demanda, para receber conteúdo do interesse dela e, quando fizer sentido, retomar a conversa.</template>
         </p>
       </div>
@@ -125,21 +122,12 @@ async function adiar(c: Contato) {
         {{ a.label }}
         <span v-if="a.id === 'hoje' && crm.pendencias" class="ml-1.5 opacity-80">{{ crm.pendencias }}</span>
       </NuxtLink>
-      <div v-if="aba === 'hoje'" class="ml-auto flex gap-1.5 rounded-full bg-gray-100 dark:bg-zinc-800 p-1">
-        <button type="button" class="px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                :class="visaoHoje === 'kanban' ? 'bg-white dark:bg-zinc-700 text-primary dark:text-white shadow-sm' : 'text-gray-500'"
-                @click="visaoHoje = 'kanban'"><Icon name="ph:kanban-bold" /> Lista</button>
-        <button type="button" class="px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                :class="visaoHoje === 'calendario' ? 'bg-white dark:bg-zinc-700 text-primary dark:text-white shadow-sm' : 'text-gray-500'"
-                @click="visaoHoje = 'calendario'"><Icon name="ph:calendar-bold" /> Calendário</button>
-      </div>
     </div>
 
     <p v-if="crm.error && !andamentoAberto" class="text-sm text-danger">{{ crm.error }}</p>
 
     <template v-if="aba === 'hoje'">
-      <HojePanel v-if="visaoHoje === 'kanban'" :agenda="crm.agenda" @abrir="abrir" @andamento="andamento" @adiar="adiar" />
-      <CalendarioPanel v-else />
+      <HojePanel :agenda="crm.agenda" @abrir="abrir" @andamento="andamento" @adiar="adiar" />
     </template>
     <RemarketingBoard v-else ref="remarketing" @abrir="abrir" @mensagem="(c, m) => abrir(c, 'conversa', m)" @reabrir="(c) => andamento(c, 'qualificacao')" />
 

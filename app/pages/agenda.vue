@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { definePageMeta, navigateTo, useRoute } from '#imports'
+import { definePageMeta, useHead } from '#imports'
+import CalendarioPanel from '~/components/crm/CalendarioPanel.vue'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
-
-const route = useRoute()
-const query: Record<string, string> = { aba: 'hoje', ver: 'calendario' }
-if (route.query.contato) query.contato = String(route.query.contato)
-if (route.query.caso) query.caso = String(route.query.caso)
-
-await navigateTo({ path: '/crm', query })
+useHead({ title: 'Agenda' })
 </script>
 
 <template>
-  <div />
+  <div class="space-y-6">
+    <div>
+      <p class="eyebrow">Trabalho</p>
+      <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Agenda</h1>
+    </div>
+    <CalendarioPanel />
+  </div>
 </template>

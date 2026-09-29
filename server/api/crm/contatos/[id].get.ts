@@ -1,5 +1,5 @@
 import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
-import { dataCompromisso, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp } from '../../../../shared/types/crm'
+import { dataCompromisso, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp, type Movimentacao, type Parte, type Processo } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { montarChecklist } from '../../../utils/checklist'
 
@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) throw createError({ statusCode: 400, message: 'ID inválido.' })
 
-  const [contato, honorarios, mensagens, atividades, documentos, casos, compromissos, qualificacao, tarefas, marcas] = await Promise.all([
+  const [contato, honorarios, mensagens, atividades, documentos, casos, compromissos, qualificacao, tarefas, marcas, processos] = await Promise.all([
     client.from('contatos').select('*').eq('id', id).single(),
     client.from('honorarios').select('*').eq('contato_id', id).order('created_at', { ascending: false }),
     client.from('mensagens_whatsapp').select('*').eq('contato_id', id).order('id', { ascending: false }).limit(300),
@@ -22,10 +22,11 @@ export default defineEventHandler(async (event) => {
     serverSupabaseServiceRole(event).from('qualificacao').select('cpf, endereco').eq('contato_id', id).maybeSingle(),
     client.from('tarefas_internas').select('id, titulo, prazo, prioridade, caso_id').eq('contato_id', id).eq('concluida', false).order('prazo').limit(50),
     client.from('checklist_marcas').select('caso_id, chave, concluido_em, autor:profiles(name)').eq('contato_id', id),
+    client.from('processos').select('*').eq('contato_id', id).order('created_at', { ascending: false }),
   ])
 
   if (contato.error || !contato.data) throw createError({ statusCode: 404, message: 'Contato não encontrado.' })
-  for (const r of [honorarios, mensagens, atividades, documentos, casos, compromissos, tarefas, marcas]) if (r.error) console.error('[crm/detail] Erro parcial:', r.error)
+  for (const r of [honorarios, mensagens, atividades, documentos, casos, compromissos, tarefas, marcas, processos]) if (r.error) console.error('[crm/detail] Erro parcial:', r.error)
 
   // "Análise da consulta" (antigo Diagnóstico): vem das respostas às perguntas dessa seção, nas demandas do cliente.
   let analise: { updated_at: string | null } | null = null
@@ -39,6 +40,13 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Partes das demandas e movimentações dos processos (carregadas juntas: são poucas por cliente).
+  const idsProcessos = (processos.data ?? []).map(p => p.id)
+  const [partes, movimentacoes] = await Promise.all([
+    idsCasos.length ? client.from('partes').select('*').in('caso_id', idsCasos).order('id') : Promise.resolve({ data: [] as Parte[] }),
+    idsProcessos.length ? client.from('movimentacoes').select('*').in('processo_id', idsProcessos).order('data', { ascending: false }).order('id', { ascending: false }).limit(400) : Promise.resolve({ data: [] as Movimentacao[] }),
+  ])
+
   return {
     contato: contato.data as Contato,
     honorarios: (honorarios.data ?? []) as Honorario[],
@@ -46,6 +54,9 @@ export default defineEventHandler(async (event) => {
     atividades: (atividades.data ?? []) as Atividade[],
     documentos: (documentos.data ?? []) as Documento[],
     casos: (casos.data ?? []) as Caso[],
+    processos: (processos.data ?? []) as Processo[],
+    partes: (partes.data ?? []) as Parte[],
+    movimentacoes: (movimentacoes.data ?? []) as Movimentacao[],
     tarefas: (tarefas.data ?? []) as { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[],
     compromissos: ((compromissos.data ?? []) as Compromisso[]).sort((a, b) => dataCompromisso(a).localeCompare(dataCompromisso(b))),
     checklist: montarChecklist({

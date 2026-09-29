@@ -54,7 +54,7 @@ async function concluir(c: Compromisso) {
       <div>
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">
           Só compromissos com data-limite, do mais urgente ao mais distante. Pra criar um novo prazo, use
-          <NuxtLink to="/crm?ver=calendario" class="underline hover:text-primary">a Agenda</NuxtLink> — aqui é só acompanhamento.
+          <NuxtLink to="/agenda" class="underline hover:text-primary">a Agenda</NuxtLink> — aqui é só acompanhamento.
         </p>
       </div>
       <label class="flex items-center gap-2 text-sm cursor-pointer">

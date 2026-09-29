@@ -1,13 +1,14 @@
 import { serverSupabaseClient } from '#supabase/server'
 import type { Compromisso } from '../../../shared/types/crm'
 import { requireStaff } from '../../utils/security'
+import { comNumeroDoProcesso } from '../../utils/compatCaso'
 
 export default defineEventHandler(async (event) => {
   await requireStaff(event, 'compromissos/list')
   const q = getQuery(event)
   let query = (await serverSupabaseClient(event))
     .from('compromissos')
-    .select('*, contato:contatos(id, nome), caso:casos(id, titulo, numero_processo)')
+    .select('*, contato:contatos(id, nome), caso:casos(id, titulo, processos(numero))')
     .order('data_limite', { ascending: true, nullsFirst: false })
     .order('inicio', { ascending: true })
     .limit(500)
@@ -19,5 +20,5 @@ export default defineEventHandler(async (event) => {
     console.error('[compromissos] Erro:', error)
     throw createError({ statusCode: 500, message: 'Erro ao carregar a agenda.' })
   }
-  return (data ?? []) as Compromisso[]
+  return comNumeroDoProcesso(data as any[]) as Compromisso[]
 })

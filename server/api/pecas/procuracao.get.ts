@@ -17,13 +17,15 @@ export default defineEventHandler(async (event) => {
     admin.from('contatos').select('nome, demanda, parte_contraria').eq('id', contatoId).single(),
     admin.from('qualificacao').select('*').eq('contato_id', contatoId).maybeSingle(),
     carregarEscritorio(admin),
-    q.caso ? admin.from('casos').select('titulo, numero_processo, parte_contraria').eq('id', Number(q.caso)).eq('contato_id', contatoId).maybeSingle() : Promise.resolve({ data: null }),
+    q.caso ? admin.from('casos').select('titulo, processos(numero, natureza), partes(nome, papel)').eq('id', Number(q.caso)).eq('contato_id', contatoId).maybeSingle() : Promise.resolve({ data: null }),
   ])
   if (!contato) throw createError({ statusCode: 404, message: 'Cliente não encontrado.' })
   const qq = (qual ?? {}) as Partial<Qualificacao>
 
+  const numero = (caso as any)?.processos?.find((p: { numero: string | null; natureza: string }) => p.numero && p.natureza === 'judicial')?.numero
+  const contraria = (caso as any)?.partes?.find((p: { papel: string }) => p.papel === 'Parte contrária')?.nome
   const finalidade = caso
-    ? `, especialmente para atuar no caso "${caso.titulo}"${caso.numero_processo ? `, processo nº ${caso.numero_processo}` : ''}${caso.parte_contraria ? `, em face de ${caso.parte_contraria}` : ''}`
+    ? `, especialmente para atuar na demanda "${caso.titulo}"${numero ? `, processo nº ${numero}` : ''}${contraria ? `, em face de ${contraria}` : ''}`
     : contato.demanda ? `, especialmente para tratar de ${contato.demanda.toLowerCase()}` : ''
 
   const buffer = await gerarDocx('PROCURAÇÃO', [

@@ -48,20 +48,30 @@ const grupos = computed(() => {
 
   const lista = [
     {
-      titulo: 'O que fazer agora',
+      titulo: 'Trabalho',
       itens: [
         { label: 'Dashboard', path: '/', icone: 'ph:squares-four-bold' },
         { label: 'Hoje', path: '/crm', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
+        { label: 'Tarefas', path: '/tarefas', icone: 'ph:check-square-bold' },
+        { label: 'Prazos', path: '/prazos', icone: 'ph:hourglass-high-bold' },
+        { label: 'Agenda', path: '/agenda', icone: 'ph:calendar-bold' },
       ] as { label: string; path: string; icone: string; badge?: number }[],
     },
     {
-      titulo: 'Meus clientes',
+      titulo: 'Pessoas',
       itens: [
         { label: 'Leads', path: '/leads', icone: 'ph:kanban-bold' },
         { label: 'Clientes', path: '/clientes', icone: 'ph:users-bold' },
         { label: 'Mensagens', path: '/mensagens', icone: 'ph:chat-circle-text-bold' },
-        { label: 'Formulários', path: '/formularios', icone: 'ph:clipboard-text-bold' },
         { label: 'Remarketing', path: '/crm?aba=remarketing', icone: 'ph:arrow-counter-clockwise-bold' },
+      ],
+    },
+    {
+      titulo: 'Serviços jurídicos',
+      itens: [
+        { label: 'Demandas', path: '/demandas', icone: 'ph:briefcase-bold' },
+        { label: 'Processos', path: '/processos', icone: 'ph:gavel-bold' },
+        { label: 'Documentos', path: '/documentos', icone: 'ph:files-bold' },
       ],
     },
     {
@@ -74,12 +84,13 @@ const grupos = computed(() => {
     {
       titulo: 'Escritório',
       itens: [
+        { label: 'Formulários', path: '/formularios', icone: 'ph:clipboard-text-bold' },
         { label: 'Padrões operacionais', path: '/manual', icone: 'ph:list-checks-bold' },
       ] as { label: string; path: string; icone: string; badge?: number }[],
     },
   ]
   if (role === 'admin') {
-    lista[3]!.itens.push({ label: 'Configurações', path: '/admin/escritorio', icone: 'ph:gear-bold' })
+    lista[4]!.itens.push({ label: 'Configurações', path: '/admin/escritorio', icone: 'ph:gear-bold' })
   }
   return lista
 })

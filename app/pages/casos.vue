@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { definePageMeta } from '#imports'
 
-// Agora é uma aba da tela Clientes.
-definePageMeta({ redirect: '/clientes?aba=casos' })
+// "Casos" agora se chama Demandas.
+definePageMeta({ redirect: '/demandas' })
 </script>
 
 <template>

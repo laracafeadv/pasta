@@ -22,9 +22,16 @@ export default defineEventHandler(async (event) => {
   const search = sanitizarBusca(query.search)
   if (search) {
     // Também acha quem tem uma demanda/processo com o termo (título, número do processo, outra parte).
-    const { data: porDemanda } = await client.from('casos').select('contato_id')
-      .or(`titulo.ilike.%${search}%,numero_processo.ilike.%${search}%,parte_contraria.ilike.%${search}%`).limit(100)
-    const idsDemanda = [...new Set((porDemanda ?? []).map(c => c.contato_id))]
+    const [porDemanda, porProcesso, porParte] = await Promise.all([
+      client.from('casos').select('contato_id').ilike('titulo', `%${search}%`).limit(100),
+      client.from('processos').select('contato_id').or(`numero.ilike.%${search}%,orgao.ilike.%${search}%`).limit(100),
+      client.from('partes').select('caso:casos(contato_id)').ilike('nome', `%${search}%`).limit(100),
+    ])
+    const idsDemanda = [...new Set([
+      ...(porDemanda.data ?? []).map(c => c.contato_id),
+      ...(porProcesso.data ?? []).map(c => c.contato_id),
+      ...(porParte.data ?? []).map(p => (p.caso as any)?.contato_id).filter(Boolean),
+    ])]
     q = q.or(`nome.ilike.%${search}%,email.ilike.%${search}%,telefone.ilike.%${search.replace(/\D/g, '') || search}%,parte_contraria.ilike.%${search}%,resumo.ilike.%${search}%${idsDemanda.length ? `,id.in.(${idsDemanda.join(',')})` : ''}`)
   }
   if (query.etapa) q = q.eq('etapa', String(query.etapa))

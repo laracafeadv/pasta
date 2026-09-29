@@ -206,7 +206,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Nova demanda</Button>
-          <NuxtLink :to="`/crm?aba=hoje&ver=calendario&contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">+ Prazo ou compromisso</NuxtLink>
+          <NuxtLink :to="`/agenda?contato=${dados.contato.id}`" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white">+ Prazo ou compromisso</NuxtLink>
           <a v-if="dados.contato.drive_pasta_url" :href="dados.contato.drive_pasta_url" target="_blank" rel="noopener" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white"><Icon name="ph:google-drive-logo-bold" class="align-middle" /> Pasta no Drive</a>
           <button v-else-if="driveOk" type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 hover:bg-primary hover:text-white" :disabled="criandoPasta" @click="criarPastaDrive">
             <Icon name="ph:google-drive-logo-bold" class="align-middle" /> {{ criandoPasta ? 'Criando…' : 'Criar pasta no Drive' }}
@@ -231,25 +231,23 @@
             <span class="tag">{{ STATUS_CASO[k.status] }}</span>
           </div>
           <p class="text-xs text-gray-500">
-            {{ TIPOS_CASO[k.tipo] }}<span v-if="k.procedimento"> · {{ PROCEDIMENTOS.find(p => p.valor === k.procedimento)?.rotulo }}</span>
-            <span v-if="k.tipo === 'extrajudicial' && k.orgao"> · {{ k.orgao }}</span>
+            Atuação {{ TIPOS_CASO[k.tipo].toLowerCase() }}<span v-if="k.procedimento"> · {{ PROCEDIMENTOS.find(p => p.valor === k.procedimento)?.rotulo }}</span>
           </p>
-          <!-- Dados de processo: só quando há processo -->
-          <template v-if="k.tipo === 'judicial'">
-            <p class="text-xs text-gray-500"><span v-if="k.numero_processo" class="font-mono">{{ k.numero_processo }}</span><span v-if="k.orgao"> · {{ k.orgao }}</span><span v-if="k.comarca"> · {{ k.comarca }}/{{ k.uf }}</span></p>
-            <p v-if="k.fase_processual || k.valor_causa" class="text-xs text-gray-500">
-              <span v-if="k.fase_processual">Fase: {{ k.fase_processual }}</span>
-              <span v-if="k.fase_processual && k.valor_causa"> · </span>
-              <span v-if="k.valor_causa">Valor da causa: {{ brl(k.valor_causa) }}</span>
-            </p>
-          </template>
-          <p v-if="k.parte_contraria" class="text-xs">{{ k.tipo === 'judicial' ? 'Parte contrária' : 'Outra parte' }}: {{ k.parte_contraria }}</p>
           <div class="flex flex-wrap gap-3 pt-1 text-xs">
-            <button class="underline underline-offset-2" @click="editarCaso(k)">Editar</button>
-            <NuxtLink :to="`/crm?aba=hoje&ver=calendario&contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">{{ k.tipo === 'judicial' ? 'Novo prazo' : 'Novo compromisso' }}</NuxtLink>
+            <button class="underline underline-offset-2" @click="editarCaso(k)">Editar demanda</button>
+            <button type="button" class="underline underline-offset-2" @click="novoProcesso(k, 'judicial')">+ Processo judicial</button>
+            <button type="button" class="underline underline-offset-2" @click="novoProcesso(k, 'extrajudicial')">+ Procedimento extrajudicial</button>
+            <NuxtLink :to="`/agenda?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo / compromisso</NuxtLink>
             <button v-if="ehAdmin && k.tipo !== 'consultivo'" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração desta demanda</button>
-            <a v-if="k.link_tribunal" :href="k.link_tribunal" target="_blank" rel="noopener" class="underline underline-offset-2">Ver no tribunal</a>
           </div>
+          <div v-if="processosDaDemanda(k.id).length" class="mt-3 space-y-2">
+            <ProcessoCard v-for="pr in processosDaDemanda(k.id)" :key="pr.id" :processo="pr" :movimentacoes="movsDoProcesso(pr.id)" @editar="editarProcesso" @mudou="carregar" />
+          </div>
+          <p v-else class="text-xs text-gray-400 pt-1">Sem processo ou procedimento: a demanda é {{ k.tipo === 'consultivo' ? 'consultiva/documental' : 'só um serviço a acompanhar' }}. Registre um quando existir.</p>
+          <details class="mt-3" :open="partesDaDemanda(k.id).length > 0">
+            <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Partes e interessados <span class="normal-case tracking-normal font-normal">· {{ partesDaDemanda(k.id).length }}</span></summary>
+            <PartesDemanda class="mt-2" :partes="partesDaDemanda(k.id)" :caso-id="k.id" @mudou="carregar" />
+          </details>
           <ChecklistPainel v-if="dados.checklist?.casos[k.id]" class="mt-2" :escopo="dados.checklist.casos[k.id]!" @alternar="i => alternarChecklist(i, k.id)" />
           <p v-else class="text-xs text-gray-400 pt-1">Sem procedimento definido. <button type="button" class="underline underline-offset-2 hover:text-primary" @click="editarCaso(k)">Escolha o procedimento</button> para acompanhar as etapas desta demanda.</p>
           <InformacoesCliente :key="`d${k.id}`" class="mt-2" :contato-id="dados.contato.id" :caso-id="k.id" iniciar-aberto />
@@ -277,6 +275,7 @@
           </ul>
           <DocumentosDemanda v-if="docsGerais.length" :docs="docsGerais" :contato-id="dados.contato.id" :caso-id="null" @mudou="carregar" @cobrar="cobrarDocs" />
         </div>
+        <ProcessoFormModal :is-open="processoAberto" :caso-id="processoCaso" :natureza="processoNatureza" :processo="processoEditando" @close="processoAberto = false" @salvo="processoAberto = false; carregar()" />
         <CasoFormModal :is-open="casoAberto" :contato="dados.contato" :caso="casoEditando" @close="casoAberto = false" @salvo="casoAberto = false; carregar()" />
       </div>
 
@@ -326,20 +325,23 @@ import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import PreFormularioEditor from './PreFormularioEditor.vue'
 import { PROCEDIMENTOS } from '~~/shared/data/checklist'
-import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Movimentacao, type Parte, type Processo, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
 import ChecklistPainel from './ChecklistPainel.vue'
 import InformacoesCliente from './InformacoesCliente.vue'
 import type { ChecklistFicha, ItemChecklist } from '../../../shared/types/checklist'
 import DocumentosDemanda from './DocumentosDemanda.vue'
+import ProcessoCard from './ProcessoCard.vue'
+import ProcessoFormModal from './ProcessoFormModal.vue'
+import PartesDemanda from './PartesDemanda.vue'
 import { useProfileStore } from '../../stores/profile'
 import ModeloPicker from './ModeloPicker.vue'
 import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
+interface Detalhe { processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string; modeloInicial?: string | null }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
@@ -486,6 +488,15 @@ const ehAdmin = computed(() => useProfileStore().profile?.role === 'admin')
 
 // ─── Casos ────────────────────────────────────────────────────────────────
 const casoAberto = ref(false)
+const processosDaDemanda = (id: number) => (dados.value?.processos ?? []).filter(p => p.caso_id === id)
+const partesDaDemanda = (id: number) => (dados.value?.partes ?? []).filter(p => p.caso_id === id)
+const movsDoProcesso = (id: number) => (dados.value?.movimentacoes ?? []).filter(m => m.processo_id === id)
+const processoAberto = ref(false)
+const processoCaso = ref<number>(0)
+const processoNatureza = ref<'judicial' | 'extrajudicial'>('judicial')
+const processoEditando = ref<Processo | null>(null)
+function novoProcesso(k: Caso, natureza: 'judicial' | 'extrajudicial') { processoCaso.value = k.id; processoNatureza.value = natureza; processoEditando.value = null; processoAberto.value = true }
+function editarProcesso(p: Processo) { processoCaso.value = p.caso_id; processoNatureza.value = p.natureza; processoEditando.value = p; processoAberto.value = true }
 const verEncerradas = ref(false)
 const encerradas = computed(() => (dados.value?.casos ?? []).filter(c => c.status === 'encerrado'))
 const demandasVisiveis = computed(() => (dados.value?.casos ?? []).filter(c => c.status !== 'encerrado' || verEncerradas.value))

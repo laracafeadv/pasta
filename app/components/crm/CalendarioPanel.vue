@@ -85,6 +85,7 @@ const editando = ref<Compromisso | null>(null)
 const form = reactive<Record<string, any>>({})
 const contatos = ref<Pick<Contato, 'id' | 'nome'>[]>([])
 const casos = ref<Caso[]>([])
+const processosDaDemanda = computed(() => casos.value.find(k => k.id === form.caso_id)?.processos ?? [])
 
 async function carregarOpcoes() {
   if (!contatos.value.length) {
@@ -100,7 +101,7 @@ async function novo(contatoId: number | null = null, casoId: number | null = nul
   editando.value = null
   erro.value = null
   Object.assign(form, {
-    tipo: casoId ? 'prazo' : 'tarefa', titulo: '', contato_id: contatoId, caso_id: casoId,
+    tipo: casoId ? 'prazo' : 'tarefa', titulo: '', contato_id: contatoId, caso_id: casoId, processo_id: null,
     data_publicacao: hoje, dias_prazo: 15, data_limite: somarDias(hoje, 1), inicio_local: '', local: '', observacao: '',
   })
   await carregarOpcoes()
@@ -197,8 +198,12 @@ async function excluir() {
           <select v-model="form.contato_id" class="modal-input"><option :value="null">—</option><option v-for="c in contatos" :key="c.id" :value="c.id">{{ c.nome }}</option></select>
         </label>
         <label v-if="casos.length" class="field sm:col-span-2">
-          <span>Caso</span>
-          <select v-model="form.caso_id" class="modal-input"><option :value="null">—</option><option v-for="k in casos" :key="k.id" :value="k.id">{{ k.titulo }}{{ k.numero_processo ? ` · ${k.numero_processo}` : '' }}</option></select>
+          <span>Demanda</span>
+          <select v-model="form.caso_id" class="modal-input" @change="form.processo_id = null"><option :value="null">—</option><option v-for="k in casos" :key="k.id" :value="k.id">{{ k.titulo }}</option></select>
+        </label>
+        <label v-if="processosDaDemanda.length" class="field sm:col-span-2">
+          <span>Processo / procedimento</span>
+          <select v-model="form.processo_id" class="modal-input"><option :value="null">—</option><option v-for="pr in processosDaDemanda" :key="pr.id" :value="pr.id">{{ pr.natureza === 'judicial' ? 'Processo' : 'Procedimento' }} {{ pr.numero || pr.orgao || '' }}</option></select>
         </label>
         <label class="field sm:col-span-2"><span>Descrição *</span><input v-model="form.titulo" class="modal-input" required :placeholder="form.tipo === 'prazo' ? 'Ex.: Contestação' : 'Ex.: Audiência de conciliação'" /></label>
 

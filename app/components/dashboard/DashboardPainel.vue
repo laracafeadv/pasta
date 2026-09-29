@@ -117,7 +117,7 @@
               </ul>
             </div>
           </div>
-          <NuxtLink to="/crm?aba=hoje&ver=calendario" class="inline-block mt-4 text-xs font-semibold text-primary dark:text-zinc-200 underline underline-offset-2">Abrir a agenda completa</NuxtLink>
+          <NuxtLink to="/agenda" class="inline-block mt-4 text-xs font-semibold text-primary dark:text-zinc-200 underline underline-offset-2">Abrir a agenda completa</NuxtLink>
         </section>
       </div>
 
@@ -142,7 +142,7 @@
         <section v-if="visiveis.casos" class="painel" :class="visiveis.atividade ? 'xl:col-span-2' : 'xl:col-span-3'">
           <div class="flex items-baseline justify-between mb-3">
             <h2 class="titulo">Demandas em andamento</h2>
-            <NuxtLink to="/clientes?aba=casos" class="text-xs text-gray-500 hover:text-primary underline underline-offset-2">Ver todos</NuxtLink>
+            <NuxtLink to="/demandas" class="text-xs text-gray-500 hover:text-primary underline underline-offset-2">Ver todos</NuxtLink>
           </div>
           <p v-if="!data.casosAndamento.length" class="text-sm text-gray-500 py-2">Nenhuma demanda ativa.</p>
           <ul v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
@@ -346,8 +346,8 @@ const chips = computed(() => {
   const r = data.value?.resumo
   if (!r) return []
   const lista = [
-    { rotulo: 'Tarefas abertas', valor: r.abertas.tarefas, to: '/clientes?aba=tarefas' },
-    { rotulo: 'Prazos pendentes', valor: r.abertas.prazos, to: '/clientes?aba=prazos' },
+    { rotulo: 'Tarefas abertas', valor: r.abertas.tarefas, to: '/tarefas' },
+    { rotulo: 'Prazos pendentes', valor: r.abertas.prazos, to: '/prazos' },
     { rotulo: 'Clientes com documentos pendentes', valor: r.abertas.documentosClientes, to: '/clientes' },
     { rotulo: 'Leads em aberto', valor: r.carteira.leadsAbertos, to: '/leads' },
     { rotulo: r.abertas.propostas ? `Propostas em aberto (${brl(r.abertas.propostasValor)})` : 'Propostas em aberto', valor: r.abertas.propostas, to: '/honorarios' },

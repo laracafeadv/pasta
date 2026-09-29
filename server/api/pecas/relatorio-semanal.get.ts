@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
   const [{ data: contato }, { data: casos }, { data: comps }, { data: docs }, escritorio] = await Promise.all([
     admin.from('contatos').select('nome, demanda').eq('id', contatoId).single(),
-    admin.from('casos').select('titulo, numero_processo, orgao, status').eq('contato_id', contatoId).eq('status', 'ativo'),
+    admin.from('casos').select('titulo, status, processos(numero, orgao, natureza, status)').eq('contato_id', contatoId).eq('status', 'ativo'),
     admin.from('compromissos').select('*').eq('contato_id', contatoId).limit(200),
     admin.from('documentos').select('descricao, status').eq('contato_id', contatoId).eq('status', 'pendente'),
     carregarEscritorio(admin),
@@ -39,7 +39,8 @@ export default defineEventHandler(async (event) => {
     { titulo: 'Período:', texto: `${br(inicio)} a ${br(hoje)}` },
   ]
   for (const k of casos ?? []) {
-    blocos.push({ titulo: 'Caso:', texto: `${k.titulo}${k.numero_processo ? ` — processo nº ${k.numero_processo}` : ''}${k.orgao ? ` (${k.orgao})` : ''}`, espaco: 60 })
+    blocos.push({ titulo: 'Demanda:', texto: k.titulo, espaco: 30 })
+    for (const pr of (k as any).processos ?? []) if (pr.status !== 'encerrado') blocos.push({ titulo: pr.natureza === 'judicial' ? 'Processo:' : 'Procedimento:', texto: `${pr.numero ? `nº ${pr.numero}` : 'sem número'}${pr.orgao ? ` (${pr.orgao})` : ''}`, espaco: 30 })
   }
   blocos.push({ negrito: 'O que foi feito nesta semana', espaco: 80 })
   if (feitos.length) for (const c of feitos) blocos.push({ texto: `• ${br(c.concluido_em!.slice(0, 10))} — ${c.titulo}`, espaco: 40 })
