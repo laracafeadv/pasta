@@ -1,6 +1,4 @@
-import { toFile } from 'openai'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { criarOpenAI } from './agente'
 import { baixarMidia, type MensagemRecebida } from './whatsapp'
 import { driveConfigurado, enviarArquivo, garantirPastaCliente } from './drive'
 import { NIVEIS_SIGILO, codigoCliente, nomeArquivoPadrao } from '../../shared/types/crm'
@@ -12,8 +10,8 @@ const EXTENSOES: Record<string, string> = {
 }
 
 /**
- * Guarda a mídia recebida no bucket privado e, se for áudio, transcreve.
- * Devolve o texto que representa a mensagem na conversa (para a equipe e para a Ana).
+ * Guarda a mídia recebida no bucket privado.
+ * Devolve o texto que representa a mensagem na conversa (para a equipe).
  * Falhas não interrompem o atendimento: a mensagem fica registrada mesmo assim.
  */
 export async function processarMidia(admin: SupabaseClient, contatoId: number, mensagemId: number, msg: MensagemRecebida): Promise<string> {
@@ -32,26 +30,7 @@ export async function processarMidia(admin: SupabaseClient, contatoId: number, m
     atualizacao.midia_path = caminho
     atualizacao.midia_tipo = tipoBase
 
-    if (msg.tipo === 'audio') {
-      try {
-        const { openai } = criarOpenAI()
-        const r = await openai.audio.transcriptions.create({
-          file: await toFile(buffer, `audio.${ext}`, { type: tipoBase }),
-          model: process.env.OPENAI_TRANSCRIBE_MODEL || 'whisper-1',
-          language: 'pt',
-        })
-        const texto = (r.text ?? '').trim()
-        if (texto) {
-          atualizacao.transcricao = texto.slice(0, 8000)
-          conteudo = `🎤 ${texto}`
-        } else {
-          conteudo = '[áudio não transcrito]'
-        }
-      } catch (e) {
-        console.error('[midia] Falha na transcrição:', e)
-        conteudo = '[áudio não transcrito]'
-      }
-    } else if (msg.tipo === 'document' && m.nome) {
+    if (msg.tipo === 'document' && m.nome) {
       conteudo = `[o cliente enviou o documento "${m.nome}"]${legenda}`
     }
 

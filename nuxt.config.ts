@@ -122,7 +122,6 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     // Private — server-side only
-    openaiApiKey: process.env.OPENAI_API_KEY ?? '',
     resendApiKey: process.env.RESEND_API_KEY ?? '',
     mailerSenderEmail: process.env.MAILER_SENDER_EMAIL ?? '',
     supabaseSecretKey: process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
@@ -131,8 +130,6 @@ export default defineNuxtConfig({
     whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? '',
     whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? '',
     whatsappAppSecret: process.env.WHATSAPP_APP_SECRET ?? '',
-    // Modelo usado pela assistente no WhatsApp
-    openaiModel: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
       originalSiteUrl: process.env.NUXT_PUBLIC_ORIGINAL_SITE_URL ?? '',
@@ -141,12 +138,7 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
-    // Na Vercel: tempo para a Ana responder depois do webhook (event.waitUntil) e para gerar peças.
+    // Na Vercel: tempo para gerar peças em Word.
     vercel: { functions: { maxDuration: 60 } },
-    // Prevent Nitro from bundling CJS-only packages — they generate
-    // invalid Windows absolute paths ('d:/...') in the ESM bundle
-    externals: {
-      external: ['pdf-parse', 'xlsx'],
-    },
   },
 })

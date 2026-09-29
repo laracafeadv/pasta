@@ -6,7 +6,6 @@ import type { EcoEnviado } from './whatsapp'
 /**
  * Registra no CRM uma mensagem enviada pelo aplicativo do celular.
  * Só para quem já é contato: conversas pessoais do número não entram no sistema.
- * Como a advogada respondeu pessoalmente, a Ana para de responder esse contato.
  */
 export async function registrarEco(event: H3Event, eco: EcoEnviado) {
   const admin = serverSupabaseServiceRole(event)
@@ -17,5 +16,5 @@ export async function registrarEco(event: H3Event, eco: EcoEnviado) {
   })
   if (error && error.code !== '23505') console.error('[whatsapp/eco] Erro:', error)
   if (error) return
-  await admin.from('contatos').update({ ia_ativa: false, ultimo_contato_em: new Date(eco.timestamp).toISOString() }).eq('id', contato.id)
+  await admin.from('contatos').update({ ultimo_contato_em: new Date(eco.timestamp).toISOString() }).eq('id', contato.id)
 }

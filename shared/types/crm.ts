@@ -321,7 +321,7 @@ export interface FormularioEnvioDetalhe extends FormularioEnvio {
   respostas: FormularioEnvioResposta[]
 }
 
-// ─── Dados do escritório (tela "Escritório"; alimentam a Ana e as peças) ─────
+// ─── Dados do escritório (tela "Configurações"; alimentam as peças e as mensagens prontas) ─────
 export const ESCRITORIO_CAMPOS = [
   { chave: 'advogada_nome', rotulo: 'Nome da advogada', grupo: 'Identificação', exemplo: 'Lara Café' },
   { chave: 'oab', rotulo: 'OAB (número/UF)', grupo: 'Identificação', exemplo: '000.000/SP' },
@@ -330,16 +330,16 @@ export const ESCRITORIO_CAMPOS = [
   { chave: 'telefone', rotulo: 'Telefone / WhatsApp', grupo: 'Identificação', exemplo: '(71) 99381-2266' },
   { chave: 'endereco', rotulo: 'Endereço profissional completo', grupo: 'Identificação', exemplo: 'Rua…, nº…, bairro, cidade/UF, CEP' },
   { chave: 'cidade_foro', rotulo: 'Cidade para foro e assinatura', grupo: 'Identificação', exemplo: 'Salvador/BA' },
-  { chave: 'proposta_valor', rotulo: 'Proposta única de valor', grupo: 'Posicionamento (usado pela Ana)', exemplo: 'Eu ajudo mulheres a atravessar a separação com segurança, por meio de uma advocacia humana e estratégica, sem reviver o desgaste do conflito.' },
-  { chave: 'tom_de_voz', rotulo: 'Tom de voz nas mensagens', grupo: 'Posicionamento (usado pela Ana)', exemplo: 'Acolhedor; sem ponto final no fim das mensagens; emoji 🤍 com moderação' },
-  { chave: 'nao_atende', rotulo: 'Casos que não atendo (e para onde encaminho)', grupo: 'Posicionamento (usado pela Ana)', exemplo: 'Violência doméstica: encaminho a uma parceira; trabalhista e previdenciário' },
-  { chave: 'valor_consulta', rotulo: 'Valor da consulta', grupo: 'Consulta (usado pela Ana)', exemplo: 'R$ 350,00' },
-  { chave: 'consulta_abatida', rotulo: 'Consulta abatida dos honorários?', grupo: 'Consulta (usado pela Ana)', exemplo: 'sim' },
-  { chave: 'duracao_consulta', rotulo: 'Duração média da consulta', grupo: 'Consulta (usado pela Ana)', exemplo: '60 minutos' },
-  { chave: 'plataforma_consulta', rotulo: 'Plataforma da videochamada', grupo: 'Consulta (usado pela Ana)', exemplo: 'Google Meet' },
-  { chave: 'horario_atendimento', rotulo: 'Horário de atendimento', grupo: 'Consulta (usado pela Ana)', exemplo: 'segunda a sexta, das 9h às 18h' },
-  { chave: 'chave_pix', rotulo: 'Chave PIX (a Ana não envia; só você)', grupo: 'Pagamento', exemplo: 'CNPJ ou e-mail' },
-  { chave: 'dados_bancarios', rotulo: 'Conta para depósito (a Ana não envia; só você)', grupo: 'Pagamento', exemplo: 'Banco, agência, conta, titular' },
+  { chave: 'proposta_valor', rotulo: 'Proposta única de valor', grupo: 'Posicionamento', exemplo: 'Eu ajudo mulheres a atravessar a separação com segurança, por meio de uma advocacia humana e estratégica, sem reviver o desgaste do conflito.' },
+  { chave: 'tom_de_voz', rotulo: 'Tom de voz nas mensagens', grupo: 'Posicionamento', exemplo: 'Acolhedor; sem ponto final no fim das mensagens; emoji 🤍 com moderação' },
+  { chave: 'nao_atende', rotulo: 'Casos que não atendo (e para onde encaminho)', grupo: 'Posicionamento', exemplo: 'Violência doméstica: encaminho a uma parceira; trabalhista e previdenciário' },
+  { chave: 'valor_consulta', rotulo: 'Valor da consulta', grupo: 'Consulta', exemplo: 'R$ 350,00' },
+  { chave: 'consulta_abatida', rotulo: 'Consulta abatida dos honorários?', grupo: 'Consulta', exemplo: 'sim' },
+  { chave: 'duracao_consulta', rotulo: 'Duração média da consulta', grupo: 'Consulta', exemplo: '60 minutos' },
+  { chave: 'plataforma_consulta', rotulo: 'Plataforma da videochamada', grupo: 'Consulta', exemplo: 'Google Meet' },
+  { chave: 'horario_atendimento', rotulo: 'Horário de atendimento', grupo: 'Consulta', exemplo: 'segunda a sexta, das 9h às 18h' },
+  { chave: 'chave_pix', rotulo: 'Chave PIX', grupo: 'Pagamento', exemplo: 'CNPJ ou e-mail' },
+  { chave: 'dados_bancarios', rotulo: 'Conta para depósito', grupo: 'Pagamento', exemplo: 'Banco, agência, conta, titular' },
   { chave: 'link_avaliacao', rotulo: 'Link de avaliação no Google', grupo: 'Pagamento', exemplo: 'https://g.page/…' },
 ] as const
 export type ChaveEscritorio = typeof ESCRITORIO_CAMPOS[number]['chave']

@@ -36,8 +36,7 @@ export default defineEventHandler(async (event) => {
   const ecos = extrairEcos(payload)
   const campos = ((payload as any)?.entry ?? []).flatMap((e: any) => (e?.changes ?? []).map((c: any) => c?.field))
   await registrarDiagnostico(event, { ok: true, campos, mensagens: mensagens.length, ecos: ecos.length })
-  // 1) Grava tudo ANTES de responder (na Vercel o processo pode parar logo após a resposta).
-  const respostasDaAna: (() => Promise<void>)[] = []
+  // Grava tudo ANTES de responder (na Vercel o processo pode parar logo após a resposta).
   for (const eco of ecos) {
     try {
       await registrarEco(event, eco)
@@ -47,25 +46,10 @@ export default defineEventHandler(async (event) => {
   }
   for (const m of mensagens) {
     try {
-      const continuar = await processarMensagem(event, m)
-      if (continuar) respostasDaAna.push(continuar)
+      await processarMensagem(event, m)
     } catch (e) {
       console.error('[whatsapp/webhook] Erro ao processar mensagem:', e)
     }
   }
-  // 2) A resposta da Ana (espera mensagens seguidas + IA) segue em segundo plano.
-  if (respostasDaAna.length) {
-    const tarefa = (async () => {
-      for (const responder of respostasDaAna) {
-        try {
-          await responder()
-        } catch (e) {
-          console.error('[whatsapp/webhook] Erro na resposta da assistente:', e)
-        }
-      }
-    })()
-    if (typeof event.waitUntil === 'function') event.waitUntil(tarefa)
-  }
-
   return { ok: true }
 })

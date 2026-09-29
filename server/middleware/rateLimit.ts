@@ -1,14 +1,12 @@
 import { defineEventHandler, getRequestURL, getRequestHeader, setResponseHeader, createError } from 'h3'
 
 /**
- * In-memory rate limiter for expensive API routes (OpenAI/EVA).
+ * In-memory rate limiter for sensitive API routes.
  * Limits each IP to MAX_REQUESTS per WINDOW_MS on protected paths.
  */
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
 
 const RATE_LIMITED_PATHS = [
-  '/api/eva/simular',
-  '/api/eva/rag',
   '/api/email/send',
   '/api/admin/users',
   '/api/formulario',

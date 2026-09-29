@@ -25,9 +25,6 @@ export default defineEventHandler(async (event) => {
     const motivo = data.etapa === 'perdido' && updated.motivo_perda ? ` (${updated.motivo_perda})` : ''
     await registrarAtividade(event, id, 'Sistema', `Etapa: ${etapa(anterior.etapa).nome} → ${etapa(data.etapa).nome}${motivo}`, userId)
   }
-  if (anterior && 'ia_ativa' in data && anterior.ia_ativa !== data.ia_ativa) {
-    await registrarAtividade(event, id, 'Sistema', data.ia_ativa ? 'Assistente de IA reativada nesta conversa.' : 'Equipe assumiu a conversa (IA pausada).', userId)
-  }
 
   const alterados = camposAlterados(anterior, data as Record<string, any>)
   if (alterados.length) await auditar(event, 'editou contato', 'contato', id, { campos: alterados })
