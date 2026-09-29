@@ -285,7 +285,8 @@ export interface ModeloMensagem {
   ativo: boolean
 }
 
-export type TipoPergunta = 'texto_curto' | 'texto_longo' | 'numero' | 'data' | 'email' | 'telefone' | 'sim_nao' | 'selecao_unica' | 'selecao_multipla' | 'checklist'
+import type { Condicao, ContextoFormulario, TipoPergunta } from '../data/formulario'
+export type { TipoPergunta }
 
 export interface FormularioPergunta {
   id: number
@@ -295,35 +296,47 @@ export interface FormularioPergunta {
   arquivada: boolean
   escopo: 'cliente' | 'demanda'
   procedimentos: string[]
-  /** Só aparece na ficha quando a resposta da pergunta indicada for igual ao valor. */
-  mostrar_se?: { pergunta_id: number; igual_a: string } | null
   secao: string
   ordem: number
   ajuda: string | null
+  versao?: number
 }
 
 /** Resposta atual de um cliente a uma pergunta (string, lista de opções marcadas ou nada). */
 export type ValorResposta = string | string[] | null
 
-/** Uma pergunta na ficha: a definição (do construtor) + a resposta atual do cliente. */
-export interface PerguntaDaFicha extends Pick<FormularioPergunta, 'id' | 'texto' | 'tipo' | 'opcoes' | 'ajuda' | 'arquivada' | 'mostrar_se'> {
+/** Pergunta como aparece na ficha (Informações do cliente / da demanda), com a resposta atual. */
+export interface PerguntaDaFicha {
+  id: number
+  texto: string
+  tipo: TipoPergunta
+  opcoes: string[]
+  ajuda: string | null
+  obrigatoria: boolean
+  /** Pergunta que saiu do formulário mas tem resposta guardada (histórico). */
+  arquivada: boolean
+  mostrar_se: Condicao | null
   resposta: ValorResposta
   respondido_em: string | null
 }
-export interface SecaoDaFicha { nome: string; perguntas: PerguntaDaFicha[] }
+export interface SecaoDaFicha { nome: string; formulario_id: number | null; mostrar_se: Condicao | null; perguntas: PerguntaDaFicha[] }
 
 export interface FormularioItem {
   id: number
   pergunta_id: number
   ordem: number
   obrigatoria: boolean
-  pergunta: FormularioPergunta
+  pergunta: Pick<FormularioPergunta, 'id' | 'texto' | 'tipo'>
 }
 
 export interface Formulario {
   id: number
   nome: string
+  descricao: string | null
+  contexto: ContextoFormulario
+  procedimentos: string[]
   ativo: boolean
+  updated_at?: string
   itens: FormularioItem[]
 }
 

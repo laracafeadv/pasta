@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { estruturaPublica } from './formularioEstrutura'
 
 export const FORM_VALIDADE_DIAS = 30
 export const FORM_MAX_ARQUIVOS = 15
@@ -19,7 +20,7 @@ export async function contatoDoFormulario(admin: SupabaseClient, token: string |
 
 export const PRE_FORM_VALIDADE_DIAS = 14
 
-/** Valida o link de um envio do formulário pré-consulta e traz o contato + as perguntas do formulário escolhido, se houver. */
+/** Valida o link de um envio do formulário pré-consulta e traz o contato + a estrutura (seções, perguntas, lógica) do formulário escolhido, se houver. */
 export async function envioDoPreFormulario(admin: SupabaseClient, token: string | undefined) {
   if (!token || !/^[A-Za-z0-9_-]{32,64}$/.test(token)) throw createError({ statusCode: 404, message: 'Link inválido.' })
   const { data: envio } = await admin.from('formulario_envios')
@@ -28,12 +29,6 @@ export async function envioDoPreFormulario(admin: SupabaseClient, token: string 
   if (!envio || new Date(envio.expira_em).getTime() < Date.now()) {
     throw createError({ statusCode: 404, message: 'Este link não é mais válido. Peça um novo ao escritório.' })
   }
-  let itens: { pergunta_id: number; obrigatoria: boolean; pergunta: { texto: string; tipo: string; opcoes: string[]; escopo?: string } }[] = []
-  if (envio.formulario_id) {
-    const { data } = await admin.from('formulario_itens')
-      .select('pergunta_id, obrigatoria, ordem, pergunta:formulario_perguntas(texto, tipo, opcoes, escopo)')
-      .eq('formulario_id', envio.formulario_id).order('ordem')
-    itens = (data ?? []) as any
-  }
-  return { ...envio, itens }
+  const estrutura = envio.formulario_id ? await estruturaPublica(admin, envio.formulario_id).catch(() => null) : null
+  return { ...envio, estrutura }
 }

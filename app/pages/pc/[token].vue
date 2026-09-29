@@ -20,54 +20,47 @@
           </p>
         </section>
 
-        <form v-if="!enviado" class="space-y-6" @submit.prevent="enviar">
-          <section class="card space-y-4">
-            <label class="campo"><span>Conte um pouco da sua situação *</span>
-              <textarea id="pf-resumo" v-model="f.resumo" rows="5" class="modal-input" required placeholder="O que está acontecendo, desde quando, e o que você espera resolver..." />
-            </label>
-
-            <label v-for="(p, i) in info.perguntas" :key="i" class="campo">
-              <span>{{ p.texto }}{{ p.obrigatoria ? ' *' : '' }}</span>
-
-              <textarea v-if="p.tipo === 'texto_longo'" v-model="respostas[i]" rows="3" class="modal-input" :required="p.obrigatoria" />
-              <input v-else-if="p.tipo === 'numero'" v-model="respostas[i]" type="number" class="modal-input" :required="p.obrigatoria" />
-              <input v-else-if="p.tipo === 'data'" v-model="respostas[i]" type="date" class="modal-input" :required="p.obrigatoria" />
-              <input v-else-if="p.tipo === 'email'" v-model="respostas[i]" type="email" class="modal-input" :required="p.obrigatoria" />
-              <input v-else-if="p.tipo === 'telefone'" v-model="respostas[i]" type="tel" class="modal-input" :required="p.obrigatoria" />
-
-              <div v-else-if="p.tipo === 'sim_nao'" class="flex gap-4 text-sm">
-                <label class="flex items-center gap-1.5"><input v-model="respostas[i]" type="radio" value="Sim" :name="`p${i}`" class="accent-[#3c2923]" /> Sim</label>
-                <label class="flex items-center gap-1.5"><input v-model="respostas[i]" type="radio" value="Não" :name="`p${i}`" class="accent-[#3c2923]" /> Não</label>
-              </div>
-
-              <div v-else-if="p.tipo === 'selecao_unica'" class="flex flex-col gap-1.5 text-sm">
-                <label v-for="op in p.opcoes" :key="op" class="flex items-center gap-1.5">
-                  <input v-model="respostas[i]" type="radio" :value="op" :name="`p${i}`" class="accent-[#3c2923]" /> {{ op }}
-                </label>
-              </div>
-
-              <div v-else-if="p.tipo === 'selecao_multipla' || p.tipo === 'checklist'" class="flex flex-col gap-1.5 text-sm">
-                <label v-for="op in p.opcoes" :key="op" class="flex items-center gap-1.5">
-                  <input type="checkbox" :checked="((respostas[i] as string[] | undefined)?.includes(op))" class="accent-[#3c2923]" @change="alternarOpcao(i, op)" /> {{ op }}
-                </label>
-              </div>
-
-              <input v-else v-model="respostas[i]" type="text" class="modal-input" :required="p.obrigatoria" />
-            </label>
+        <template v-if="!enviado">
+          <section v-if="info.formulario?.nome || info.formulario?.descricao" class="card space-y-1">
+            <h2 class="text-xl text-primary dark:text-zinc-100">{{ info.formulario?.nome }}</h2>
+            <p v-if="info.formulario?.descricao" class="text-sm text-gray-500">{{ info.formulario.descricao }}</p>
           </section>
 
-          <section class="card space-y-3">
-            <label class="flex items-start gap-3 text-sm cursor-pointer">
-              <input id="pf-lgpd" v-model="f.consentimento" type="checkbox" class="mt-1 accent-[#3c2923]" required />
-              <span>
-                Li e concordo: minhas respostas serão usadas só para preparar o meu atendimento, com sigilo profissional e conforme a LGPD
-                (<a href="https://laracafe.com.br/politica-de-privacidade" target="_blank" rel="noopener" class="underline">política de privacidade</a>). *
-              </span>
-            </label>
-            <p v-if="erro" class="text-sm text-danger">{{ erro }}</p>
-            <button type="submit" class="botao" :disabled="enviando">{{ enviando ? 'Enviando…' : 'Enviar respostas' }}</button>
-          </section>
-        </form>
+          <FormularioPreenchimento v-if="info.secoes.length" v-model="respostas" :secoes="info.secoes" :enviando="enviando" @enviar="enviar">
+            <template #inicio>
+              <section class="card space-y-2">
+                <label class="campo"><span>Conte um pouco da sua situação *</span>
+                  <textarea id="pf-resumo" v-model="f.resumo" rows="5" class="modal-input" required placeholder="O que está acontecendo, desde quando, e o que você espera resolver..." />
+                </label>
+              </section>
+            </template>
+            <template #fim>
+              <section class="card space-y-3">
+                <label class="flex items-start gap-3 text-sm cursor-pointer">
+                  <input id="pf-lgpd" v-model="f.consentimento" type="checkbox" class="mt-1 accent-[#3c2923]" required />
+                  <span>Li e concordo: minhas respostas serão usadas só para preparar o meu atendimento, com sigilo profissional e conforme a LGPD (<a href="https://laracafe.com.br/politica-de-privacidade" target="_blank" rel="noopener" class="underline">política de privacidade</a>). *</span>
+                </label>
+                <p v-if="erro" class="text-sm text-danger">{{ erro }}</p>
+              </section>
+            </template>
+          </FormularioPreenchimento>
+
+          <form v-else class="space-y-6" @submit.prevent="enviar">
+            <section class="card space-y-4">
+              <label class="campo"><span>Conte um pouco da sua situação *</span>
+                <textarea id="pf-resumo" v-model="f.resumo" rows="5" class="modal-input" required placeholder="O que está acontecendo, desde quando, e o que você espera resolver..." />
+              </label>
+            </section>
+            <section class="card space-y-3">
+              <label class="flex items-start gap-3 text-sm cursor-pointer">
+                <input id="pf-lgpd" v-model="f.consentimento" type="checkbox" class="mt-1 accent-[#3c2923]" required />
+                <span>Li e concordo: minhas respostas serão usadas só para preparar o meu atendimento, com sigilo profissional e conforme a LGPD (<a href="https://laracafe.com.br/politica-de-privacidade" target="_blank" rel="noopener" class="underline">política de privacidade</a>). *</span>
+              </label>
+              <p v-if="erro" class="text-sm text-danger">{{ erro }}</p>
+              <button type="submit" class="botao" :disabled="enviando">{{ enviando ? 'Enviando…' : 'Enviar respostas' }}</button>
+            </section>
+          </form>
+        </template>
 
         <section v-else class="card space-y-1">
           <h2 class="text-xl text-primary dark:text-zinc-100">Recebemos, obrigada! 🤍</h2>
@@ -83,15 +76,16 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { definePageMeta, useHead, useRoute } from '#imports'
+import FormularioPreenchimento from '~/components/formularios/FormularioPreenchimento.vue'
+import type { SecaoForm, Valor } from '~~/shared/data/formulario'
 
 definePageMeta({ layout: false })
 useHead({ title: 'Antes da consulta', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
-interface PerguntaPublica { texto: string; tipo: string; opcoes: string[]; obrigatoria: boolean }
 const token = String(useRoute().params.token)
-const info = ref<{ primeiroNome: string | null; advogada: string; respondido: boolean; perguntas: PerguntaPublica[] } | null>(null)
+const info = ref<{ primeiroNome: string | null; advogada: string; respondido: boolean; formulario: { nome: string; descricao: string | null } | null; secoes: SecaoForm[] } | null>(null)
 const f = reactive<Record<string, any>>({ consentimento: false })
-const respostas = ref<(string | string[])[]>([])
+const respostas = ref<Record<number, Valor>>({})
 const enviado = ref(false)
 const enviando = ref(false)
 const erro = ref('')
@@ -102,9 +96,15 @@ onMounted(async () => {
   if (preview) {
     info.value = {
       primeiroNome: 'Maria', advogada: 'a advogada', respondido: false,
-      perguntas: [
-        { texto: 'Há medida protetiva em vigor?', tipo: 'sim_nao', opcoes: [], obrigatoria: true },
-        { texto: 'Área da demanda', tipo: 'selecao_unica', opcoes: ['Divórcio', 'Inventário', 'Guarda e alimentos'], obrigatoria: false },
+      formulario: { nome: 'Exemplo de formulário', descricao: 'Assim a cliente vê o formulário que você monta em Formulários.' },
+      secoes: [
+        { id: 1, titulo: 'Sobre você', descricao: null, mostrar_se: null, itens: [
+          { pergunta_id: 1, texto: 'Possui filhos?', tipo: 'sim_nao', opcoes: [], ajuda: null, obrigatoria: true, mostrar_se: null },
+          { pergunta_id: 2, texto: 'Quantos filhos?', tipo: 'numero', opcoes: [], ajuda: null, obrigatoria: false, mostrar_se: { juntar: 'e', regras: [{ pergunta_id: 1, operador: 'igual', valor: 'Sim' }] } },
+        ] },
+        { id: 2, titulo: 'Sua demanda', descricao: null, mostrar_se: null, itens: [
+          { pergunta_id: 3, texto: 'Área da demanda', tipo: 'selecao_unica', opcoes: ['Divórcio', 'Inventário', 'Guarda e alimentos'], ajuda: null, obrigatoria: false, mostrar_se: null },
+        ] },
       ],
     }
     return
@@ -116,11 +116,6 @@ onMounted(async () => {
     erro.value = e?.data?.message || 'Este link não é mais válido. Peça um novo ao escritório.'
   }
 })
-
-function alternarOpcao(i: number, op: string) {
-  const atual = (respostas.value[i] as string[] | undefined) ?? []
-  respostas.value[i] = atual.includes(op) ? atual.filter(o => o !== op) : [...atual, op]
-}
 
 async function enviar() {
   if (preview) { erro.value = 'Isso é só uma prévia — nada é enviado de verdade.'; return }

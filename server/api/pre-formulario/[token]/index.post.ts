@@ -1,16 +1,11 @@
 import { serverSupabaseServiceRole } from '#supabase/server'
 import { useRuntimeConfig } from '#imports'
 import { envioDoPreFormulario } from '../../../utils/formulario'
+import { validarRespostasPublicas } from '../../../utils/formularioEstrutura'
 import { notificarEquipe, registrarAtividade } from '../../../utils/crm'
 import { enviarEmailEquipe } from '../../../utils/email'
 
 const txt = (v: unknown, max = 500) => (typeof v === 'string' ? v.trim().slice(0, max) : '') || null
-
-/** Normaliza uma resposta conforme o tipo da pergunta: string p/ maioria, string[] p/ seleção múltipla. */
-function normalizarResposta(v: unknown, tipo: string): string | string[] | null {
-  if (tipo === 'selecao_multipla' || tipo === 'checklist') return Array.isArray(v) ? v.map(x => String(x).trim()).filter(Boolean).slice(0, 20) : []
-  return txt(Array.isArray(v) ? v[0] : v, 1000)
-}
 
 /** Resposta do formulário pré-consulta: contexto leve para a Dra. chegar preparada. */
 export default defineEventHandler(async (event) => {
@@ -23,27 +18,22 @@ export default defineEventHandler(async (event) => {
   const resumo = txt(b.resumo, 600)
   if (!resumo) throw createError({ statusCode: 400, message: 'Conte um pouco da sua situação.' })
 
-  const respostasBrutas = Array.isArray(b.respostas) ? b.respostas : []
-  const linhas = envio.itens.map((item, i) => {
-    const resposta = normalizarResposta(respostasBrutas[i], item.pergunta.tipo)
-    const vazia = resposta == null || (Array.isArray(resposta) ? resposta.length === 0 : resposta === '')
-    if (item.obrigatoria && vazia) throw createError({ statusCode: 400, message: `A pergunta "${item.pergunta.texto}" é obrigatória.` })
-    return { envio_id: envio.id, ordem: i, pergunta_texto: item.pergunta.texto, pergunta_tipo: item.pergunta.tipo, resposta }
-  })
+  // Mesma lógica condicional da tela: pergunta escondida não é obrigatória e sua resposta é descartada.
+  const secoes = envio.estrutura?.secoes ?? []
+  const brutas = b.respostas && typeof b.respostas === 'object' && !Array.isArray(b.respostas) ? (b.respostas as Record<string, unknown>) : {}
+  const { linhas, validas } = validarRespostasPublicas(secoes, brutas)
 
   if (linhas.length) {
-    const { error } = await admin.from('formulario_envio_respostas').insert(linhas)
+    const { error } = await admin.from('formulario_envio_respostas').insert(linhas.map(l => ({ ...l, envio_id: envio.id })))
     if (error) throw createError({ statusCode: 500, message: 'Não foi possível salvar as respostas.' })
   }
 
   // A ficha do cliente mostra a resposta atual de cada pergunta: grava o que ele acabou de responder.
-  const atuais = envio.itens.flatMap((item, i) => {
-    const r = linhas[i]?.resposta
-    const vazia = r == null || (Array.isArray(r) ? r.length === 0 : r === '')
-    // Só perguntas do cliente vão para a ficha dele; as da demanda ficam no envio até existir a demanda.
-    return vazia || item.pergunta.escopo === 'demanda' ? [] : [{ contato_id: envio.contato_id, pergunta_id: item.pergunta_id, resposta: r, updated_at: new Date().toISOString() }]
-  })
-  if (atuais.length) await admin.from('contato_respostas').upsert(atuais, { onConflict: 'contato_id,pergunta_id' })
+  // Formulário de contexto "demanda" fica só no envio até existir a demanda.
+  if (envio.estrutura?.contexto !== 'demanda' && validas.size) {
+    const atuais = [...validas.entries()].map(([pergunta_id, resposta]) => ({ contato_id: envio.contato_id, pergunta_id, resposta, updated_at: new Date().toISOString() }))
+    await admin.from('contato_respostas').upsert(atuais, { onConflict: 'contato_id,pergunta_id' })
+  }
 
   const agora = new Date().toISOString()
   await admin.from('formulario_envios').update({ respondido_em: agora, status: 'respondido' }).eq('id', envio.id)

@@ -21,9 +21,9 @@
 Hierarquia: **Pessoa → Cliente → Demanda → Processo/Procedimento → Movimentações**, com Tarefas, Prazos, Documentos, Honorários e Histórico pendurados na demanda (ou no cliente, quando não pertencem a nenhuma).
 
 ## Onde cada informação mora (formulário dinâmico)
-- **Cliente**: `contato_respostas` (perguntas de escopo "cliente").
-- **Demanda**: `caso_respostas` (perguntas de escopo "demanda", opcionalmente por procedimento).
-- Perguntas condicionais (`mostrar_se`), seções, ordem, ativação e exclusão segura no construtor.
+- **Cliente / Consulta**: `contato_respostas` (formulários de contexto cliente ou consulta).
+- **Demanda**: `caso_respostas` (formulários de contexto demanda, opcionalmente só para certos serviços/procedimentos).
+- Construtor visual em `/formularios` (ver "Construtor de formulários" abaixo).
 - "Diagnóstico" não existe mais. **Dados coletados** (formulário) ficam em perguntas; a **análise jurídica do escritório** (análise, riscos, decisão) tem campos próprios na demanda (`casos.analise/riscos/decisao`).
 - **Comercial por demanda:** cada demanda tem a sua situação comercial (sem proposta → proposta enviada → contratada), derivada dos honorários dela. Cliente antigo não volta ao funil: abre a demanda e registra a proposta dela.
 
@@ -75,3 +75,22 @@ Regras (implementadas em `server/utils/ciclo.ts`, usadas por andamento, edição
 - Contratação registrada (pelo andamento ou pela tela de Honorários) promove lead/"não contratou" a cliente ativo; proposta registrada leva lead antigo a "Proposta enviada".
 - Só quem contratou pode ser "Concluído", e só sem demanda em andamento (acontece sozinho ao encerrar a última). Reativar um concluído = abrir nova demanda.
 - Testes: `tests/fase2/rodar.sh` (cenários A–D sobre as regras) e `supabase/tests/fase2_ciclo_comercial.sql` (trava no banco).
+
+## Construtor de formulários (Fase 3)
+Fluxo: **criar formulário → adicionar perguntas → configurar → organizar → lógica → visualizar → salvar → usar**. Evolui o que já existia (banco de perguntas + formulários + itens); nada foi recriado.
+
+| Camada | O que é | Onde |
+|---|---|---|
+| Formulário | título, descrição, **contexto** (cliente / consulta / demanda + serviços), ativo | `formularios` |
+| Seção | agrupamento e "etapa" do preenchimento; pode ter condição | `formulario_secoes` |
+| Item | posição da pergunta no formulário, obrigatoriedade e **condição** (`mostrar_se`) | `formulario_itens` |
+| Pergunta | texto, tipo, opções, ajuda; **reaproveitável** entre formulários (resposta única) | `formulario_perguntas` (+ `formulario_pergunta_versoes`) |
+| Resposta atual | uma por pergunta, no cliente ou na demanda | `contato_respostas` / `caso_respostas` |
+| Resposta enviada | snapshot do envio (texto da pergunta, seção, valor) | `formulario_envio_respostas` |
+
+- **Tipos**: resposta curta, texto longo, número, data, e-mail, telefone, sim/não, seleção única, lista suspensa, múltipla seleção e checklist interno (acompanhamento; não é perguntado ao cliente). Definidos em `shared/data/formulario.ts`.
+- **Lógica condicional**: `{ juntar: e|ou, regras: [{ pergunta_id, operador, valor }] }` no item ou na seção. Operadores por tipo (sim/não e escolha: é igual/diferente; múltipla: selecionou/não selecionou; número: igual, diferente, maior, menor; texto: contém/não contém/igual; todos: foi/não foi respondida). Só depende de pergunta **anterior**; resposta de pergunta escondida não conta (cascata). O mesmo motor roda na prévia, na página pública, na ficha e no servidor (`shared/data/formulario.ts`).
+- **Ficha ≠ formulário**: o formulário define o que se pergunta; a ficha só **lê** `contato_respostas`/`caso_respostas` e organiza pelas seções do formulário. Não há cópia de dados.
+- **Contexto**: a ficha do cliente mostra formulários de contexto cliente/consulta; a ficha de cada demanda mostra só os de contexto demanda que valem para o serviço dela. O banco impede pergunta de demanda em formulário de cliente (e vice-versa).
+- **Histórico**: pergunta removida do formulário só é excluída se nunca foi respondida nem é usada noutro formulário; senão é **arquivada** e a resposta continua na ficha em "Fora do formulário". Trocar o **tipo** de pergunta já respondida cria uma pergunta nova e preserva a antiga. Cada edição de texto/opções guarda a versão anterior (`trg_versao_pergunta`). Formulário respondido não muda de contexto cliente↔demanda.
+- Testes: `tests/formularios/` (núcleo, interface) e `supabase/tests/fase3_construtor_formularios.sql`.

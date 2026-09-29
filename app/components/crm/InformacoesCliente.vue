@@ -4,7 +4,7 @@
       <span class="min-w-0 flex-1">
         <span class="block text-[10px] font-bold uppercase tracking-widest text-primary dark:text-zinc-200">{{ casoId ? 'Informações da demanda' : 'Informações do cliente' }}</span>
         <span v-if="secoes" class="block text-xs text-gray-500 mt-1">{{ respondidas }} de {{ total }} respondidas</span>
-        <span v-else class="block text-xs text-gray-400 mt-1">Perguntas que você configura em Formulários</span>
+        <span v-else class="block text-xs text-gray-400 mt-1">Vem dos formulários que você monta em Formulários</span>
       </span>
       <Icon :name="aberto ? 'ph:caret-up-bold' : 'ph:caret-down-bold'" class="text-gray-400 shrink-0" />
     </button>
@@ -13,7 +13,7 @@
       <p v-if="carregando" class="text-sm text-gray-400">Carregando…</p>
       <p v-else-if="erro" class="text-sm text-danger">{{ erro }}</p>
       <p v-else-if="!secoesVisiveis.length" class="text-sm text-gray-400">
-        {{ casoId ? 'Nenhuma pergunta de demanda para este procedimento.' : 'Nenhuma pergunta criada ainda.' }} Crie em <NuxtLink to="/formularios?aba=perguntas" class="underline hover:text-primary">Formulários › Banco de perguntas</NuxtLink> e ela aparece aqui sozinha.
+        {{ casoId ? 'Nenhum formulário de demanda vale para este procedimento.' : 'Nenhum formulário de cliente ou consulta ainda.' }} Monte em <NuxtLink to="/formularios" class="underline hover:text-primary">Formulários</NuxtLink> (contexto {{ casoId ? 'demanda' : 'cliente ou consulta' }}) e as perguntas aparecem aqui sozinhas.
       </p>
       <div v-for="s in secoesVisiveis" :key="s.nome">
         <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{{ s.nome }}</p>
@@ -31,7 +31,7 @@
             </div>
 
             <!-- Escolha única e sim/não: botões -->
-            <div v-else-if="p.tipo === 'selecao_unica' || p.tipo === 'sim_nao'" class="mt-1 flex flex-wrap gap-1.5">
+            <div v-else-if="p.tipo === 'selecao_unica' || p.tipo === 'lista_suspensa' || p.tipo === 'sim_nao'" class="mt-1 flex flex-wrap gap-1.5">
               <button v-for="o in (p.tipo === 'sim_nao' ? ['Sim', 'Não'] : p.opcoes)" :key="o" type="button" :disabled="salvando.has(p.id)"
                       class="px-3 py-1 rounded-full border text-xs font-semibold" :class="p.resposta === o ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700 hover:border-primary'"
                       @click="salvar(p, p.resposta === o ? null : o)">{{ o }}</button>
@@ -62,6 +62,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import type { PerguntaDaFicha, SecaoDaFicha, ValorResposta } from '../../../shared/types/crm'
+import { avaliarCondicao } from '../../../shared/data/formulario'
 
 // Carrega só quando a ficha abre este cartão (a ficha tem muito mais coisa que isso).
 const props = withDefaults(defineProps<{ contatoId: number; casoId?: number | null; iniciarAberto?: boolean }>(), { casoId: null, iniciarAberto: false })
@@ -76,16 +77,15 @@ const rascunho = ref('')
 const salvando = ref(new Set<number>())
 const msgErro = reactive<Record<number, string>>({})
 
-// Pergunta condicional ("Quantidade de filhos?" só se "Tem filhos?" = Sim): aparece quando a condição é atendida
+// Lógica condicional do formulário (a mesma do construtor): a pergunta/seção aparece quando a condição é atendida
 // ou quando já tem resposta (dado guardado nunca some da tela).
-const respostaDe = (id: number) => (secoes.value ?? []).flatMap(s => s.perguntas).find(p => p.id === id)?.resposta ?? null
+const mapaRespostas = computed(() => Object.fromEntries((secoes.value ?? []).flatMap(s => s.perguntas).map(p => [p.id, p.resposta])) as Record<number, ValorResposta>)
 function atende(p: PerguntaDaFicha) {
-  if (!p.mostrar_se) return true
-  const r = respostaDe(p.mostrar_se.pergunta_id)
-  const ok = Array.isArray(r) ? r.includes(p.mostrar_se.igual_a) : r === p.mostrar_se.igual_a
-  return ok || !vazia(p)
+  return avaliarCondicao(p.mostrar_se, mapaRespostas.value) || !vazia(p)
 }
-const secoesVisiveis = computed(() => (secoes.value ?? []).map(s => ({ ...s, perguntas: s.perguntas.filter(atende) })).filter(s => s.perguntas.length))
+const secoesVisiveis = computed(() => (secoes.value ?? [])
+  .map(s => ({ ...s, perguntas: s.perguntas.filter(atende) }))
+  .filter(s => s.perguntas.length && (avaliarCondicao(s.mostrar_se, mapaRespostas.value) || s.perguntas.some(p => !vazia(p)))))
 const perguntas = computed(() => secoesVisiveis.value.flatMap(s => s.perguntas).filter(p => !p.arquivada))
 const total = computed(() => perguntas.value.length)
 const respondidas = computed(() => perguntas.value.filter(p => !vazia(p)).length)

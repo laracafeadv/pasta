@@ -49,7 +49,7 @@ watch(() => props.isOpen, async (aberto) => {
   if (!aberto || carregou) return
   carregou = true
   try {
-    formularios.value = await $fetch<Formulario[]>('/api/formularios')
+    formularios.value = await $fetch<Formulario[]>('/api/formularios', { params: { contexto: 'cliente,consulta' } })
   } catch { carregou = false /* formulários são opcionais; tenta de novo na próxima abertura */ }
 })
 

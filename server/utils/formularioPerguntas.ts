@@ -1,8 +1,8 @@
 import type { TipoPergunta } from '../../shared/types/crm'
 import { PROCEDIMENTOS } from '../../shared/data/checklist'
 
-const TIPOS: TipoPergunta[] = ['texto_curto', 'texto_longo', 'numero', 'data', 'email', 'telefone', 'sim_nao', 'selecao_unica', 'selecao_multipla', 'checklist']
-export const TIPOS_COM_OPCOES: TipoPergunta[] = ['selecao_unica', 'selecao_multipla', 'checklist']
+const TIPOS: TipoPergunta[] = ['texto_curto', 'texto_longo', 'numero', 'data', 'email', 'telefone', 'sim_nao', 'selecao_unica', 'lista_suspensa', 'selecao_multipla', 'checklist']
+export const TIPOS_COM_OPCOES: TipoPergunta[] = ['selecao_unica', 'lista_suspensa', 'selecao_multipla', 'checklist']
 
 /** Valida e normaliza o corpo de uma pergunta do banco de perguntas. */
 export function limparPergunta(body: any) {
@@ -35,7 +35,7 @@ export function normalizarRespostaCliente(tipo: TipoPergunta, opcoes: string[], 
   }
   const t = texto(Array.isArray(v) ? v[0] : v, tipo === 'texto_longo' ? 4000 : 500)
   if (t == null) return null
-  if (tipo === 'selecao_unica') { if (!opcoes.includes(t)) throw createError({ statusCode: 400, message: 'Opção inválida.' }); return t }
+  if (tipo === 'selecao_unica' || tipo === 'lista_suspensa') { if (!opcoes.includes(t)) throw createError({ statusCode: 400, message: 'Opção inválida.' }); return t }
   if (tipo === 'sim_nao') { if (t !== 'Sim' && t !== 'Não') throw createError({ statusCode: 400, message: 'Responda Sim ou Não.' }); return t }
   if (tipo === 'numero') { if (!Number.isFinite(Number(t.replace(',', '.')))) throw createError({ statusCode: 400, message: 'Informe um número.' }); return t }
   if (tipo === 'data') { if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) throw createError({ statusCode: 400, message: 'Data inválida.' }); return t }

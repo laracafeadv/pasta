@@ -1,21 +1,14 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { requireStaff } from '../../utils/security'
-import { limparItens, substituirItens } from '../../utils/formularios'
+import { limparEstrutura, salvarEstrutura } from '../../utils/formularioEstrutura'
 import { auditar } from '../../utils/auditoria'
 
+/** Cria um formulário (vazio, com uma seção) ou já com a estrutura enviada. */
 export default defineEventHandler(async (event) => {
   await requireStaff(event, 'formularios/create')
-  const body = await readBody(event)
-  const nome = String(body?.nome ?? '').trim()
-  if (!nome) throw createError({ statusCode: 400, message: 'Dê um nome para o formulário.' })
-  const itens = limparItens(body?.itens)
-  const client = await serverSupabaseClient(event)
-  const { data, error } = await client.from('formularios').insert({ nome }).select().single()
-  if (error) {
-    console.error('[formularios] Erro:', error)
-    throw createError({ statusCode: 500, message: 'Erro ao criar o formulário.' })
-  }
-  await substituirItens(client, data.id, itens)
-  await auditar(event, 'criou formulário', 'formulario', data.id)
-  return { id: data.id }
+  const body = (await readBody(event)) ?? {}
+  const estrutura = limparEstrutura({ ...body, nome: body.nome || 'Formulário sem título', secoes: Array.isArray(body.secoes) && body.secoes.length ? body.secoes : [{ titulo: 'Seção 1', itens: [] }] })
+  const { id } = await salvarEstrutura(await serverSupabaseClient(event), null, estrutura)
+  await auditar(event, 'criou formulário', 'formulario', id)
+  return { id }
 })
