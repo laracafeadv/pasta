@@ -4,11 +4,11 @@ import { definePageMeta, useHead, useRoute, navigateTo } from '#imports'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
 
-// Clientes, Casos, Tarefas e Prazos numa tela só — cada aba é um painel. A aba fica na URL
+// Clientes (com as demandas de cada um), Processos (só judiciais), Tarefas e Prazos numa tela só — cada aba é um painel. A aba fica na URL
 // (?aba=casos) pra dar pra voltar direto nela e pros links antigos (/casos, /tarefas, /prazos).
 const ABAS = [
   { id: 'clientes', label: 'Clientes', icone: 'ph:users-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelClientes.vue')) },
-  { id: 'casos', label: 'Demandas', icone: 'ph:briefcase-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelCasos.vue')) },
+  { id: 'casos', label: 'Processos', icone: 'ph:gavel-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelCasos.vue')) },
   { id: 'tarefas', label: 'Tarefas', icone: 'ph:check-square-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelTarefas.vue')) },
   { id: 'prazos', label: 'Prazos', icone: 'ph:hourglass-high-bold', painel: defineAsyncComponent(() => import('~/components/clientes/PainelPrazos.vue')) },
 ] as const

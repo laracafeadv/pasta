@@ -1,4 +1,3 @@
-import { VERIFICACOES_VIABILIDADE } from '../../shared/types/crm'
 import { SERVICOS } from '../../shared/data/servicos'
 import { FASE_MAXIMA_POR_ETAPA, ITENS_ATENDIMENTO, NOMES_FASES, PROCEDIMENTOS, type DefinicaoItem } from '../../shared/data/checklist'
 import type { ChecklistEscopo, ChecklistFicha, ItemChecklist } from '../../shared/types/checklist'
@@ -12,7 +11,8 @@ export interface EntradaChecklist {
   documentos: { descricao: string; obrigatorio: boolean; status: string }[]
   casos: { id: number; titulo: string; status: string; resultado: string | null; procedimento: string | null }[]
   qualificacao: { cpf: string | null; endereco: string | null } | null
-  diagnostico: { updated_at: string | null; verificacoes: Record<string, boolean> | null } | null
+  /** Última resposta da seção "Análise da consulta" nas demandas do cliente. */
+  analise: { updated_at: string | null } | null
   marcas: { caso_id: number | null; chave: string; concluido_em: string; autor: { name: string | null } | null }[]
 }
 
@@ -50,13 +50,7 @@ function avaliarAutomatico(chave: string, e: EntradaChecklist): Resultado {
     case 'pre_form':
       return contato.pre_form_respondido_em ? { feito: true, quando: contato.pre_form_respondido_em } : { feito: false }
     case 'diagnostico':
-      return e.diagnostico?.updated_at ? { feito: true, quando: e.diagnostico.updated_at } : { feito: false }
-    case 'viabilidade': {
-      const v = e.diagnostico?.verificacoes ?? {}
-      const marcadas = VERIFICACOES_VIABILIDADE.filter(x => v[x.chave]).length
-      const total = VERIFICACOES_VIABILIDADE.length
-      return { feito: marcadas === total, quando: marcadas === total ? e.diagnostico?.updated_at ?? null : null, evidencia: `${marcadas} de ${total} verificações` }
-    }
+      return e.analise?.updated_at ? { feito: true, quando: e.analise.updated_at } : { feito: false }
     case 'proposta': {
       const h = semConsulta.find(x => ['Proposta', 'Contratado', 'Pago'].includes(x.status))
       return h ? { feito: true, quando: h.created_at } : { feito: false }

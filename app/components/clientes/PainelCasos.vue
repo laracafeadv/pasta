@@ -14,7 +14,7 @@ const visao = ref<'lista' | 'kanban'>('lista')
 async function carregar() {
   carregando.value = true
   try {
-    casos.value = await $fetch<Caso[]>('/api/casos', { params: { search: busca.value || undefined, status: status.value || undefined } })
+    casos.value = await $fetch<Caso[]>('/api/casos', { params: { tipo: 'judicial', search: busca.value || undefined, status: status.value || undefined } })
   } finally {
     carregando.value = false
   }
@@ -24,7 +24,7 @@ let t: ReturnType<typeof setTimeout> | undefined
 watch([busca, status], () => { clearTimeout(t); t = setTimeout(carregar, 300) })
 
 const columns: ColumnDef[] = [
-  { key: 'titulo', label: 'Caso' },
+  { key: 'titulo', label: 'Processo' },
   { key: 'cliente', label: 'Cliente' },
   { key: 'processo', label: 'Processo / órgão' },
   { key: 'fase', label: 'Fase / valor da causa' },
@@ -55,7 +55,7 @@ async function soltar(fase: string, e: DragEvent) {
 <template>
   <div class="space-y-6">
     <div>
-      <p class="text-sm text-gray-500 mt-2">Todos os casos abertos. Para abrir um novo, vá à ficha do cliente → “Casos e prazos”.</p>
+      <p class="text-sm text-gray-500 mt-2">Só as demandas com processo judicial: número, fase e valor da causa. Serviços consultivos e de cartório ficam na lista de Clientes e na ficha de cada um.</p>
     </div>
     <div class="flex flex-wrap gap-2">
       <div class="inline-flex rounded-full border border-gray-200 dark:border-zinc-700 p-0.5">
@@ -69,7 +69,7 @@ async function soltar(fase: string, e: DragEvent) {
       </select>
     </div>
 
-    <DataTable v-if="visao === 'lista'" :columns="columns" :data="casos" :loading="carregando" :total="casos.length" :page-size="300" @row-click="(k: Caso) => navigateTo({ path: '/crm', query: { aba: 'contatos', abrir: k.contato_id } })">
+    <DataTable v-if="visao === 'lista'" :columns="columns" :data="casos" :loading="carregando" :total="casos.length" :page-size="300" @row-click="(k: Caso) => navigateTo({ path: '/crm', query: { abrir: k.contato_id, ficha: 'casos' } })">
       <template #cell-titulo="{ item }"><p class="font-semibold">{{ item.titulo }}</p><p class="text-xs text-gray-500">{{ TIPOS_CASO[item.tipo] }} · desde {{ dataCurta(item.data_abertura) }}</p></template>
       <template #cell-cliente="{ item }">{{ item.contato?.nome }}</template>
       <template #cell-processo="{ item }"><p class="font-mono text-xs">{{ item.numero_processo || '—' }}</p><p class="text-xs text-gray-500">{{ [item.orgao, item.comarca && `${item.comarca}/${item.uf}`].filter(Boolean).join(' · ') }}</p></template>

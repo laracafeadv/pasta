@@ -60,14 +60,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import type { PerguntaDaFicha, SecaoDaFicha, ValorResposta } from '../../../shared/types/crm'
 
 // Carrega só quando a ficha abre este cartão (a ficha tem muito mais coisa que isso).
-const props = defineProps<{ contatoId: number; casoId?: number | null }>()
+const props = withDefaults(defineProps<{ contatoId: number; casoId?: number | null; iniciarAberto?: boolean }>(), { casoId: null, iniciarAberto: false })
 
 const TIPO_INPUT: Record<string, string> = { numero: 'text', data: 'date', email: 'email', telefone: 'tel' }
-const aberto = ref(false)
+const aberto = ref(props.iniciarAberto)
 const carregando = ref(false)
 const erro = ref<string | null>(null)
 const secoes = ref<SecaoDaFicha[] | null>(null)
@@ -100,6 +100,7 @@ async function carregar() {
     carregando.value = false
   }
 }
+onMounted(() => { if (aberto.value) carregar() })
 function alternar() {
   aberto.value = !aberto.value
   if (aberto.value && !secoes.value) carregar()

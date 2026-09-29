@@ -250,6 +250,7 @@ export const DOCUMENTOS_POR_AREA: Record<string, [string, boolean][]> = {
 export interface Documento {
   id: number
   contato_id: number
+  caso_id?: number | null
   descricao: string
   obrigatorio: boolean
   status: 'pendente' | 'recebido' | 'dispensado'
@@ -487,85 +488,6 @@ export function normalizarTelefone(raw: string | null | undefined): string {
 export function normalizarNome(s: string | null | undefined): string {
   return String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
 }
-
-// ─── Diagnóstico: roteiro da consulta, 5 porquês e viabilidade ───────────────
-export const ROTEIRO_CONSULTA: Record<string, string[]> = {
-  '*': [
-    'Me conta, com as suas palavras, o que está acontecendo.',
-    'O que fez você procurar ajuda justamente agora?',
-    'O que mais te preocupa nessa situação?',
-    'Se isso estivesse resolvido amanhã, o que mudaria na sua vida?',
-    'O que você já tentou fazer até aqui?',
-    'Existe algum prazo, audiência ou documento com data que você recebeu?',
-  ],
-  'Direito de Família': [
-    'Desde quando vocês estão juntos (e separados, se for o caso)? Casamento ou união estável? Qual o regime de bens?',
-    'Há filhos menores? Como está a rotina deles hoje (moradia, convivência, escola)?',
-    'Quais bens foram adquiridos durante a relação e em nome de quem estão?',
-    'Existe diálogo com a outra parte ou o caminho tende a ser litigioso?',
-    'Há alguma situação de violência, ameaça ou risco?',
-  ],
-  'Sucessões': [
-    'Quem faleceu, quando, e qual era o estado civil e o regime de bens?',
-    'Quem são os herdeiros? Todos são maiores e capazes? Estão de acordo?',
-    'Quais bens e dívidas existem? Há imóveis em outras cidades?',
-    'Existe testamento, doações em vida ou inventário já aberto?',
-    'Já passou o prazo de 60 dias do óbito (multa do ITCMD varia por estado)?',
-  ],
-  'Planejamento Matrimonial': [
-    'Qual a data prevista do casamento ou do início da união?',
-    'Quais bens e empresas cada um já tem, e o que pretendem construir juntos?',
-    'Há filhos de relações anteriores ou herança esperada?',
-    'O que é mais importante para vocês: proteger patrimônio, simplificar ou equilibrar?',
-  ],
-  'Consultoria Jurídica': [
-    'Qual decisão você precisa tomar e até quando?',
-    'Quais documentos ou contratos estão envolvidos?',
-  ],
-}
-
-export const VERIFICACOES_VIABILIDADE = [
-  { chave: 'area', rotulo: 'Está na área de atuação do escritório', grupo: 'Jurídica' },
-  { chave: 'prescricao', rotulo: 'Prescrição e decadência verificadas', grupo: 'Jurídica' },
-  { chave: 'competencia', rotulo: 'Foro/competência e via (judicial ou cartório) definidos', grupo: 'Jurídica' },
-  { chave: 'legitimidade', rotulo: 'Legitimidade das partes confirmada', grupo: 'Jurídica' },
-  { chave: 'provas', rotulo: 'Provas e documentos suficientes (ou obtêníveis)', grupo: 'Jurídica' },
-  { chave: 'conflito', rotulo: 'Sem conflito de interesses', grupo: 'Jurídica' },
-  { chave: 'expectativa', rotulo: 'Expectativa da cliente é realista e foi alinhada', grupo: 'Relação' },
-  { chave: 'decisora', rotulo: 'Falei com quem decide (e sobre quem paga)', grupo: 'Relação' },
-] as const
-
-export const CAPACIDADES_PAGAMENTO = {
-  confortavel: 'Paga à vista ou em poucas parcelas',
-  parcelado: 'Precisa de parcelamento',
-  restrita: 'Condição restrita (avaliar gratuidade/indicar Defensoria)',
-  nao_informado: 'Ainda não sei',
-} as const
-
-export const DECISOES_DIAGNOSTICO = {
-  viavel: { nome: 'Viável', dica: 'Seguir para a proposta.' },
-  ressalvas: { nome: 'Viável com ressalvas', dica: 'Deixe os riscos por escrito na proposta.' },
-  inviavel: { nome: 'Não viável', dica: 'Explique com transparência e encerre como "Não contratou" ou indique outro caminho.' },
-} as const
-
-export interface Diagnostico {
-  contato_id: number
-  problema_relatado: string | null
-  porques: string[]
-  causa_raiz: string | null
-  objetivo_cliente: string | null
-  verificacoes: Partial<Record<typeof VERIFICACOES_VIABILIDADE[number]['chave'], boolean>>
-  riscos: string | null
-  capacidade_pagamento: keyof typeof CAPACIDADES_PAGAMENTO | null
-  valor_em_jogo: number | null
-  descricao_em_jogo: string | null
-  decisao: keyof typeof DECISOES_DIAGNOSTICO | null
-  updated_at?: string
-  // calculados pela API
-  honorario_proposto?: number | null
-  preco_minimo?: number | null
-}
-export const DIAGNOSTICO_CAMPOS = ['problema_relatado', 'porques', 'causa_raiz', 'objetivo_cliente', 'verificacoes', 'riscos', 'capacidade_pagamento', 'valor_em_jogo', 'descricao_em_jogo', 'decisao'] as const
 
 // ─── Mapa da Empatia (playbook "Mapa da Empatia") ───────────────────────────
 export const MAPA_EMPATIA = [

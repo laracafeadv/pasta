@@ -12,15 +12,20 @@ export default defineEventHandler(async (event) => {
   const pageSize = Math.min(Number(query.pageSize ?? 25) || 25, 200)
   const from = (page - 1) * pageSize
 
+  // Lista de Clientes: cada pessoa vem com as suas demandas (uma única lista para achar pessoa ou serviço).
   let q = client
     .from('contatos')
-    .select('*', { count: 'exact' })
+    .select(query.demandas === '1' ? '*, demandas:casos(id, titulo, tipo, status)' : '*', { count: 'exact' })
     .order('updated_at', { ascending: false })
     .range(from, from + pageSize - 1)
 
   const search = sanitizarBusca(query.search)
   if (search) {
-    q = q.or(`nome.ilike.%${search}%,email.ilike.%${search}%,telefone.ilike.%${search.replace(/\D/g, '') || search}%,parte_contraria.ilike.%${search}%,resumo.ilike.%${search}%`)
+    // Também acha quem tem uma demanda/processo com o termo (título, número do processo, outra parte).
+    const { data: porDemanda } = await client.from('casos').select('contato_id')
+      .or(`titulo.ilike.%${search}%,numero_processo.ilike.%${search}%,parte_contraria.ilike.%${search}%`).limit(100)
+    const idsDemanda = [...new Set((porDemanda ?? []).map(c => c.contato_id))]
+    q = q.or(`nome.ilike.%${search}%,email.ilike.%${search}%,telefone.ilike.%${search.replace(/\D/g, '') || search}%,parte_contraria.ilike.%${search}%,resumo.ilike.%${search}%${idsDemanda.length ? `,id.in.(${idsDemanda.join(',')})` : ''}`)
   }
   if (query.etapa) q = q.eq('etapa', String(query.etapa))
   else if (query.clientes === '1') q = q.in('etapa', ['ativo', 'concluido'])

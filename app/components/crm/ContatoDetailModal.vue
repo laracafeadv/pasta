@@ -26,11 +26,9 @@
         </div>
       </div>
 
-      <!-- Caso -->
+      <!-- Cliente: quem é (permanente) -->
       <div v-if="aba === 'resumo'" class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-        <p class="md:col-span-2 text-xs text-gray-500 -mb-2">Visão geral: dados de contato, situação do caso, relacionamento e o que ela já contou com as próprias palavras.</p>
         <ChecklistPainel v-if="dados.checklist?.atendimento?.total" class="md:col-span-2" :escopo="dados.checklist.atendimento" @alternar="i => alternarChecklist(i, null)" />
-        <InformacoesCliente :key="`i${dados.contato.id}`" class="md:col-span-2" :contato-id="dados.contato.id" />
         <div class="card">
           <h3>Contato</h3>
           <p><b>WhatsApp:</b> <a :href="whatsappLink(dados.contato.telefone)" target="_blank" rel="noopener" class="text-primary">{{ telefoneFormatado(dados.contato.telefone) }}</a></p>
@@ -40,7 +38,26 @@
           <p><b>Aviso LGPD:</b> {{ dados.contato.consentimento_em ? dataHora(dados.contato.consentimento_em) : 'não enviado' }}</p>
         </div>
         <div class="card">
-          <h3>Interesse inicial</h3>
+          <h3>Relacionamento</h3>
+          <p><b>Aniversário:</b> {{ dados.contato.data_nascimento ? dataCurta(dados.contato.data_nascimento) : '—' }}</p>
+          <p>
+            <b>Classificação:</b>
+            <template v-if="dados.contato.classificacao">{{ CLASSIFICACOES[dados.contato.classificacao].nome }} <span class="text-xs text-gray-500">— {{ CLASSIFICACOES[dados.contato.classificacao].dica }}</span></template>
+            <template v-else>—</template>
+          </p>
+          <div>
+            <p><b>NPS:</b> {{ dados.contato.nps ?? '—' }} <span class="text-xs text-gray-500">— registrar a nota que a cliente deu:</span></p>
+            <div class="flex flex-wrap gap-1 mt-1">
+              <button v-for="n in 11" :key="n" type="button" class="w-7 h-7 rounded-full text-xs font-semibold border"
+                      :class="dados.contato.nps === n - 1 ? 'bg-primary text-white border-primary' : n - 1 >= 9 ? 'border-success/50 text-success-dark' : n - 1 >= 7 ? 'border-warning/50 text-warning-dark' : 'border-danger/40 text-danger-dark'"
+                      @click="registrarNps(n - 1)">{{ n - 1 }}</button>
+            </div>
+          </div>
+          <p v-if="dados.contato.obs_relacionamento"><b>Observação:</b> {{ dados.contato.obs_relacionamento }}</p>
+          <p v-if="dados.contato.ultimo_contato_em"><b>Último gesto:</b> {{ dataCurta(dados.contato.ultimo_contato_em) }}</p>
+        </div>
+        <div v-if="!dados.casos.length" class="card">
+          <h3>Atendimento</h3>
           <p><b>Área:</b> {{ dados.contato.area || '—' }} <span v-if="dados.contato.demanda">· {{ dados.contato.demanda }}</span></p>
           <p><b>Outra parte:</b> {{ dados.contato.parte_contraria || '—' }}</p>
           <p><b>Urgência:</b> {{ dados.contato.urgencia || '—' }} · <b>Sentimento:</b> {{ dados.contato.sentimento || '—' }}</p>
@@ -67,27 +84,13 @@
           </div>
           <p v-if="avisoFormulario" class="text-xs mt-1" :class="avisoFormulario.erro ? 'text-danger' : 'text-success-dark'">{{ avisoFormulario.texto }}</p>
         </div>
-        <div class="card">
-          <h3>Relacionamento</h3>
-          <p><b>Aniversário:</b> {{ dados.contato.data_nascimento ? dataCurta(dados.contato.data_nascimento) : '—' }}</p>
-          <p>
-            <b>Classificação:</b>
-            <template v-if="dados.contato.classificacao">{{ CLASSIFICACOES[dados.contato.classificacao].nome }} <span class="text-xs text-gray-500">— {{ CLASSIFICACOES[dados.contato.classificacao].dica }}</span></template>
-            <template v-else>—</template>
-          </p>
-          <div>
-            <p><b>NPS:</b> {{ dados.contato.nps ?? '—' }} <span class="text-xs text-gray-500">— registrar a nota que a cliente deu:</span></p>
-            <div class="flex flex-wrap gap-1 mt-1">
-              <button v-for="n in 11" :key="n" type="button" class="w-7 h-7 rounded-full text-xs font-semibold border"
-                      :class="dados.contato.nps === n - 1 ? 'bg-primary text-white border-primary' : n - 1 >= 9 ? 'border-success/50 text-success-dark' : n - 1 >= 7 ? 'border-warning/50 text-warning-dark' : 'border-danger/40 text-danger-dark'"
-                      @click="registrarNps(n - 1)">{{ n - 1 }}</button>
-            </div>
-          </div>
-          <p v-if="dados.contato.obs_relacionamento"><b>Observação:</b> {{ dados.contato.obs_relacionamento }}</p>
-          <p v-if="dados.contato.ultimo_contato_em"><b>Último gesto:</b> {{ dataCurta(dados.contato.ultimo_contato_em) }}</p>
-        </div>
+        <InformacoesCliente :key="`i${dados.contato.id}`" class="md:col-span-2" :contato-id="dados.contato.id" iniciar-aberto />
+        <details class="md:col-span-2 rounded-2xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50" @toggle="qualificacaoAberta = ($event.target as HTMLDetailsElement).open">
+          <summary class="cursor-pointer p-4 text-[10px] font-bold uppercase tracking-widest text-primary dark:text-zinc-200">Dados pessoais e qualificação (CPF, RG, endereço — usados nas peças)</summary>
+          <QualificacaoForm v-if="qualificacaoAberta" :key="dados.contato.id" :contato-id="dados.contato.id" :nome-sugerido="dados.contato.nome" />
+        </details>
         <div v-if="dados.contato.dor || dados.contato.objetivo || dados.contato.pre_form_respostas_extra?.length" class="card">
-          <h3>Com as palavras dela</h3>
+          <h3>Relato do cliente</h3>
           <p v-if="dados.contato.dor"><b>O que preocupa:</b> “{{ dados.contato.dor }}”</p>
           <p v-if="dados.contato.objetivo"><b>O que quer que mude:</b> “{{ dados.contato.objetivo }}”</p>
           <template v-for="(r, i) in dados.contato.pre_form_respostas_extra ?? []" :key="i">
@@ -95,7 +98,7 @@
           </template>
         </div>
         <div class="card md:col-span-2">
-          <h3>Resumo do caso</h3>
+          <h3>Resumo do atendimento</h3>
           <p class="whitespace-pre-wrap">{{ dados.contato.resumo || 'Sem resumo ainda. Edite a ficha para escrever.' }}</p>
           <div v-if="dados.contato.interesses?.length" class="mt-3">
             <b class="text-xs uppercase tracking-wider text-gray-400">Pontos de atenção</b>
@@ -195,23 +198,11 @@
         </ol>
       </div>
 
-      <!-- Diagnóstico -->
-      <DiagnosticoPanel v-else-if="aba === 'diagnostico'" :key="`d${dados.contato.id}`" :contato-id="dados.contato.id" :nome="dados.contato.nome" :area="dados.contato.area" :demanda="dados.contato.demanda" @mensagem="usarMensagem" />
-
-      <!-- Caso: processos e prazos, documentos, qualificação -->
-      <div v-else-if="aba === 'processo'">
-      <div class="flex flex-wrap gap-1 px-5 pt-4">
-        <button v-for="x in subAbas" :key="x.id" class="px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider border"
-                :class="sub === x.id ? 'border-primary text-primary dark:text-zinc-100 bg-primary/5' : 'border-transparent text-gray-500 hover:border-gray-200'" @click="sub = x.id">
-          {{ x.label }}<span v-if="x.badge" class="ml-1 opacity-70">{{ x.badge }}</span>
-        </button>
-      </div>
-      <QualificacaoForm v-if="sub === 'qualificacao'" :key="dados.contato.id" :contato-id="dados.contato.id" :nome-sugerido="dados.contato.nome" />
-
-      <div v-else-if="sub === 'casos'" class="p-5 space-y-5">
-        <p class="text-xs text-gray-500 -mt-1">O que este cliente contratou: cada serviço é uma demanda (consultiva, cartório ou judicial). Só demanda judicial tem dados de processo. O cliente é o mesmo; uma nova contratação é uma nova demanda.</p>
-        <div v-if="dados.contato.etapa === 'ativo' && !dados.casos.length" class="rounded-2xl bg-secondary/10 border border-secondary/30 p-4 text-sm">
-          Cliente ativo sem demanda aberta. Abra a demanda para acompanhar as etapas, os prazos e gerar a procuração.
+      <!-- Demandas: o que este cliente contratou -->
+      <div v-else-if="aba === 'processo'" class="p-5 space-y-5">
+        <div v-if="!dados.casos.length" class="rounded-2xl bg-secondary/10 border border-secondary/30 p-4 text-sm">
+          {{ dados.contato.etapa === 'ativo' ? 'Cliente ativo sem demanda aberta.' : 'Nenhuma demanda ainda.' }}
+          Abra a demanda para registrar a análise da consulta, acompanhar as etapas, os documentos e os prazos daquele serviço.
         </div>
         <div class="flex flex-wrap gap-2">
           <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Nova demanda</Button>
@@ -233,7 +224,6 @@
           {{ avisoDrive.texto }} <a v-if="avisoDrive.url" :href="avisoDrive.url" target="_blank" rel="noopener" class="underline">abrir</a>
         </p>
         <p v-if="avisoFormulario" class="text-xs" :class="avisoFormulario.erro ? 'text-danger' : 'text-success-dark'">{{ avisoFormulario.texto }}</p>
-        <p v-if="!dados.casos.length" class="text-sm text-gray-400">Nenhuma demanda aberta. Este cliente está apenas cadastrado.</p>
         <template v-for="k in demandasVisiveis" :key="k.id">
         <article class="card" :class="k.status === 'encerrado' ? 'opacity-75' : ''">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
@@ -262,63 +252,39 @@
           </div>
           <ChecklistPainel v-if="dados.checklist?.casos[k.id]" class="mt-2" :escopo="dados.checklist.casos[k.id]!" @alternar="i => alternarChecklist(i, k.id)" />
           <p v-else class="text-xs text-gray-400 pt-1">Sem procedimento definido. <button type="button" class="underline underline-offset-2 hover:text-primary" @click="editarCaso(k)">Escolha o procedimento</button> para acompanhar as etapas desta demanda.</p>
-          <InformacoesCliente :key="`d${k.id}`" class="mt-2" :contato-id="dados.contato.id" :caso-id="k.id" />
+          <InformacoesCliente :key="`d${k.id}`" class="mt-2" :contato-id="dados.contato.id" :caso-id="k.id" iniciar-aberto />
+          <div v-if="prazosDaDemanda(k.id).length || tarefasDaDemanda(k.id).length" class="mt-3">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Prazos e tarefas</p>
+            <ul class="text-sm divide-y divide-gray-50 dark:divide-zinc-800/60">
+              <li v-for="c in prazosDaDemanda(k.id)" :key="`c${c.id}`" class="py-1.5 flex gap-2 items-center"><Icon :name="TIPOS_COMPROMISSO[c.tipo].icone" class="text-secondary" /><span class="w-20 shrink-0 font-medium">{{ dataCurta(dataCompromisso(c)) }}</span><span class="flex-1">{{ c.titulo }}</span><span class="text-xs text-gray-500">{{ diaRelativo(dataCompromisso(c)) }}</span></li>
+              <li v-for="t in tarefasDaDemanda(k.id)" :key="`t${t.id}`" class="py-1.5 flex gap-2 items-center"><Icon name="ph:check-square-bold" class="text-gray-400" /><span class="w-20 shrink-0 font-medium">{{ dataCurta(t.prazo) }}</span><span class="flex-1">{{ t.titulo }}</span><span class="text-xs text-gray-500">tarefa</span></li>
+            </ul>
+          </div>
+          <details class="mt-3">
+            <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Documentos desta demanda <span class="normal-case tracking-normal font-normal">· {{ docsDaDemanda(k.id).filter(d => d.status === 'recebido').length }}/{{ docsDaDemanda(k.id).length }} recebidos</span></summary>
+            <DocumentosDemanda class="mt-2" :docs="docsDaDemanda(k.id)" :contato-id="dados.contato.id" :caso-id="k.id" @mudou="carregar" @cobrar="cobrarDocs" />
+          </details>
         </article>
         </template>
         <button v-if="encerradas.length" type="button" class="text-xs text-gray-500 underline underline-offset-2" @click="verEncerradas = !verEncerradas">
           {{ verEncerradas ? 'Ocultar' : 'Mostrar' }} {{ encerradas.length }} demanda(s) encerrada(s)
         </button>
-        <div v-if="dados.compromissos.length">
-          <h3 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Próximos prazos e compromissos</h3>
-          <ul class="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
-            <li v-for="c in dados.compromissos" :key="c.id" class="py-2 flex gap-3 items-center">
-              <Icon :name="TIPOS_COMPROMISSO[c.tipo].icone" class="text-secondary" />
-              <span class="font-medium w-24 shrink-0">{{ dataCurta(dataCompromisso(c)) }}</span>
-              <span class="flex-1">{{ c.titulo }}</span>
-              <span class="text-xs text-gray-500">{{ diaRelativo(dataCompromisso(c)) }}</span>
-            </li>
+        <div v-if="docsGerais.length || prazosGerais.length || tarefasGerais.length" class="card">
+          <h3>Gerais do cliente (sem demanda)</h3>
+          <ul v-if="prazosGerais.length || tarefasGerais.length" class="text-sm divide-y divide-gray-50 dark:divide-zinc-800/60 mb-3">
+            <li v-for="c in prazosGerais" :key="`c${c.id}`" class="py-1.5 flex gap-2 items-center"><Icon :name="TIPOS_COMPROMISSO[c.tipo].icone" class="text-secondary" /><span class="w-20 shrink-0 font-medium">{{ dataCurta(dataCompromisso(c)) }}</span><span class="flex-1">{{ c.titulo }}</span></li>
+            <li v-for="t in tarefasGerais" :key="`t${t.id}`" class="py-1.5 flex gap-2 items-center"><Icon name="ph:check-square-bold" class="text-gray-400" /><span class="w-20 shrink-0 font-medium">{{ dataCurta(t.prazo) }}</span><span class="flex-1">{{ t.titulo }}</span></li>
           </ul>
+          <DocumentosDemanda v-if="docsGerais.length" :docs="docsGerais" :contato-id="dados.contato.id" :caso-id="null" @mudou="carregar" @cobrar="cobrarDocs" />
         </div>
         <CasoFormModal :is-open="casoAberto" :contato="dados.contato" :caso="casoEditando" @close="casoAberto = false" @salvo="casoAberto = false; carregar()" />
-      </div>
-
-      <!-- Documentos -->
-      <div v-else-if="sub === 'documentos'" class="p-5 space-y-4">
-        <p class="text-xs text-gray-500 -mt-1">Checklist do que falta pedir pra cliente, já pronto por área de atuação — cobre quem ainda não mandou.</p>
-        <div class="flex flex-wrap gap-2 items-center">
-          <Button size="sm" variant="outline" icon="ph:list-checks-bold" :loading="gerandoDocs" @click="gerarChecklist">
-            {{ dados.documentos.length ? 'Completar com a lista da área' : 'Gerar checklist da área' }}
-          </Button>
-          <Button v-if="pendentes.length" size="sm" icon="ph:whatsapp-logo-bold" @click="cobrarPendentes">Cobrar pendentes pelo WhatsApp</Button>
-          <span class="ml-auto text-xs text-gray-500">{{ recebidos.length }} recebido(s) · {{ pendentes.length }} pendente(s)</span>
-        </div>
-        <p v-if="!dados.documentos.length" class="text-sm text-gray-400">Nenhum documento listado. Gere a lista padrão de {{ dados.contato.area || 'documentos' }}.</p>
-        <ul class="divide-y divide-gray-100 dark:divide-zinc-800">
-          <li v-for="d in dados.documentos" :key="d.id" class="flex items-center gap-3 py-2 text-sm">
-            <Icon :name="d.status === 'recebido' ? 'ph:check-circle-fill' : d.status === 'dispensado' ? 'ph:minus-circle' : 'ph:circle'"
-                  :class="d.status === 'recebido' ? 'text-success' : 'text-gray-400'" class="text-lg shrink-0" />
-            <span class="flex-1" :class="d.status === 'dispensado' ? 'line-through text-gray-400' : ''">
-              {{ d.descricao }} <span v-if="!d.obrigatorio" class="text-xs text-gray-400">(se houver)</span>
-            </span>
-            <select :value="d.status" class="text-xs rounded-full border border-gray-200 dark:border-zinc-700 bg-transparent px-2 py-1" @change="mudarDoc(d.id, ($event.target as HTMLSelectElement).value)">
-              <option value="pendente">Pendente</option>
-              <option value="recebido">Recebido</option>
-              <option value="dispensado">Dispensado</option>
-            </select>
-            <button type="button" class="text-gray-400 hover:text-danger" title="Remover" @click="removerDoc(d.id)"><Icon name="ph:x-bold" /></button>
-          </li>
-        </ul>
-        <form class="flex gap-2" @submit.prevent="adicionarDoc">
-          <input v-model="novoDoc" class="modal-input flex-1" placeholder="Acrescentar documento…" />
-          <Button type="submit" size="sm" :disabled="!novoDoc.trim()">Adicionar</Button>
-        </form>
-      </div>
       </div>
 
       <!-- Honorários -->
       <div v-else-if="aba === 'honorarios'" class="p-5 space-y-3">
         <p class="text-xs text-gray-500">Propostas e contratos de honorário fechados com esta cliente, e as parcelas em aberto — pra cobrança geral, use a tela Financeiro.</p>
-        <div class="flex justify-end">
+        <div class="flex flex-wrap justify-end gap-4">
+          <button v-if="dados.honorarios.some(h => h.tipo !== 'Consulta')" type="button" class="text-sm font-semibold text-primary" @click="montarProposta">Montar mensagem de proposta</button>
           <NuxtLink :to="`/honorarios?contato=${dados.contato.id}`" class="text-sm font-semibold text-primary">+ Registrar honorário</NuxtLink>
         </div>
         <div v-if="ehAdmin && parcelas.length" class="card">
@@ -366,14 +332,14 @@ import CasoFormModal from './CasoFormModal.vue'
 import ChecklistPainel from './ChecklistPainel.vue'
 import InformacoesCliente from './InformacoesCliente.vue'
 import type { ChecklistFicha, ItemChecklist } from '../../../shared/types/checklist'
-import DiagnosticoPanel from './DiagnosticoPanel.vue'
+import DocumentosDemanda from './DocumentosDemanda.vue'
 import { useProfileStore } from '../../stores/profile'
 import ModeloPicker from './ModeloPicker.vue'
 import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
+interface Detalhe { tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string; modeloInicial?: string | null }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
@@ -384,29 +350,21 @@ const loading = ref(false)
 const aba = ref('resumo')
 const scrollBox = ref<HTMLElement | null>(null)
 
-// Abas na ordem do atendimento: quem é → conversa → consulta → caso → financeiro → histórico.
-// "Consulta" (análise feita na consulta) só aparece enquanto é útil: antes de fechar contrato,
-// ou depois se já houver análise registrada — para cliente antigo sem análise, não vira aba vazia.
-const temAnalise = computed(() => !!dados.value?.checklist?.atendimento?.itens.find(i => i.chave === 'diagnostico')?.concluido)
-const emPreVenda = computed(() => !['ativo', 'concluido'].includes(dados.value?.contato.etapa ?? ''))
+// Cliente (quem é, permanente) → Demandas (o que contratou: etapas, informações, documentos, prazos) → Conversa → Financeiro → Histórico.
 const abas = computed(() => [
-  { id: 'resumo', label: 'Resumo' },
+  { id: 'resumo', label: 'Cliente' },
+  { id: 'processo', label: 'Demandas', badge: dados.value?.casos.filter(c => c.status !== 'encerrado').length || undefined },
   { id: 'conversa', label: 'Conversa', badge: dados.value?.mensagens.length || undefined },
-  ...(emPreVenda.value || temAnalise.value ? [{ id: 'diagnostico', label: 'Consulta' }] : []),
-  { id: 'processo', label: 'Demandas', badge: pendentes.value.length ? `${pendentes.value.length} doc.` : dados.value?.casos.length || undefined },
   { id: 'honorarios', label: 'Financeiro', badge: dados.value?.honorarios.length || undefined },
   { id: 'atividades', label: 'Histórico', badge: dados.value?.atividades.length || undefined },
 ])
-const subAbas = computed(() => [
-  { id: 'casos', label: 'Demandas e prazos', badge: dados.value?.casos.length || undefined },
-  { id: 'documentos', label: 'Documentos', badge: pendentes.value.length ? `${pendentes.value.length} pend.` : undefined },
-  { id: 'qualificacao', label: 'Qualificação' },
-])
-const sub = ref('casos')
+const qualificacaoAberta = ref(false)
 // Nomes antigos de abas (links e atalhos) continuam funcionando.
 function irPara(destino: string) {
-  if (['casos', 'documentos', 'qualificacao'].includes(destino)) { sub.value = destino; aba.value = 'processo' }
-  else aba.value = destino === 'caso' ? 'resumo' : destino
+  // Nomes antigos (links e atalhos) continuam levando ao lugar certo.
+  if (['casos', 'documentos', 'diagnostico', 'caso_demanda'].includes(destino)) aba.value = 'processo'
+  else if (['qualificacao', 'caso'].includes(destino)) aba.value = 'resumo'
+  else aba.value = destino
 }
 
 async function carregar() {
@@ -421,7 +379,6 @@ async function carregar() {
 
 watch(() => props.isOpen, (open) => {
   if (open) {
-    sub.value = 'casos'
     irPara(props.abaInicial || 'resumo')
     dados.value = null
     resposta.value = ''
@@ -538,45 +495,21 @@ function editarCaso(k: Caso | null) {
   casoAberto.value = true
 }
 
-// ─── Documentos ───────────────────────────────────────────────────────────
-const pendentes = computed(() => (dados.value?.documentos ?? []).filter(d => d.status === 'pendente'))
-const recebidos = computed(() => (dados.value?.documentos ?? []).filter(d => d.status === 'recebido'))
-const gerandoDocs = ref(false)
-const novoDoc = ref('')
-async function gerarChecklist() {
-  if (!dados.value) return
-  gerandoDocs.value = true
-  try {
-    await $fetch(`/api/crm/contatos/${dados.value.contato.id}/documentos`, { method: 'POST', body: { gerar: true } })
-    await carregar()
-  } finally {
-    gerandoDocs.value = false
-  }
-}
-async function adicionarDoc() {
-  if (!dados.value || !novoDoc.value.trim()) return
-  await $fetch(`/api/crm/contatos/${dados.value.contato.id}/documentos`, { method: 'POST', body: { descricao: novoDoc.value } })
-  novoDoc.value = ''
-  await carregar()
-}
-async function mudarDoc(id: number, status: string) {
-  await $fetch(`/api/documentos/${id}`, { method: 'PATCH', body: { status } })
-  await carregar()
-}
-async function removerDoc(id: number) {
-  await $fetch(`/api/documentos/${id}`, { method: 'DELETE' })
-  await carregar()
-}
+// ─── Documentos, prazos e tarefas: cada um dentro da sua demanda (ou "gerais") ───────────
+const docsDaDemanda = (id: number) => (dados.value?.documentos ?? []).filter(d => d.caso_id === id)
+const docsGerais = computed(() => (dados.value?.documentos ?? []).filter(d => !d.caso_id))
+const prazosDaDemanda = (id: number) => (dados.value?.compromissos ?? []).filter(c => c.caso_id === id)
+const tarefasDaDemanda = (id: number) => (dados.value?.tarefas ?? []).filter(t => t.caso_id === id)
+const prazosGerais = computed(() => (dados.value?.compromissos ?? []).filter(c => !c.caso_id))
+const tarefasGerais = computed(() => (dados.value?.tarefas ?? []).filter(t => !t.caso_id))
 // Monta a mensagem de cobrança (modelo /pendencia) com as listas reais.
-async function cobrarPendentes() {
+async function cobrarDocs(pendentes: Documento[], recebidos: Documento[]) {
   if (!dados.value) return
   await carregarModelos()
   const base = modelos.value.find(m => m.atalho === '/pendencia')?.texto
     ?? 'Oi, [NOME]! Já recebi:\n[RECEBIDOS]\nPassando pra lembrar do envio de:\n[PENDENTES]\nQual prazo fica confortável pra você me enviar?'
   const lista = (ds: Documento[]) => ds.length ? ds.map(d => `📌 ${d.descricao}`).join('\n') : '—'
-  resposta.value = preencher(base, dados.value.contato.nome)
-    .replace('[RECEBIDOS]', lista(recebidos.value))
-    .replace('[PENDENTES]', lista(pendentes.value))
+  resposta.value = preencher(base, dados.value.contato.nome).replace('[RECEBIDOS]', lista(recebidos)).replace('[PENDENTES]', lista(pendentes))
   aba.value = 'conversa'
 }
 
@@ -610,6 +543,17 @@ async function registrarNps(nota: number) {
   const atalho = nota >= 9 ? '/nps-promotora' : nota >= 7 ? '/nps-neutra' : '/nps-detratora'
   const m = modelos.value.find(x => x.atalho === atalho)
   if (m && dados.value) { resposta.value = preencher(m.texto, dados.value.contato.nome, extrasContato.value); aba.value = 'conversa' }
+}
+
+// Proposta: modelo /proposta-valor com o honorário mais recente (o que está em jogo vem da análise da demanda).
+async function montarProposta() {
+  if (!dados.value) return
+  await carregarModelos()
+  const h = dados.value.honorarios.filter(x => x.tipo !== 'Consulta' && x.status !== 'Cancelado').sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+  const base = modelos.value.find(m => m.atalho === '/proposta-valor')?.texto ?? ''
+  let texto = preencher(base, dados.value.contato.nome)
+  if (h) texto = texto.replace('R$ [VALOR]', brl(h.valor))
+  usarMensagem(texto)
 }
 
 function usarMensagem(texto: string) {
