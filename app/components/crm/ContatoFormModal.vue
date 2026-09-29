@@ -74,7 +74,7 @@
       <label class="field">
         <span>Etapa</span>
         <select v-model="form.etapa" class="modal-input">
-          <option v-for="e in ETAPAS" :key="e.id" :value="e.id">{{ e.nome }}</option>
+          <option v-for="e in ETAPAS.filter(x => x.id !== 'relacionado')" :key="e.id" :value="e.id">{{ e.nome }}</option>
         </select>
       </label>
       <label v-if="form.etapa === 'perdido'" class="field md:col-span-2">

@@ -25,12 +25,12 @@ export default defineEventHandler(async (event) => {
 
   let compromissoId: number | null = null
   if (plano) {
-    const { data: tarefa, error } = await client.from('compromissos').insert({
-      tipo: 'tarefa', titulo: `Plano de ação (revisão): ${plano.slice(0, 120)}`, contato_id: caso.contato_id, caso_id: caso.id,
-      data_limite: body.prazo, responsavel_id: body.responsavel_id || userId, observacao: `Falhas: ${falhas.map(f => f.rotulo).join('; ') || '—'}`,
-    }).select('id').single()
+    // O plano de ação é uma tarefa comum (aparece em Tarefas, Hoje e no Dashboard).
+    const { error } = await client.from('tarefas_internas').insert({
+      titulo: `Plano de ação (revisão): ${plano.slice(0, 120)}`, contato_id: caso.contato_id, caso_id: caso.id,
+      prazo: body.prazo, prioridade: 'alta', descricao: `Falhas: ${falhas.map(f => f.rotulo).join('; ') || '—'}`,
+    })
     if (error) console.error('[qualidade] Erro ao criar tarefa:', error)
-    compromissoId = tarefa?.id ?? null
   }
   const { data, error } = await client.from('revisoes').insert({
     caso_id: caso.id, revisor_id: userId, itens, aprovado: falhas.length === 0,

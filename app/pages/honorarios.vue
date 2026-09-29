@@ -55,7 +55,7 @@ async function carregar() {
 }
 onMounted(() => {
   carregar()
-  if (route.query.contato) novo(Number(route.query.contato))
+  if (route.query.contato) novo(Number(route.query.contato), route.query.caso ? Number(route.query.caso) : undefined)
 })
 watch(filtros, () => { page.value = 1; carregar() })
 watch(visao, carregar)
@@ -90,10 +90,10 @@ watch(() => form.contato_id, async (id) => {
 const opcoesContato = ref<Contato[]>([])
 const contatoEscolhido = ref<Pick<Contato, 'id' | 'nome' | 'telefone'> | null>(null)
 
-function preencher(h?: Honorario, contatoId?: number) {
+function preencher(h?: Honorario, contatoId?: number, casoId?: number) {
   Object.assign(form, {
     contato_id: h?.contato_id ?? contatoId ?? null,
-    caso_id: h?.caso_id ?? null,
+    caso_id: h?.caso_id ?? casoId ?? null,
     descricao: h?.descricao ?? '',
     valor: h?.valor ?? '',
     tipo: h?.tipo ?? 'Contrato fixo',
@@ -109,10 +109,10 @@ function preencher(h?: Honorario, contatoId?: number) {
   })
 }
 
-async function novo(contatoId?: number) {
+async function novo(contatoId?: number, casoId?: number) {
   editando.value = null
   erro.value = null
-  preencher(undefined, contatoId)
+  preencher(undefined, contatoId, casoId)
   contatoEscolhido.value = null
   buscaContato.value = ''
   if (contatoId) {

@@ -340,7 +340,7 @@ const kpis = computed(() => {
     { titulo: 'Hoje', icone: 'ph:sun-bold', valor: r.hoje.total, sub: partes(r.hoje) || 'Nada marcado para hoje', estado: (urgenteHoje ? 'atencao' : 'normal') as Estado, ir: () => navigateTo('/crm') },
     { titulo: 'Atrasado', icone: 'ph:warning-bold', valor: r.atrasado.total, sub: partes(r.atrasado) || 'Nada atrasado', estado: (r.atrasado.prazos ? 'urgente' : r.atrasado.total ? 'atrasado' : 'normal') as Estado, ir: () => { filtro.value = 'todos'; rolar('atencao') } },
     { titulo: 'Próximos 7 dias', icone: 'ph:calendar-blank-bold', valor: r.proximos7.total, sub: partes(r.proximos7) || 'Semana livre', estado: 'normal' as Estado, ir: () => { periodoAgenda.value = '7d'; visiveis.agenda = true; rolar('agenda') } },
-    { titulo: 'Carteira', icone: 'ph:users-bold', valor: r.carteira.clientesAtivos, sub: `${r.carteira.clientesAtivos === 1 ? 'cliente ativo' : 'clientes ativos'} · ${plural(r.carteira.casosAtivos, 'demanda em andamento', 'demandas em andamento')}`, estado: 'normal' as Estado, ir: () => navigateTo('/clientes') },
+    { titulo: 'Carteira', icone: 'ph:users-bold', valor: r.carteira.clientesAtivos, sub: `${r.carteira.clientesAtivos === 1 ? 'cliente ativo' : 'clientes ativos'} · ${plural(r.carteira.casosAtivos, 'demanda em andamento', 'demandas em andamento')}${r.carteira.processosJudiciais + r.carteira.procedimentosExtrajudiciais ? ` · ${r.carteira.processosJudiciais} processo(s) e ${r.carteira.procedimentosExtrajudiciais} procedimento(s)` : ''}`, estado: 'normal' as Estado, ir: () => navigateTo('/demandas') },
   ]
 })
 const chips = computed(() => {

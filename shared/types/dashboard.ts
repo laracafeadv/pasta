@@ -64,7 +64,7 @@ export interface DashboardData {
     hoje: { total: number; tarefas: number; prazos: number; compromissos: number; retornos: number }
     atrasado: { total: number; tarefas: number; prazos: number; compromissos: number; retornos: number }
     proximos7: { total: number; tarefas: number; prazos: number; compromissos: number }
-    carteira: { clientesAtivos: number; casosAtivos: number; casosSuspensos: number; leadsAbertos: number }
+    carteira: { clientesAtivos: number; casosAtivos: number; processosJudiciais: number; procedimentosExtrajudiciais: number; casosSuspensos: number; leadsAbertos: number }
     abertas: { tarefas: number; prazos: number; documentosClientes: number; propostas: number; propostasValor: number }
     /** Mesma conta do número no menu "Hoje". */
     pendencias: number

@@ -5,9 +5,9 @@ import { requireStaff } from '../../utils/security'
 export default defineEventHandler(async (event) => {
   await requireStaff(event, 'documentos/list')
   const q = getQuery(event)
-  const status = ['pendente', 'recebido', 'dispensado'].includes(String(q.status)) ? String(q.status) : 'pendente'
+  const status = ['pendente', 'recebido', 'conferido', 'dispensado', 'rascunho', 'final'].includes(String(q.status)) ? String(q.status) : 'pendente'
   let query = (await serverSupabaseClient(event)).from('documentos')
-    .select('id, descricao, obrigatorio, status, atualizado_em, contato_id, caso_id, contato:contatos(id, nome), caso:casos(id, titulo)')
+    .select('id, descricao, obrigatorio, status, origem, arquivo_url, arquivo_nome, atualizado_em, contato_id, caso_id, contato:contatos(id, nome), caso:casos(id, titulo)')
     .eq('status', status).order('contato_id').order('ordem').limit(1000)
   if (q.contato) query = query.eq('contato_id', Number(q.contato))
   const { data, error } = await query

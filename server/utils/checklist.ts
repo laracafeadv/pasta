@@ -8,7 +8,7 @@ export interface EntradaChecklist {
     drive_pasta_id: string | null; nps: number | null
   }
   honorarios: { tipo: string; status: string; created_at: string; data_contratacao: string | null }[]
-  documentos: { descricao: string; obrigatorio: boolean; status: string }[]
+  documentos: { descricao: string; obrigatorio: boolean; status: string; origem?: string }[]
   casos: { id: number; titulo: string; status: string; resultado: string | null; procedimento: string | null }[]
   qualificacao: { cpf: string | null; endereco: string | null } | null
   /** Última resposta da seção "Análise da consulta" nas demandas do cliente. */
@@ -31,7 +31,7 @@ const dia = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso)
   ? iso.split('-').reverse().slice(0, 2).join('/')
   : new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }))
 type Resultado = { feito: boolean; quando?: string | null; evidencia?: string | null }
-const RECEBIDO = (s: string) => s === 'recebido' || s === 'dispensado'
+const RECEBIDO = (s: string) => ['recebido', 'conferido', 'final', 'dispensado'].includes(s)
 
 /**
  * Itens automáticos: só olham fatos que já estão registrados no CRM (um honorário, um documento
@@ -68,7 +68,7 @@ function avaliarAutomatico(chave: string, e: EntradaChecklist): Resultado {
       const proc = documentos.find(d => /procuração assinada/i.test(d.descricao))
       const contr = documentos.find(d => /contrato de honorários assinado/i.test(d.descricao))
       if (!proc && !contr) return { feito: false, evidencia: 'Gere o checklist de documentos para acompanhar' }
-      const ok = (d?: { status: string }) => d?.status === 'recebido'
+      const ok = (d?: { status: string }) => !!d && ['recebido', 'conferido', 'final'].includes(d.status)
       return { feito: ok(proc) && ok(contr), evidencia: `Procuração: ${ok(proc) ? 'recebida' : 'pendente'} · Contrato: ${ok(contr) ? 'recebido' : 'pendente'}` }
     }
     case 'pasta_drive':
@@ -76,7 +76,7 @@ function avaliarAutomatico(chave: string, e: EntradaChecklist): Resultado {
     case 'caso_aberto':
       return casos.length ? { feito: true, evidencia: casos.length === 1 ? '1 caso' : `${casos.length} casos` } : { feito: false }
     case 'docs_obrigatorios': {
-      const obrig = documentos.filter(d => d.obrigatorio)
+      const obrig = documentos.filter(d => d.obrigatorio && d.origem !== 'produzido')
       if (!obrig.length) return { feito: false, evidencia: 'Checklist de documentos ainda não gerado' }
       const ok = obrig.filter(d => RECEBIDO(d.status)).length
       return { feito: ok === obrig.length, evidencia: `${ok} de ${obrig.length} obrigatórios` }
@@ -120,7 +120,7 @@ export function montarChecklist(e: EntradaChecklist): ChecklistFicha {
 
   // ── Etapas de cada caso, conforme o procedimento escolhido ───────────────────────────────
   const casos: Record<number, ChecklistEscopo> = {}
-  const obrig = e.documentos.filter(d => d.obrigatorio)
+  const obrig = e.documentos.filter(d => d.obrigatorio && d.origem !== 'produzido')
   for (const c of e.casos) {
     const etapas = itensDoProcedimento(c.procedimento)
     if (!etapas.length) continue

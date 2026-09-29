@@ -3,12 +3,14 @@
     <div class="flex flex-wrap items-baseline gap-2">
       <span class="text-[10px] font-bold uppercase tracking-widest" :class="processo.natureza === 'judicial' ? 'text-primary' : 'text-secondary-dark'">{{ NATUREZAS_PROCESSO[processo.natureza] }}</span>
       <span v-if="processo.numero" class="font-mono text-xs">{{ processo.numero }}</span>
+      <span v-if="processo.tipo_procedimento" class="text-xs text-gray-500">{{ processo.tipo_procedimento }}</span>
       <span class="tag ml-auto">{{ STATUS_CASO[processo.status] }}</span>
     </div>
     <p class="text-xs text-gray-500 mt-0.5">
       {{ [processo.tribunal, processo.orgao, processo.comarca && `${processo.comarca}${processo.uf ? '/' + processo.uf : ''}`].filter(Boolean).join(' · ') || 'Órgão não informado' }}
       <span v-if="processo.fase"> · {{ processo.fase }}</span>
       <span v-if="processo.valor"> · {{ brl(processo.valor) }}</span>
+      <span v-if="processo.responsavel_nome"> · resp.: {{ processo.responsavel_nome }}</span>
     </p>
     <div class="flex flex-wrap gap-3 pt-1 text-xs">
       <button type="button" class="underline underline-offset-2" @click="emit('editar', processo)">Editar</button>

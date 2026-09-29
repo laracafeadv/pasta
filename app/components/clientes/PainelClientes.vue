@@ -6,7 +6,7 @@ const ContatoFormModal = defineAsyncComponent(() => import('~/components/crm/Con
 const ContatoDetailModal = defineAsyncComponent(() => import('~/components/crm/ContatoDetailModal.vue'))
 const AndamentoModal = defineAsyncComponent(() => import('~/components/crm/AndamentoModal.vue'))
 import { useCrmStore, type AndamentoPayload } from '~/stores/crm'
-import { etapa, type Contato, type ContatoInput } from '~~/shared/types/crm'
+import { type Contato, type ContatoInput } from '~~/shared/types/crm'
 import { dataCurta, telefoneFormatado } from '~/utils/formatadores'
 
 // Clientes: quem já fechou contrato (etapa ativo ou concluído). Perfil completo — casos,
@@ -30,6 +30,13 @@ watch(busca, () => {
   debounce = setTimeout(carregar, 300)
 })
 onMounted(carregar)
+
+// Situação do cliente: com demanda em andamento, cadastrado sem demanda ativa, ou concluído (todas encerradas).
+function situacao(c: ClienteComDemandas) {
+  const ativas = (c.demandas ?? []).filter(d => d.status !== 'encerrado').length
+  if (ativas) return { nome: `${ativas} demanda${ativas === 1 ? '' : 's'} ativa${ativas === 1 ? '' : 's'}`, cor: 'bg-success/15 text-success-dark' }
+  return c.etapa === 'concluido' ? { nome: 'Concluído', cor: 'bg-gray-100 dark:bg-zinc-800 text-gray-500' } : { nome: 'Sem demanda ativa', cor: 'bg-warning/15 text-warning-dark' }
+}
 
 const columns: ColumnDef[] = [
   { key: 'nome', label: 'Cliente' },
@@ -99,7 +106,7 @@ async function concluirAndamento(data: AndamentoPayload) {
         <p v-else class="text-xs text-gray-400">Sem demanda</p>
       </template>
       <template #cell-situacao="{ item }">
-        <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" :class="item.etapa === 'ativo' ? 'bg-success/15 text-success-dark' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500'">{{ etapa(item.etapa).nome }}</span>
+        <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" :class="situacao(item).cor">{{ situacao(item).nome }}</span>
       </template>
       <template #cell-cliente_desde="{ item }">{{ dataCurta(item.etapa_desde) }}</template>
     </DataTable>

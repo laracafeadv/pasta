@@ -241,7 +241,10 @@
         <article class="card" :class="k.status === 'encerrado' ? 'opacity-75' : ''">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
             <p class="font-semibold">{{ k.titulo }}</p>
-            <span class="tag">{{ STATUS_CASO[k.status] }}</span>
+            <span class="flex items-center gap-2">
+              <span v-if="k.status !== 'encerrado'" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" :class="situacaoComercial(k.id).cor">{{ situacaoComercial(k.id).nome }}</span>
+              <span class="tag">{{ STATUS_CASO[k.status] }}</span>
+            </span>
           </div>
           <p class="text-xs text-gray-500">
             Atuação {{ TIPOS_CASO[k.tipo].toLowerCase() }}<span v-if="k.procedimento"> · {{ PROCEDIMENTOS.find(p => p.valor === k.procedimento)?.rotulo }}</span>
@@ -251,6 +254,7 @@
             <button type="button" class="underline underline-offset-2" @click="novoProcesso(k, 'judicial')">+ Processo judicial</button>
             <button type="button" class="underline underline-offset-2" @click="novoProcesso(k, 'extrajudicial')">+ Procedimento extrajudicial</button>
             <NuxtLink :to="`/agenda?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Novo prazo / compromisso</NuxtLink>
+            <NuxtLink v-if="k.status !== 'encerrado' && situacaoComercial(k.id).nome === 'Sem proposta'" :to="`/honorarios?contato=${dados.contato.id}&caso=${k.id}`" class="underline underline-offset-2">Registrar proposta</NuxtLink>
             <button v-if="ehAdmin && k.tipo !== 'consultivo'" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração desta demanda</button>
           </div>
           <div v-if="processosDaDemanda(k.id).length" class="mt-3 space-y-2">
@@ -260,6 +264,10 @@
           <details class="mt-3" :open="partesDaDemanda(k.id).length > 0">
             <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Partes e interessados <span class="normal-case tracking-normal font-normal">· {{ partesDaDemanda(k.id).length }}</span></summary>
             <PartesDemanda class="mt-2" :partes="partesDaDemanda(k.id)" :caso-id="k.id" @mudou="carregar" />
+          </details>
+          <details class="mt-3" :open="!!(k.analise || k.riscos || k.decisao)">
+            <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Análise do escritório <span v-if="k.decisao" class="normal-case tracking-normal font-normal">· {{ DECISOES_DEMANDA[k.decisao].nome }}</span></summary>
+            <AnaliseDemanda class="mt-2" :caso="k" @mudou="carregar" />
           </details>
           <ChecklistPainel v-if="dados.checklist?.casos[k.id]" class="mt-2" :escopo="dados.checklist.casos[k.id]!" @alternar="i => alternarChecklist(i, k.id)" />
           <p v-else class="text-xs text-gray-400 pt-1">Sem procedimento definido. <button type="button" class="underline underline-offset-2 hover:text-primary" @click="editarCaso(k)">Escolha o procedimento</button> para acompanhar as etapas desta demanda.</p>
@@ -272,8 +280,8 @@
             </ul>
           </div>
           <details class="mt-3">
-            <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Documentos desta demanda <span class="normal-case tracking-normal font-normal">· {{ docsDaDemanda(k.id).filter(d => d.status === 'recebido').length }}/{{ docsDaDemanda(k.id).length }} recebidos</span></summary>
-            <DocumentosDemanda class="mt-2" :docs="docsDaDemanda(k.id)" :contato-id="dados.contato.id" :caso-id="k.id" @mudou="carregar" @cobrar="cobrarDocs" />
+            <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Documentos desta demanda <span class="normal-case tracking-normal font-normal">· {{ docsDaDemanda(k.id).filter(d => ['recebido', 'conferido', 'final'].includes(d.status)).length }}/{{ docsDaDemanda(k.id).length }} recebidos</span></summary>
+            <DocumentosDemanda class="mt-2" :docs="docsDaDemanda(k.id)" :contato-id="dados.contato.id" :caso-id="k.id" :processos="processosDaDemanda(k.id)" :partes="partesDaDemanda(k.id)" @mudou="carregar" @cobrar="cobrarDocs" />
           </details>
         </article>
         </template>
@@ -297,30 +305,40 @@
         <p class="text-xs text-gray-500">Propostas e contratos de honorário fechados com esta cliente, e as parcelas em aberto — pra cobrança geral, use a tela Financeiro.</p>
         <div class="flex flex-wrap justify-end gap-4">
           <button v-if="dados.honorarios.some(h => h.tipo !== 'Consulta')" type="button" class="text-sm font-semibold text-primary" @click="montarProposta">Montar mensagem de proposta</button>
-          <NuxtLink :to="`/honorarios?contato=${dados.contato.id}`" class="text-sm font-semibold text-primary">+ Registrar honorário</NuxtLink>
+          <NuxtLink :to="`/honorarios?contato=${dados.contato.id}`" class="text-sm font-semibold text-primary">+ Registrar honorário / proposta</NuxtLink>
         </div>
         <div v-if="ehAdmin && parcelas.length" class="card">
           <h3>Parcelas em aberto</h3>
           <ul class="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
             <li v-for="l in parcelas" :key="l.id" class="py-2 flex flex-wrap items-center gap-2">
               <span class="w-24 font-medium tabular-nums" :class="l.vencimento < hojeIso ? 'text-danger' : ''">{{ dataCurta(l.vencimento) }}</span>
-              <span class="flex-1">{{ l.descricao }} · <b>{{ brl(l.valor) }}</b></span>
+              <span class="flex-1">{{ l.descricao }} · <b>{{ brl(l.valor) }}</b><span v-if="l.caso_id && dados.casos.length > 1" class="text-xs text-gray-400"> · {{ dados.casos.find(k => k.id === l.caso_id)?.titulo }}</span></span>
               <button v-if="l.vencimento < hojeIso" type="button" class="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-white" @click="mensagemParcela(l, '/cobranca')">Cobrar</button>
               <button type="button" class="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border border-gray-300 dark:border-zinc-700 hover:border-primary" @click="mensagemParcela(l, '/boleto')">Enviar boleto</button>
             </li>
           </ul>
         </div>
-        <p v-if="!dados.honorarios.length" class="text-sm text-gray-400">Nenhum honorário registrado para este contato.</p>
-        <div v-for="h in dados.honorarios" :key="h.id" class="card flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="font-semibold">{{ brl(h.valor) }} <span class="text-xs text-gray-400">· {{ h.tipo }}<span v-if="h.parcelas > 1"> · {{ h.parcelas }}x</span></span></p>
-            <p class="text-xs text-gray-500">{{ h.descricao || '—' }}<span v-if="h.caso_id && dados.casos.length > 1"> · demanda: {{ dados.casos.find(c => c.id === h.caso_id)?.titulo }}</span></p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button v-if="ehAdmin" type="button" class="text-xs underline underline-offset-2" title="Gerar contrato em Word" @click="peca(`/api/pecas/contrato?honorario=${h.id}`)">Contrato (.docx)</button>
-            <span class="tag">{{ h.status }}</span>
-          </div>
+        <p v-if="!dados.honorarios.length" class="text-sm text-gray-400">Nenhum honorário registrado para este cliente.</p>
+        <div v-if="dados.honorarios.length" class="grid grid-cols-3 gap-2 text-center">
+          <div class="card !p-3"><p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Contratado</p><p class="font-serif text-lg text-primary dark:text-zinc-100">{{ brl(totaisCliente.contratado) }}</p></div>
+          <div class="card !p-3"><p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Recebido</p><p class="font-serif text-lg text-primary dark:text-zinc-100">{{ brl(totaisCliente.pago) }}</p></div>
+          <div class="card !p-3"><p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Propostas em aberto</p><p class="font-serif text-lg text-primary dark:text-zinc-100">{{ brl(totaisCliente.proposta) }}</p></div>
         </div>
+        <section v-for="g in financeiroPorDemanda" :key="g.id ?? 0" class="space-y-2">
+          <p class="flex flex-wrap items-baseline gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+            {{ g.titulo }} <span class="normal-case tracking-normal font-normal text-gray-400">· contratado {{ brl(g.contratado) }}<template v-if="g.proposta"> · proposta {{ brl(g.proposta) }}</template></span>
+          </p>
+          <div v-for="h in g.itens" :key="h.id" class="card flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="font-semibold">{{ brl(h.valor) }} <span class="text-xs text-gray-400">· {{ h.tipo }}<span v-if="h.parcelas > 1"> · {{ h.parcelas }}x</span></span></p>
+              <p class="text-xs text-gray-500">{{ h.descricao || '—' }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button v-if="ehAdmin" type="button" class="text-xs underline underline-offset-2" title="Gerar contrato em Word" @click="peca(`/api/pecas/contrato?honorario=${h.id}`)">Contrato (.docx)</button>
+              <span class="tag">{{ h.status }}</span>
+            </div>
+          </div>
+        </section>
       </div>
     </template>
   </Modal>
@@ -338,7 +356,7 @@ import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import PreFormularioEditor from './PreFormularioEditor.vue'
 import { PROCEDIMENTOS } from '~~/shared/data/checklist'
-import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Movimentacao, type Parte, type Processo, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, DECISOES_DEMANDA, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Movimentacao, type Parte, type Processo, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
 import ChecklistPainel from './ChecklistPainel.vue'
@@ -348,6 +366,7 @@ import DocumentosDemanda from './DocumentosDemanda.vue'
 import ProcessoCard from './ProcessoCard.vue'
 import ProcessoFormModal from './ProcessoFormModal.vue'
 import PartesDemanda from './PartesDemanda.vue'
+import AnaliseDemanda from './AnaliseDemanda.vue'
 import { useProfileStore } from '../../stores/profile'
 import ModeloPicker from './ModeloPicker.vue'
 import { useModelos } from '../../composables/useModelos'
@@ -541,6 +560,27 @@ async function abrirDemandaDeConsulta() {
   } finally {
     abrindoConsulta.value = false
   }
+}
+// Financeiro por demanda + consolidado do cliente.
+const honorariosReais = computed(() => (dados.value?.honorarios ?? []).filter(h => h.status !== 'Cancelado'))
+const somar = (hs: Honorario[], st: string[]) => hs.filter(h => st.includes(h.status) && h.tipo !== 'Consulta').reduce((t, h) => t + Number(h.valor), 0)
+const totaisCliente = computed(() => ({ contratado: somar(honorariosReais.value, ['Contratado', 'Pago']), pago: somar(honorariosReais.value, ['Pago']), proposta: somar(honorariosReais.value, ['Proposta']) }))
+const financeiroPorDemanda = computed(() => {
+  const d = dados.value
+  if (!d) return []
+  const grupos: { id: number | null; titulo: string; itens: Honorario[]; contratado: number; proposta: number }[] = []
+  for (const k of [...d.casos.map(c => ({ id: c.id as number | null, titulo: c.titulo })), { id: null, titulo: 'Sem demanda específica' }]) {
+    const itens = honorariosReais.value.filter(h => (h.caso_id ?? null) === k.id)
+    if (itens.length) grupos.push({ ...k, itens, contratado: somar(itens, ['Contratado', 'Pago']), proposta: somar(itens, ['Proposta']) })
+  }
+  return grupos
+})
+// Situação comercial da DEMANDA (não do cliente): cliente antigo abre demanda nova e ela tem a sua própria proposta/contratação.
+function situacaoComercial(casoId: number) {
+  const hs = honorariosReais.value.filter(h => h.caso_id === casoId && h.tipo !== 'Consulta')
+  if (hs.some(h => ['Contratado', 'Pago'].includes(h.status))) return { nome: 'Contratada', cor: 'bg-success/15 text-success-dark' }
+  if (hs.some(h => h.status === 'Proposta')) return { nome: 'Proposta enviada', cor: 'bg-warning/15 text-warning-dark' }
+  return { nome: 'Sem proposta', cor: 'bg-gray-100 dark:bg-zinc-800 text-gray-500' }
 }
 const verEncerradas = ref(false)
 const encerradas = computed(() => (dados.value?.casos ?? []).filter(c => c.status === 'encerrado'))

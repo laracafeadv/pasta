@@ -19,7 +19,7 @@
       <label class="field">
         <span>Etapa agora</span>
         <select v-model="form.etapa" class="modal-input">
-          <option v-for="e in ETAPAS" :key="e.id" :value="e.id">{{ e.nome }}</option>
+          <option v-for="e in ETAPAS.filter(x => x.id !== 'relacionado')" :key="e.id" :value="e.id">{{ e.nome }}</option>
         </select>
       </label>
       <template v-if="form.etapa === 'agendado' && contato?.etapa !== 'agendado'">

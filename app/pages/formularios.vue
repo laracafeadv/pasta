@@ -289,7 +289,7 @@ onMounted(async () => {
           <div v-for="(p, i) in sec.itens" :key="p.id" class="flex items-stretch rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 hover:border-primary">
             <button type="button" class="flex-1 min-w-0 text-left p-4" @click="abrirPergunta(p)">
               <p class="text-sm font-semibold text-primary dark:text-zinc-100">{{ p.texto }}</p>
-              <p class="text-xs text-gray-400 mt-0.5 truncate"><span v-if="p.escopo === 'demanda'" class="font-semibold text-secondary-dark">Demanda · </span>{{ nomeTipo(p.tipo) }}<span v-if="p.opcoes.length"> — {{ p.opcoes.join(', ') }}</span></p>
+              <p class="text-xs text-gray-400 mt-0.5 truncate"><span v-if="p.escopo === 'demanda'" class="font-semibold text-secondary-dark">Demanda: {{ p.procedimentos?.length ? p.procedimentos.map(v => PROCEDIMENTOS.find(x => x.valor === v)?.rotulo ?? v).join(', ') : 'todas' }} · </span><span v-else class="font-semibold text-primary">Cliente · </span>{{ nomeTipo(p.tipo) }}<span v-if="p.mostrar_se" class="text-gray-400"> · condicional</span><span v-if="p.opcoes.length"> — {{ p.opcoes.join(', ') }}</span></p>
             </button>
             <div class="flex flex-col justify-center pr-2 text-gray-300">
               <button type="button" class="hover:text-primary disabled:opacity-30" :disabled="i === 0" aria-label="Subir" @click="mover(p, -1)"><Icon name="ph:caret-up-bold" /></button>

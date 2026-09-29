@@ -15,7 +15,7 @@ export interface EntradaDashboard {
     id: number; nome: string | null; etapa: string; created_at: string; proxima_acao: string | null; proxima_data: string | null
     ultima_mensagem_em: string | null; nao_contatar: boolean | null; sugestao_resposta: string | null
   }[]
-  casos: { id: number; titulo: string; status: string; processos?: { fase: string | null; status: string }[]; contato: Pessoa }[]
+  casos: { id: number; titulo: string; status: string; processos?: { fase: string | null; status: string; natureza?: string }[]; contato: Pessoa }[]
   compromissos: {
     id: number; tipo: string; titulo: string; inicio: string | null; data_limite: string | null; local: string | null
     contato_id: number | null; caso_id: number | null; contato: Pessoa; caso: { id: number; titulo: string } | null
@@ -264,6 +264,8 @@ export function montarDashboard(e: EntradaDashboard): DashboardData {
       carteira: {
         clientesAtivos: e.contatos.filter(c => c.etapa === 'ativo').length,
         casosAtivos: casosAtivos.length,
+        processosJudiciais: e.casos.flatMap(c => c.processos ?? []).filter(p => p.status === 'ativo' && p.natureza === 'judicial').length,
+        procedimentosExtrajudiciais: e.casos.flatMap(c => c.processos ?? []).filter(p => p.status === 'ativo' && p.natureza === 'extrajudicial').length,
         casosSuspensos: e.casos.filter(c => c.status === 'suspenso').length,
         leadsAbertos: abertos.filter(c => c.etapa !== 'ativo').length,
       },

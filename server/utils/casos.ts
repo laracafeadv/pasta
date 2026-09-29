@@ -1,4 +1,4 @@
-import { AREAS, CASO_CAMPOS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, pick } from '../../shared/types/crm'
+import { AREAS, CASO_CAMPOS, DECISOES_DEMANDA, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, pick } from '../../shared/types/crm'
 import { PROCEDIMENTOS } from '../../shared/data/checklist'
 import { registrarAtividade } from './crm'
 
@@ -10,6 +10,9 @@ export function limparCaso(body: Record<string, any>) {
   if (d.tipo && !(d.tipo in TIPOS_CASO)) throw createError({ statusCode: 400, message: 'Tipo inválido.' })
   if (d.status && !(d.status in STATUS_CASO)) throw createError({ statusCode: 400, message: 'Status inválido.' })
   if (d.resultado && !(d.resultado in RESULTADOS_CASO)) throw createError({ statusCode: 400, message: 'Resultado inválido.' })
+  if (d.decisao && !(d.decisao in DECISOES_DEMANDA)) throw createError({ statusCode: 400, message: 'Decisão inválida.' })
+  if ('analise' in d && d.analise) d.analise = String(d.analise).slice(0, 8000)
+  if ('riscos' in d && d.riscos) d.riscos = String(d.riscos).slice(0, 4000)
   if (d.procedimento && !PROCEDIMENTOS.some(p => p.valor === d.procedimento)) throw createError({ statusCode: 400, message: 'Procedimento inválido.' })
   if (d.area && !(d.area in AREAS)) throw createError({ statusCode: 400, message: 'Área inválida.' })
   if ('contato_id' in d) d.contato_id = Number(d.contato_id)

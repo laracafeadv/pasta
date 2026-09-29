@@ -4,17 +4,17 @@
 
 | Conceito | Definição | Tabela | Módulo |
 |---|---|---|---|
-| **Pessoa / Contato** | Qualquer pessoa que já falou com o escritório. Cadastrada uma única vez. | `contatos` | Leads, Clientes, Mensagens |
+| **Pessoa / Contato** | Qualquer pessoa conhecida pelo escritório, cadastrada uma única vez. Estados (etapa): novo → em qualificação → consulta agendada → consulta realizada → proposta enviada → cliente ativo → concluído (ou não contratou). "Pessoa cadastrada" (`relacionado`) é quem só aparece como parte/interessado: não é lead nem cliente e não entra em funil nem em Hoje. | `contatos` | Leads, Clientes, Mensagens |
 | **Lead** | Pessoa ainda em atendimento comercial (etapas novo → proposta). Não é outra entidade: é a etapa do contato. | `contatos.etapa` | Leads |
 | **Cliente** | Pessoa que contratou (etapa ativo / concluído). Continua cadastrada depois de tudo encerrado. | `contatos.etapa` | Clientes |
 | **Demanda / Serviço** | O que o cliente contratou: consultivo, documental, extrajudicial ou judicial. Um cliente tem várias ao longo do tempo. Contém procedimento (checklist), informações próprias, documentos, prazos, tarefas, honorário e histórico. | `casos` (nome interno; "Caso" não existe mais na interface) | Demandas |
 | **Processo** (judicial) | Execução formal em juízo: tribunal, vara, número CNJ, fase, valor, movimentações. Uma demanda tem 0..N. | `processos` (natureza = judicial) | Processos |
 | **Procedimento** (extrajudicial) | Execução formal fora do Judiciário: cartório/serventia, protocolo, etapas, atos. Uma demanda tem 0..N. | `processos` (natureza = extrajudicial) | Processos |
-| **Parte / Interessado** | Quem participa de uma demanda sem ser o cliente: parte contrária, cônjuge, herdeiros, testemunhas. | `partes` | Ficha › Demandas |
+| **Parte / Interessado** | Quem participa de uma demanda sem ser o cliente: parte contrária, cônjuge, herdeiros, testemunhas. Aponta para uma pessoa já cadastrada (ou cadastra uma na hora), sem duplicar fichas. | `partes` (`contato_id`) | Ficha › Demandas |
 | **Movimentação** | Andamento registrado num processo/procedimento. | `movimentacoes` | Ficha › Demandas |
-| **Tarefa** | Algo a fazer (com data de execução). | `tarefas_internas` | Tarefas |
+| **Tarefa** | Algo a fazer (com data de execução). Existe um só lugar para tarefas; a Agenda tem apenas prazos, audiências, consultas e reuniões. | `tarefas_internas` | Tarefas |
 | **Prazo / Compromisso** | Obrigação ou evento com data: prazo processual, audiência, consulta, reunião. | `compromissos` | Prazos, Agenda |
-| **Documento** | Item pedido ao cliente, por demanda (recebido / pendente). | `documentos` | Documentos, Ficha |
+| **Documento** | Pedido ao cliente (pendente → recebido → conferido) ou peça produzida pelo escritório (rascunho → final), por demanda, opcionalmente ligado a um processo/procedimento e a uma parte. Guarda só a referência do arquivo (provedor + link), pronta para o Drive. | `documentos` | Documentos, Ficha |
 | **Interação / Histórico** | O que aconteceu, por cliente e, quando aplicável, por demanda. | `atividades`, `mensagens_whatsapp`, `auditoria` | Ficha › Histórico |
 | **Financeiro** | Honorário (contratação) por demanda, parcelas e recebimentos. | `honorarios`, `lancamentos` | Financeiro |
 
@@ -24,7 +24,8 @@ Hierarquia: **Pessoa → Cliente → Demanda → Processo/Procedimento → Movim
 - **Cliente**: `contato_respostas` (perguntas de escopo "cliente").
 - **Demanda**: `caso_respostas` (perguntas de escopo "demanda", opcionalmente por procedimento).
 - Perguntas condicionais (`mostrar_se`), seções, ordem, ativação e exclusão segura no construtor.
-- "Diagnóstico" não existe mais: virou a seção "Análise da consulta" (perguntas da demanda).
+- "Diagnóstico" não existe mais. **Dados coletados** (formulário) ficam em perguntas; a **análise jurídica do escritório** (análise, riscos, decisão) tem campos próprios na demanda (`casos.analise/riscos/decisao`).
+- **Comercial por demanda:** cada demanda tem a sua situação comercial (sem proposta → proposta enviada → contratada), derivada dos honorários dela. Cliente antigo não volta ao funil: abre a demanda e registra a proposta dela.
 
 ## Regras de ciclo de vida
 - Encerrar a última demanda de um cliente ativo → cliente "Concluído" (segue cadastrado).

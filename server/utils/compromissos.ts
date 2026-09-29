@@ -4,6 +4,7 @@ import { calcularPrazo } from '../../shared/utils/juridico'
 export function limparCompromisso(body: Record<string, any>) {
   const d = pick(body ?? {}, COMPROMISSO_CAMPOS) as Record<string, any>
   for (const [k, v] of Object.entries(d)) if (v === '') d[k] = null
+  if (d.tipo === 'tarefa') throw createError({ statusCode: 400, message: 'Tarefas são criadas em Tarefas. Aqui ficam prazos, audiências, consultas e reuniões.' })
   if (d.tipo && !(d.tipo in TIPOS_COMPROMISSO)) throw createError({ statusCode: 400, message: 'Tipo inválido.' })
   if ('titulo' in d && !String(d.titulo ?? '').trim()) throw createError({ statusCode: 400, message: 'Descreva o compromisso.' })
   if (d.titulo) d.titulo = String(d.titulo).trim().slice(0, 200)

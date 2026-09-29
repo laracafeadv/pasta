@@ -28,22 +28,15 @@ export default defineEventHandler(async (event) => {
   if (contato.error || !contato.data) throw createError({ statusCode: 404, message: 'Contato não encontrado.' })
   for (const r of [honorarios, mensagens, atividades, documentos, casos, compromissos, tarefas, marcas, processos]) if (r.error) console.error('[crm/detail] Erro parcial:', r.error)
 
-  // "Análise da consulta" (antigo Diagnóstico): vem das respostas às perguntas dessa seção, nas demandas do cliente.
-  let analise: { updated_at: string | null } | null = null
+  // Análise do escritório (antigo Diagnóstico): vem dos campos próprios da demanda.
+  const comAnalise = (casos.data ?? []).filter(c => c.analise || c.decisao || c.riscos).map(c => c.updated_at as string).sort().reverse()
+  const analise: { updated_at: string | null } | null = comAnalise.length ? { updated_at: comAnalise[0] ?? null } : null
   const idsCasos = (casos.data ?? []).map(c => c.id)
-  if (idsCasos.length) {
-    const { data: perguntasAnalise } = await client.from('formulario_perguntas').select('id').eq('secao', 'Análise da consulta')
-    const idsPerg = (perguntasAnalise ?? []).map(p => p.id)
-    if (idsPerg.length) {
-      const { data: ultima } = await client.from('caso_respostas').select('updated_at').in('caso_id', idsCasos).in('pergunta_id', idsPerg).order('updated_at', { ascending: false }).limit(1)
-      analise = ultima?.[0] ? { updated_at: ultima[0].updated_at } : null
-    }
-  }
 
   // Partes das demandas e movimentações dos processos (carregadas juntas: são poucas por cliente).
   const idsProcessos = (processos.data ?? []).map(p => p.id)
   const [partes, movimentacoes] = await Promise.all([
-    idsCasos.length ? client.from('partes').select('*').in('caso_id', idsCasos).order('id') : Promise.resolve({ data: [] as Parte[] }),
+    idsCasos.length ? client.from('partes').select('*, contato:contatos(id, nome, etapa)').in('caso_id', idsCasos).order('id') : Promise.resolve({ data: [] as Parte[] }),
     idsProcessos.length ? client.from('movimentacoes').select('*').in('processo_id', idsProcessos).order('data', { ascending: false }).order('id', { ascending: false }).limit(400) : Promise.resolve({ data: [] as Movimentacao[] }),
   ])
 

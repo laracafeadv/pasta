@@ -19,6 +19,8 @@
         <datalist :id="`fases-${form.natureza}`"><option v-for="f in (form.natureza === 'judicial' ? FASES_PROCESSUAIS : FASES_EXTRAJUDICIAIS)" :key="f" :value="f" /></datalist>
       </label>
       <label class="field"><span>{{ form.natureza === 'judicial' ? 'Valor da causa' : 'Valor do ato (opcional)' }}</span><input v-model.number="form.valor" type="number" step="0.01" min="0" class="modal-input" /></label>
+      <label v-if="form.natureza === 'extrajudicial'" class="field sm:col-span-2"><span>Tipo de procedimento</span><input v-model="form.tipo_procedimento" list="tipos-proc" class="modal-input" placeholder="Ex.: Escritura de inventário" /><datalist id="tipos-proc"><option v-for="t in TIPOS_PROCEDIMENTO" :key="t" :value="t" /></datalist></label>
+      <label class="field sm:col-span-2"><span>Advogado / responsável</span><input v-model="form.responsavel_nome" class="modal-input" placeholder="Quem conduz" /></label>
       <label class="field"><span>Status</span><select v-model="form.status" class="modal-input"><option v-for="(n, k) in STATUS_CASO" :key="k" :value="k">{{ n }}</option></select></label>
       <label class="field"><span>Início</span><input v-model="form.data_inicio" type="date" class="modal-input" /></label>
       <label v-if="form.status === 'encerrado'" class="field"><span>Encerramento</span><input v-model="form.data_encerramento" type="date" class="modal-input" /></label>
@@ -40,6 +42,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import { FASES_EXTRAJUDICIAIS, FASES_PROCESSUAIS, NATUREZAS_PROCESSO, STATUS_CASO, UFS, type Processo } from '../../../shared/types/crm'
+const TIPOS_PROCEDIMENTO = ['Escritura pública (inventário, divórcio, partilha)', 'Escritura de pacto ou união estável', 'Averbação / registro', 'Habilitação de casamento', 'Retificação / regularização', 'Procedimento administrativo', 'Outro']
 import { hojeISO } from '../../stores/crm'
 import { numeroCnjValido } from '../../../shared/utils/juridico'
 
@@ -57,7 +60,7 @@ watch(() => props.isOpen, (aberto) => {
   if (!aberto) return
   erro.value = null
   Object.assign(form, props.processo ?? {
-    natureza: props.natureza, numero: '', tribunal: '', orgao: '', comarca: '', uf: '', fase: '', status: 'ativo', valor: null, link: '',
+    natureza: props.natureza, numero: '', responsavel_nome: '', tipo_procedimento: '', tribunal: '', orgao: '', comarca: '', uf: '', fase: '', status: 'ativo', valor: null, link: '',
     data_inicio: hojeISO(), data_encerramento: null, observacoes: '',
   })
 })

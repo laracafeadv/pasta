@@ -84,9 +84,9 @@ export default defineEventHandler(async (event) => {
   // Pós-venda: ao concluir, a agenda já lembra de voltar a falar com ela em 30 dias e em 1 ano.
   if (destino.id === 'concluido' && atual.etapa !== 'concluido') {
     const dia = (n: number) => new Date(Date.now() + n * 864e5).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
-    await client.from('compromissos').insert([
-      { tipo: 'tarefa', titulo: 'Pós-venda: 30 dias depois — /pos-venda-30', contato_id: id, data_limite: dia(30), responsavel_id: userId },
-      { tipo: 'tarefa', titulo: 'Pós-venda: 1 ano depois — /pos-venda-1ano', contato_id: id, data_limite: dia(365), responsavel_id: userId },
+    await client.from('tarefas_internas').insert([
+      { titulo: 'Pós-venda: 30 dias depois — /pos-venda-30', contato_id: id, prazo: dia(30), prioridade: 'media' },
+      { titulo: 'Pós-venda: 1 ano depois — /pos-venda-1ano', contato_id: id, prazo: dia(365), prioridade: 'baixa' },
     ])
   }
   if (atual.etapa !== destino.id) {

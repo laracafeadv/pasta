@@ -16,7 +16,10 @@ export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient(event)
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) throw createError({ statusCode: 400, message: 'ID inválido.' })
-  const body = await readBody<{ gerar?: boolean; descricao?: string; obrigatorio?: boolean; caso_id?: number | null }>(event)
+  const body = await readBody<{ gerar?: boolean; descricao?: string; obrigatorio?: boolean; caso_id?: number | null; processo_id?: number | null; parte_id?: number | null; origem?: string }>(event)
+  const processoId = Number(body?.processo_id) || null
+  const parteId = Number(body?.parte_id) || null
+  const origem = body?.origem === 'produzido' ? 'produzido' : 'solicitado'
   const casoId = Number(body?.caso_id) || null
 
   const { data: contato } = await client.from('contatos').select('area').eq('id', id).single()
@@ -44,7 +47,7 @@ export default defineEventHandler(async (event) => {
     itens = [[desc.slice(0, 200), body.obrigatorio !== false]]
   }
   const novos = itens.filter(([d]) => !ja.has(d.toLowerCase())).map(([descricao, obrigatorio]) => ({
-    contato_id: id, caso_id: casoId, descricao, obrigatorio, ordem: ordem++, atualizado_por: userId,
+    contato_id: id, caso_id: casoId, processo_id: body?.gerar ? null : processoId, parte_id: body?.gerar ? null : parteId, origem: body?.gerar ? 'solicitado' : origem, status: !body?.gerar && origem === 'produzido' ? 'rascunho' : 'pendente', descricao, obrigatorio, ordem: ordem++, atualizado_por: userId,
   }))
   if (novos.length) {
     const { error } = await client.from('documentos').insert(novos)

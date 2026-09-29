@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   // Consultas independentes em paralelo (antes eram 4 idas ao banco em sequência).
   const [{ data, error }, { data: nascidos }, { data: agenda }, { data: tarefasAbertas }] = await Promise.all([
     client.from('contatos').select('*')
-      .not('etapa', 'in', '(concluido,perdido)')
+      .not('etapa', 'in', '(concluido,perdido,relacionado)')
       .order('proxima_data', { ascending: true, nullsFirst: true })
       .limit(500),
     client.from('contatos').select('id, nome, telefone, data_nascimento, classificacao').not('data_nascimento', 'is', null).limit(2000),

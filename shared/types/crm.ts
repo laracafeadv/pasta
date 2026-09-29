@@ -9,11 +9,12 @@ export const ETAPAS = [
   { id: 'novo', nome: 'Novo contato', hint: 'Responder em minutos', aberta: true },
   { id: 'qualificacao', nome: 'Em qualificação', hint: 'Entender e convidar p/ consulta', aberta: true },
   { id: 'agendado', nome: 'Consulta agendada', hint: 'Confirmar e preparar', aberta: true },
-  { id: 'diagnostico', nome: 'Diagnóstico', hint: 'Análise do caso', aberta: true },
+  { id: 'diagnostico', nome: 'Consulta realizada', hint: 'Análise feita, falta a proposta', aberta: true },
   { id: 'proposta', nome: 'Proposta enviada', hint: 'Honorários', aberta: true },
   { id: 'ativo', nome: 'Cliente ativo', hint: 'Acompanhamento', aberta: true },
   { id: 'concluido', nome: 'Concluído', hint: 'Solução entregue', aberta: false },
   { id: 'perdido', nome: 'Não contratou', hint: 'Encerrado', aberta: false },
+  { id: 'relacionado', nome: 'Pessoa cadastrada', hint: 'Parte ou interessado (não é lead nem cliente)', aberta: false },
 ] as const
 
 export type EtapaId = typeof ETAPAS[number]['id']
@@ -248,13 +249,27 @@ export const DOCUMENTOS_POR_AREA: Record<string, [string, boolean][]> = {
   ],
 }
 
+/**
+ * Documento de um cliente/demanda. `origem` distingue o que foi PEDIDO ao cliente do que foi PRODUZIDO pelo escritório.
+ * Ciclo: pendente → recebido → conferido (pedido) | rascunho → final (produzido). Pode apontar para processo e parte.
+ * O arquivo em si é referenciado por provedor + referência (drive, supabase ou link), sem cópias.
+ */
+export const STATUS_DOCUMENTO = { pendente: 'Pendente', recebido: 'Recebido', conferido: 'Conferido', dispensado: 'Dispensado', rascunho: 'Rascunho', final: 'Final' } as const
 export interface Documento {
   id: number
   contato_id: number
   caso_id?: number | null
+  processo_id?: number | null
+  parte_id?: number | null
+  origem?: 'solicitado' | 'produzido'
+  arquivo_provedor?: 'drive' | 'supabase' | 'link' | null
+  arquivo_ref?: string | null
+  arquivo_url?: string | null
+  arquivo_nome?: string | null
+  arquivo_em?: string | null
   descricao: string
   obrigatorio: boolean
-  status: 'pendente' | 'recebido' | 'dispensado'
+  status: keyof typeof STATUS_DOCUMENTO
   observacao: string | null
   ordem: number
   atualizado_em: string
@@ -428,16 +443,29 @@ export interface Caso {
   resultado?: keyof typeof RESULTADOS_CASO | null
   /** 'servico/variante' do Padrão Operacional; define as etapas do checklist da demanda. */
   procedimento?: string | null
+  /** Análise jurídica do escritório (estratégia, fundamentos), separada das respostas do formulário. */
+  analise?: string | null
+  riscos?: string | null
+  decisao?: keyof typeof DECISOES_DEMANDA | null
+  updated_at?: string
   contato?: Pick<Contato, 'id' | 'nome'> | null
   processos?: Pick<Processo, 'id' | 'natureza' | 'numero' | 'orgao' | 'fase' | 'status'>[]
   partes?: Pick<Parte, 'id' | 'nome' | 'papel'>[]
 }
-export const CASO_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'status', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado', 'procedimento'] as const
+export const CASO_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'status', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado', 'procedimento', 'analise', 'riscos', 'decisao'] as const
+/** Decisão do escritório depois de analisar a demanda (não é resposta de formulário). */
+export const DECISOES_DEMANDA = {
+  viavel: { nome: 'Viável', dica: 'Seguir para a proposta.' },
+  ressalvas: { nome: 'Viável com ressalvas', dica: 'Deixe os riscos por escrito na proposta.' },
+  inviavel: { nome: 'Não viável', dica: 'Explique com transparência e encerre ou indique outro caminho.' },
+} as const
 
 // ─── Processo (judicial) ou Procedimento (extrajudicial) de uma demanda ────────────────────
 export const NATUREZAS_PROCESSO = { judicial: 'Processo judicial', extrajudicial: 'Procedimento extrajudicial' } as const
 export const FASES_EXTRAJUDICIAIS = ['Preparação', 'Protocolo / agendamento', 'Aguardando cartório', 'Lavratura / assinatura', 'Registro / averbação'] as const
 export interface Processo {
+  responsavel_nome?: string | null
+  tipo_procedimento?: string | null
   id: number
   created_at: string
   caso_id: number
@@ -458,7 +486,7 @@ export interface Processo {
   caso?: Pick<Caso, 'id' | 'titulo' | 'tipo'> | null
   contato?: Pick<Contato, 'id' | 'nome'> | null
 }
-export const PROCESSO_CAMPOS = ['caso_id', 'natureza', 'numero', 'tribunal', 'orgao', 'comarca', 'uf', 'fase', 'status', 'valor', 'link', 'data_inicio', 'data_encerramento', 'observacoes'] as const
+export const PROCESSO_CAMPOS = ['caso_id', 'natureza', 'numero', 'responsavel_nome', 'tipo_procedimento', 'tribunal', 'orgao', 'comarca', 'uf', 'fase', 'status', 'valor', 'link', 'data_inicio', 'data_encerramento', 'observacoes'] as const
 
 // ─── Partes e interessados de uma demanda ───────────────────────────────────────────────────
 export const PAPEIS_PARTE = ['Parte contrária', 'Cônjuge / companheiro(a)', 'Herdeiro', 'Inventariante', 'Interessado', 'Testemunha', 'Advogado da parte contrária', 'Outro'] as const
@@ -473,6 +501,7 @@ export interface Parte {
   telefone: string | null
   email: string | null
   observacao: string | null
+  contato?: { id: number; nome: string | null; etapa: string } | null
 }
 export const PARTE_CAMPOS = ['caso_id', 'contato_id', 'nome', 'papel', 'documento', 'telefone', 'email', 'observacao'] as const
 

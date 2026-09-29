@@ -84,6 +84,8 @@ const erro = ref<string | null>(null)
 const editando = ref<Compromisso | null>(null)
 const form = reactive<Record<string, any>>({})
 const contatos = ref<Pick<Contato, 'id' | 'nome'>[]>([])
+// A agenda tem prazos, audiências, consultas e reuniões; tarefas vivem em Tarefas.
+const TIPOS_AGENDA = Object.fromEntries(Object.entries(TIPOS_COMPROMISSO).filter(([k]) => k !== 'tarefa')) as Omit<typeof TIPOS_COMPROMISSO, 'tarefa'>
 const casos = ref<Caso[]>([])
 const processosDaDemanda = computed(() => casos.value.find(k => k.id === form.caso_id)?.processos ?? [])
 
@@ -101,7 +103,7 @@ async function novo(contatoId: number | null = null, casoId: number | null = nul
   editando.value = null
   erro.value = null
   Object.assign(form, {
-    tipo: casoId ? 'prazo' : 'tarefa', titulo: '', contato_id: contatoId, caso_id: casoId, processo_id: null,
+    tipo: casoId ? 'prazo' : 'reuniao', titulo: '', contato_id: contatoId, caso_id: casoId, processo_id: null,
     data_publicacao: hoje, dias_prazo: 15, data_limite: somarDias(hoje, 1), inicio_local: '', local: '', observacao: '',
   })
   await carregarOpcoes()
@@ -157,7 +159,7 @@ async function excluir() {
     <div class="flex flex-wrap items-center justify-between gap-3">
       <select v-model="filtroTipo" class="rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm">
         <option value="">Tudo</option>
-        <option v-for="(t, k) in TIPOS_COMPROMISSO" :key="k" :value="k">{{ t.nome }}</option>
+        <option v-for="(t, k) in TIPOS_AGENDA" :key="k" :value="k">{{ t.nome }}</option>
       </select>
       <Button icon="ph:plus-bold" @click="novo()">Novo</Button>
     </div>
@@ -191,7 +193,7 @@ async function excluir() {
       <form id="compromisso-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4" @submit.prevent="salvar">
         <label class="field">
           <span>Tipo</span>
-          <select v-model="form.tipo" class="modal-input"><option v-for="(t, k) in TIPOS_COMPROMISSO" :key="k" :value="k">{{ t.nome }}</option></select>
+          <select v-model="form.tipo" class="modal-input"><option v-for="(t, k) in TIPOS_AGENDA" :key="k" :value="k">{{ t.nome }}</option></select>
         </label>
         <label class="field">
           <span>Cliente</span>

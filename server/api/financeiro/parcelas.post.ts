@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
       vencimento: dt.toISOString().slice(0, 10),
       pago_em: h.status === 'Pago' ? dt.toISOString().slice(0, 10) : null,
       contato_id: h.contato_id,
+      caso_id: h.caso_id ?? null,
       honorario_id: h.id,
     }
   })
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
       const dt = new Date(Date.UTC(a!, m! + n + i, Math.min(d!, 28)))
       linhas.push({
         tipo: 'receber', descricao: `Mensalidade — ${h.contato?.nome ?? 'cliente'} (${i + 1}/${h.meses})`, categoria: 'Honorários',
-        valor: Number(h.valor_mensal), vencimento: dt.toISOString().slice(0, 10), pago_em: null, contato_id: h.contato_id, honorario_id: h.id,
+        valor: Number(h.valor_mensal), vencimento: dt.toISOString().slice(0, 10), pago_em: null, contato_id: h.contato_id, caso_id: h.caso_id ?? null, honorario_id: h.id,
       })
     }
   }

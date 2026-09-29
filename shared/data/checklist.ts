@@ -24,7 +24,7 @@ export const ITENS_ATENDIMENTO: DefinicaoItem[] = [
   { chave: 'consulta_paga', fase: 1, titulo: 'Consulta paga', tipo: 'auto', dica: 'Vem do honorário de consulta marcado como pago, no Financeiro.' },
   { chave: 'consulta_agendada', fase: 1, titulo: 'Consulta agendada', tipo: 'auto', dica: 'Vem da data da consulta, registrada ao mover o contato para "Consulta agendada".' },
   { chave: 'pre_form', fase: 1, titulo: 'Formulário pré-consulta respondido', tipo: 'auto', dica: 'Vem da resposta recebida pelo link do formulário.' },
-  { chave: 'diagnostico', fase: 2, titulo: 'Análise da consulta registrada', tipo: 'auto', dica: 'Vem das respostas da seção "Análise da consulta", dentro da demanda.' },
+  { chave: 'diagnostico', fase: 2, titulo: 'Análise da consulta registrada', tipo: 'auto', dica: 'Vem do bloco "Análise do escritório" da demanda (análise, riscos ou decisão preenchidos).' },
   { chave: 'feedback_consulta', fase: 2, titulo: 'Feedback pós-consulta enviado', tipo: 'manual', dica: 'O sistema só lembra (/feedback). Marque quando você enviar.' },
   { chave: 'proposta', fase: 3, titulo: 'Proposta de honorários registrada', tipo: 'auto', dica: 'Vem do honorário registrado (proposta, contratado ou pago) no Financeiro.' },
   { chave: 'honorario_fechado', fase: 3, titulo: 'Honorário contratado', tipo: 'auto', dica: 'Vem do honorário com status Contratado ou Pago.' },
