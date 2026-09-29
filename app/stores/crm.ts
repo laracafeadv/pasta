@@ -30,16 +30,8 @@ export interface AndamentoPayload {
 const erro = (e: any, fallback: string) => e?.data?.message || e?.message || fallback
 
 export const useCrmStore = defineStore('crm', () => {
-  // ─── Lista de contatos ───────────────────────────────────────────────────
-  const records = ref<Contato[]>([])
-  const total = ref(0)
-  const loading = ref(false)
   const saving = ref(false)
   const error = ref<string | null>(null)
-  const currentPage = ref(1)
-  const pageSize = ref(25)
-  const filtros = ref({ search: '', etapa: '', area: '', origem: '' })
-  const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 
   // ─── Funil (todos os abertos, sem paginação) ─────────────────────────────
   const funil = ref<Contato[]>([])
@@ -60,22 +52,6 @@ export const useCrmStore = defineStore('crm', () => {
       + agenda.value.compromissos.filter(c => dataCompromisso(c) <= hoje).length
       + (agenda.value.tarefas ?? []).filter(t => t.prazo <= hoje).length
   })
-
-  async function fetchRecords() {
-    loading.value = true
-    error.value = null
-    try {
-      const params: Record<string, string> = { page: String(currentPage.value), pageSize: String(pageSize.value) }
-      for (const [k, v] of Object.entries(filtros.value)) if (v) params[k] = v
-      const res = await $fetch<ListaResponse>('/api/crm/contatos', { params })
-      records.value = res.records
-      total.value = res.total
-    } catch (e) {
-      error.value = erro(e, 'Erro ao carregar contatos.')
-    } finally {
-      loading.value = false
-    }
-  }
 
   async function fetchFunil(incluirEncerrados = false) {
     funilLoading.value = true
@@ -105,7 +81,7 @@ export const useCrmStore = defineStore('crm', () => {
 
   /** Recarrega tudo o que pode ter mudado após uma alteração. */
   async function refresh() {
-    await Promise.all([fetchRecords(), fetchAgenda(), funil.value.length ? fetchFunil() : Promise.resolve()])
+    await Promise.all([fetchAgenda(), funil.value.length ? fetchFunil() : Promise.resolve()])
   }
 
   async function salvar(id: number | null, payload: ContatoInput) {
@@ -150,22 +126,10 @@ export const useCrmStore = defineStore('crm', () => {
     refresh()
   }
 
-  function setFiltro(campo: keyof typeof filtros.value, valor: string) {
-    filtros.value[campo] = valor
-    currentPage.value = 1
-    fetchRecords()
-  }
-
-  function goToPage(page: number) {
-    if (page < 1 || page > totalPages.value) return
-    currentPage.value = page
-    fetchRecords()
-  }
-
   return {
-    records, total, loading, saving, error, currentPage, pageSize, totalPages, filtros,
+    saving, error,
     funil, funilLoading, agenda, agendaLoading, pendencias, definirPendencias,
-    fetchRecords, fetchFunil, fetchAgenda, refresh, salvar, registrarAndamento, adiar, excluir, setFiltro, goToPage,
+    fetchFunil, fetchAgenda, refresh, salvar, registrarAndamento, adiar, excluir,
   }
 })
 

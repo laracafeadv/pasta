@@ -71,7 +71,7 @@ const detalhe = (d: Record<string, any> | null) => {
         <p v-if="item.detalhes" class="text-xs text-gray-500">{{ detalhe(item.detalhes) }}</p>
       </template>
       <template #cell-alvo="{ item }">
-        <NuxtLink v-if="item.entidade === 'contato'" :to="`/crm?aba=contatos`" class="underline underline-offset-2">Contato #{{ item.entidade_id }}</NuxtLink>
+        <NuxtLink v-if="item.entidade === 'contato'" :to="`/crm?abrir=${item.entidade_id}`" class="underline underline-offset-2">Contato #{{ item.entidade_id }}</NuxtLink>
         <span v-else>{{ item.entidade }} {{ item.entidade_id ? `#${item.entidade_id}` : '' }}</span>
       </template>
     </DataTable>

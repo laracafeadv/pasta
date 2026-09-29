@@ -4,7 +4,6 @@ import { definePageMeta, useHead, useRoute, useRouter } from '#imports'
 import Button from '~/components/Button.vue'
 import HojePanel from '~/components/crm/HojePanel.vue'
 import CalendarioPanel from '~/components/crm/CalendarioPanel.vue'
-import ContatosTable from '~/components/crm/ContatosTable.vue'
 import RemarketingBoard from '~/components/crm/RemarketingBoard.vue'
 import ContatoFormModal from '~/components/crm/ContatoFormModal.vue'
 import ContatoDetailModal from '~/components/crm/ContatoDetailModal.vue'
@@ -21,7 +20,6 @@ const router = useRouter()
 
 const abas = [
   { id: 'hoje', label: 'Hoje' },
-  { id: 'contatos', label: 'Buscar contatos' },
   { id: 'remarketing', label: 'Remarketing' },
 ] as const
 const aba = computed(() => (abas.some(a => a.id === route.query.aba) ? String(route.query.aba) : 'hoje'))
@@ -32,7 +30,6 @@ const visaoHoje = ref<'kanban' | 'calendario'>(route.query.ver === 'calendario' 
 
 function carregarAba() {
   if (aba.value === 'hoje') crm.fetchAgenda()
-  if (aba.value === 'contatos') crm.fetchRecords()
 }
 onMounted(() => {
   if (route.query.abrir) abrir({ id: Number(route.query.abrir) } as Contato, String(route.query.ficha || 'casos'))
@@ -105,12 +102,11 @@ async function adiar(c: Contato) {
       <div>
         <p class="eyebrow capitalize">{{ aba === 'hoje' ? dataHoje : 'Jornada do cliente' }}</p>
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">
-          {{ aba === 'hoje' ? 'O que precisa de você hoje' : aba === 'remarketing' ? 'Remarketing' : 'Buscar contatos' }}
+          {{ aba === 'hoje' ? 'O que precisa de você hoje' : 'Remarketing' }}
         </h1>
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">
           <template v-if="aba === 'hoje'">{{ visaoHoje === 'kanban' ? 'Casos com próxima ação e tarefas internas, lado a lado — tudo que precisa de você.' : 'Prazos processuais, audiências, consultas e tarefas — contados em dias úteis (CPC), com feriados nacionais e recesso forense.' }}</template>
-          <template v-else-if="aba === 'remarketing'">Quem procurou e não fechou, por demanda, para receber conteúdo do interesse dela e, quando fizer sentido, retomar a conversa.</template>
-          <template v-else>Toda a base, com busca e filtros — leads e clientes têm telas próprias em Leads e Clientes.</template>
+          <template v-else>Quem procurou e não fechou, por demanda, para receber conteúdo do interesse dela e, quando fizer sentido, retomar a conversa.</template>
         </p>
       </div>
       <Button icon="ph:plus-bold" @click="novo">Novo contato</Button>
@@ -143,8 +139,7 @@ async function adiar(c: Contato) {
       <HojePanel v-if="visaoHoje === 'kanban'" :agenda="crm.agenda" @abrir="abrir" @andamento="andamento" @adiar="adiar" />
       <CalendarioPanel v-else />
     </template>
-    <RemarketingBoard v-else-if="aba === 'remarketing'" ref="remarketing" @abrir="abrir" @mensagem="(c, m) => abrir(c, 'conversa', m)" @reabrir="(c) => andamento(c, 'qualificacao')" />
-    <ContatosTable v-else @abrir="abrir" />
+    <RemarketingBoard v-else ref="remarketing" @abrir="abrir" @mensagem="(c, m) => abrir(c, 'conversa', m)" @reabrir="(c) => andamento(c, 'qualificacao')" />
 
     <ContatoFormModal :is-open="formAberto" :contato="emEdicao" :loading="crm.saving" @close="formAberto = false" @submit="salvar" />
     <ContatoDetailModal

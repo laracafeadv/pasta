@@ -95,7 +95,7 @@ async function soltar(fase: string, e: DragEvent) {
           draggable="true"
           class="rounded-2xl bg-white dark:bg-zinc-800 p-3 cursor-grab shadow-sm hover:shadow-md transition-shadow space-y-1"
           @dragstart="$event.dataTransfer?.setData('text/plain', String(c.id))"
-          @click="navigateTo({ path: '/crm', query: { aba: 'contatos', abrir: c.contato_id } })"
+          @click="navigateTo({ path: '/crm', query: { abrir: c.contato_id, ficha: 'casos' } })"
         >
           <p class="font-semibold text-sm">{{ c.titulo }}</p>
           <p class="text-xs text-gray-500">{{ c.contato?.nome }}</p>

@@ -12,16 +12,16 @@ export default defineEventHandler(async (event): Promise<Resultado[]> => {
   const digitos = q.replace(/\D/g, '')
 
   const [contatos, casos, tarefas] = await Promise.all([
-    client.from('contatos').select('id, nome, telefone, email, etapa, demanda')
-      .or(`nome.ilike.%${q}%,email.ilike.%${q}%,demanda.ilike.%${q}%${digitos.length >= 4 ? `,telefone.ilike.%${digitos}%` : ''}`).limit(6),
-    client.from('casos').select('id, titulo, numero_processo, contato_id, contato:contatos(nome)').or(`titulo.ilike.%${q}%,numero_processo.ilike.%${q}%`).limit(6),
+    client.from('contatos').select('id, nome, telefone, email, etapa, demanda, parte_contraria')
+      .or(`nome.ilike.%${q}%,email.ilike.%${q}%,demanda.ilike.%${q}%,parte_contraria.ilike.%${q}%${digitos.length >= 4 ? `,telefone.ilike.%${digitos}%` : ''}`).limit(6),
+    client.from('casos').select('id, titulo, numero_processo, contato_id, contato:contatos(nome)').or(`titulo.ilike.%${q}%,numero_processo.ilike.%${q}%,parte_contraria.ilike.%${q}%`).limit(6),
     client.from('tarefas_internas').select('id, titulo').eq('concluida', false).ilike('titulo', `%${q}%`).limit(6),
   ])
 
   const resultados: Resultado[] = []
   for (const c of contatos.data ?? []) {
     const ehCliente = ['ativo', 'concluido'].includes(c.etapa)
-    resultados.push({ tipo: 'contato', titulo: c.nome ?? 'Sem nome', subtitulo: [ehCliente ? 'Cliente' : 'Lead', c.demanda].filter(Boolean).join(' · ') || c.telefone || '', link: `/crm?abrir=${c.id}` })
+    resultados.push({ tipo: 'contato', titulo: c.nome ?? 'Sem nome', subtitulo: [ehCliente ? 'Cliente' : 'Lead', c.demanda, c.parte_contraria ? `x ${c.parte_contraria}` : null].filter(Boolean).join(' · ') || c.telefone || '', link: `/crm?abrir=${c.id}` })
   }
   for (const c of casos.data ?? []) {
     resultados.push({ tipo: 'caso', titulo: c.titulo ?? 'Caso sem título', subtitulo: [c.numero_processo, (c.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${c.contato_id}&ficha=casos` })
