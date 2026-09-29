@@ -271,10 +271,16 @@ onMounted(async () => {
 
   // Load Shiki
   try {
-    const { createHighlighter } = await import('shiki')
-    highlighter = await createHighlighter({
-      themes: ['github-dark', 'github-light'],
-      langs: ['markdown']
+    // Só o núcleo + markdown + os 2 temas, com o motor em JS: o pacote 'shiki' completo
+    // trazia centenas de gramáticas e um WASM (~11 MB de assets) para realçar uma única linguagem.
+    const [{ createHighlighterCore }, { createJavaScriptRegexEngine }] = await Promise.all([
+      import('shiki/core'),
+      import('shiki/engine/javascript'),
+    ])
+    highlighter = await createHighlighterCore({
+      themes: [import('shiki/themes/github-dark.mjs'), import('shiki/themes/github-light.mjs')],
+      langs: [import('shiki/langs/markdown.mjs')],
+      engine: createJavaScriptRegexEngine(),
     })
     highlighterReady.value = true
     updateHighlight()

@@ -55,7 +55,8 @@ export default defineNuxtPlugin(async () => {
                         return
                     }
                 }
-                profileStore.fetchMe()
+                // O supabase-js reemite SIGNED_IN ao voltar o foco para a aba; o perfil já carregado não muda.
+                if (!profileStore.profile) profileStore.fetchMe()
             } else if (event === 'SIGNED_OUT') {
                 profileStore.clearProfile()
             }

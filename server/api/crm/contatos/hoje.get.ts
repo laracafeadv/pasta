@@ -11,12 +11,19 @@ export default defineEventHandler(async (event) => {
   const hoje = hojeBR()
   const em7 = hojeBR(7)
 
-  const { data, error } = await client
-    .from('contatos')
-    .select('*')
-    .not('etapa', 'in', '(concluido,perdido)')
-    .order('proxima_data', { ascending: true, nullsFirst: true })
-    .limit(500)
+  // Consultas independentes em paralelo (antes eram 4 idas ao banco em sequência).
+  const [{ data, error }, { data: nascidos }, { data: agenda }] = await Promise.all([
+    client.from('contatos').select('*')
+      .not('etapa', 'in', '(concluido,perdido)')
+      .order('proxima_data', { ascending: true, nullsFirst: true })
+      .limit(500),
+    client.from('contatos').select('id, nome, telefone, data_nascimento, classificacao').not('data_nascimento', 'is', null).limit(2000),
+    client.from('compromissos')
+      .select('*, contato:contatos(id, nome), caso:casos(id, titulo, numero_processo)')
+      .eq('status', 'pendente').limit(300),
+    // Lembretes automáticos de prazos (uma vez por dia, na primeira abertura).
+    enviarLembretes(event).catch(e => console.error('[crm/hoje] Lembretes:', e)),
+  ])
 
   if (error) {
     console.error('[crm/hoje] Erro:', error)
@@ -27,20 +34,13 @@ export default defineEventHandler(async (event) => {
 
   // Aniversariantes do dia (clientes e contatos), para o gesto de relacionamento do playbook.
   const mmdd = hoje.slice(5)
-  const { data: nascidos } = await client.from('contatos').select('id, nome, telefone, data_nascimento, classificacao').not('data_nascimento', 'is', null).limit(2000)
   const aniversarios = (nascidos ?? []).filter(c => String(c.data_nascimento).slice(5) === mmdd)
   const semAcao = (c: Contato) => !c.proxima_acao || !c.proxima_data
 
   // Prazos e compromissos: vencidos, de hoje e dos próximos 7 dias (mesma janela do quadro de tarefas).
-  const { data: agenda } = await client.from('compromissos')
-    .select('*, contato:contatos(id, nome), caso:casos(id, titulo, numero_processo)')
-    .eq('status', 'pendente').limit(300)
   const compromissos = ((agenda ?? []) as Compromisso[])
     .filter(c => { const d = dataCompromisso(c); return d && d <= em7 })
     .sort((a, b) => dataCompromisso(a).localeCompare(dataCompromisso(b)))
-
-  // Lembretes automáticos de prazos (uma vez por dia, na primeira abertura).
-  await enviarLembretes(event).catch(e => console.error('[crm/hoje] Lembretes:', e))
 
   // Relatório semanal (quadro antigo, "Mensagens de WhatsApp"): cliente ativo sem notícia há 7+ dias.
   const seteDias = Date.now() - 7 * 864e5

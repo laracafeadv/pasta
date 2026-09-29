@@ -52,8 +52,19 @@ export default defineNuxtConfig({
       display: 'standalone',
     },
     workbox: {
-      // Limit globPatterns to files that actually exist in public/ during build
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,json,woff2}']
+      // Pré-cache só o que toda tela usa (CSS, fontes, ícones do app). Antes entravam TODOS os
+      // .js (~390 arquivos, ~10 MB), baixados de novo a cada deploy. Os chunks JS agora entram
+      // no cache só quando uma tela realmente os usa (nome com hash = conteúdo imutável).
+      globPatterns: ['**/*.{css,png,svg,ico,woff2,webmanifest}'],
+      // App com SSR e login: não existe um "/" pré-cacheado para servir como fallback offline.
+      navigateFallback: null,
+      runtimeCaching: [
+        {
+          urlPattern: ({ url }) => url.pathname.startsWith('/_nuxt/') && url.pathname.endsWith('.js'),
+          handler: 'CacheFirst',
+          options: { cacheName: 'nuxt-js', expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 } },
+        },
+      ],
     },
     client: {
       installPrompt: true,
@@ -65,6 +76,16 @@ export default defineNuxtConfig({
       suppressWarnings: true,
       navigateFallbackAllowlist: [/^\/$/]
     }
+  },
+  // Ícones usados no código entram no bundle do cliente: trocar de tela não dispara mais
+  // requisições a /api/_nuxt_icon (uma função serverless, sujeita a cold start).
+  icon: {
+    clientBundle: {
+      scan: true,
+      // A varredura só olha app/; estes vêm de shared/types/crm.ts (TIPOS_COMPROMISSO).
+      icons: ['ph:gavel-bold', 'ph:video-camera-bold', 'ph:check-square-bold', 'ph:hourglass-high-bold', 'ph:users-bold'],
+      sizeLimitKb: 256,
+    },
   },
   css: ['~/assets/css/main.css'],
   vite: {
