@@ -7,7 +7,9 @@
         <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">Dashboard</h1>
         <p class="text-sm text-gray-500 dark:text-zinc-400 mt-2 max-w-2xl">{{ frase }}</p>
       </div>
-      <div class="relative flex items-center gap-2">
+      <div class="relative flex flex-wrap items-center gap-2">
+        <button type="button" class="btn-mini bg-primary text-white inline-flex items-center gap-1.5 !px-3.5 !py-2" @click="tarefaAberta = true"><Icon name="ph:plus-bold" /> Nova tarefa</button>
+        <button type="button" class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-primary inline-flex items-center gap-1.5 !px-3.5 !py-2" @click="emEdicao = null; formAberto = true"><Icon name="ph:plus-bold" /> Novo contato</button>
         <span v-if="data" class="hidden sm:inline text-[11px] text-gray-400">atualizado às {{ horaAtualizacao }}</span>
         <button type="button" class="btn-ico" :disabled="atualizando" aria-label="Atualizar agora" title="Atualizar agora" @click="carregar(true)">
           <Icon name="ph:arrow-clockwise-bold" :class="atualizando ? 'animate-spin' : ''" />
@@ -213,6 +215,7 @@
       ref="detalhe" :is-open="detalheAberto" :contato-id="detalheId" :aba-inicial="detalheAba"
       @close="fecharFicha" @editar="editarContato" @andamento="registrarAndamento"
     />
+    <TarefaFormModal :is-open="tarefaAberta" @close="tarefaAberta = false" @salvo="tarefaAberta = false; carregar(true)" />
     <ContatoFormModal :is-open="formAberto" :contato="emEdicao" :loading="crm.saving" @close="formAberto = false" @submit="salvarContato" />
     <AndamentoModal :is-open="andamentoAberto" :contato="andamentoContato" :etapa-destino="null" :loading="crm.saving" :erro="crm.error" @close="andamentoAberto = false" @submit="concluirAndamento" />
   </div>
@@ -232,6 +235,7 @@ import type { DashboardData, GrupoAtencao, ItemAtencao, OrigemAtencao, Severidad
 import { brl, dataCurta, diaRelativo } from '../../utils/formatadores'
 
 const ContatoDetailModal = defineAsyncComponent(() => import('../crm/ContatoDetailModal.vue'))
+const TarefaFormModal = defineAsyncComponent(() => import('../crm/TarefaFormModal.vue'))
 const ContatoFormModal = defineAsyncComponent(() => import('../crm/ContatoFormModal.vue'))
 const AndamentoModal = defineAsyncComponent(() => import('../crm/AndamentoModal.vue'))
 
@@ -453,6 +457,7 @@ const detalheAba = ref<string | undefined>(undefined)
 function abrirFicha(id: number, aba?: string) { detalheId.value = id; detalheAba.value = aba; detalheAberto.value = true }
 function fecharFicha() { detalheAberto.value = false; carregar(true) }
 
+const tarefaAberta = ref(false)
 const formAberto = ref(false)
 const emEdicao = ref<Contato | null>(null)
 function editarContato(c: Contato) { emEdicao.value = c; formAberto.value = true }
@@ -461,6 +466,7 @@ async function salvarContato(d: ContatoInput) {
     await crm.salvar(emEdicao.value?.id ?? null, d)
     formAberto.value = false
     detalhe.value?.recarregar()
+    carregar(true)
   } catch (e: any) {
     alert(e?.data?.message || 'Não foi possível salvar.')
   }
