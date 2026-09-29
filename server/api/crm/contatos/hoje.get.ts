@@ -1,5 +1,5 @@
 import { serverSupabaseClient } from '#supabase/server'
-import { dataCompromisso, type Compromisso, type Contato } from '../../../../shared/types/crm'
+import { dataCompromisso, type Compromisso, type Contato, type TarefaInterna } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { hojeBR } from '../../../utils/crm'
 import { enviarLembretes } from '../../../utils/lembretes'
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const em7 = hojeBR(7)
 
   // Consultas independentes em paralelo (antes eram 4 idas ao banco em sequência).
-  const [{ data, error }, { data: nascidos }, { data: agenda }] = await Promise.all([
+  const [{ data, error }, { data: nascidos }, { data: agenda }, { data: tarefasAbertas }] = await Promise.all([
     client.from('contatos').select('*')
       .not('etapa', 'in', '(concluido,perdido)')
       .order('proxima_data', { ascending: true, nullsFirst: true })
@@ -21,6 +21,9 @@ export default defineEventHandler(async (event) => {
     client.from('compromissos')
       .select('*, contato:contatos(id, nome), caso:casos(id, titulo, numero_processo)')
       .eq('status', 'pendente').limit(300),
+    // Tarefas em aberto até a próxima semana: as de hoje/atrasadas são o trabalho do dia; o resto só entra na contagem.
+    client.from('tarefas_internas').select('*, contato:contatos(id, nome), caso:casos(id, titulo)')
+      .eq('concluida', false).lte('prazo', em7).order('prazo').limit(300),
     // Lembretes automáticos de prazos (uma vez por dia, na primeira abertura).
     enviarLembretes(event).catch(e => console.error('[crm/hoje] Lembretes:', e)),
   ])
@@ -60,5 +63,6 @@ export default defineEventHandler(async (event) => {
     transferidas: abertos.filter(c => !c.ia_ativa),
     sugestoes: abertos.filter(c => c.sugestao_resposta),
     aniversarios,
+    tarefas: (tarefasAbertas ?? []) as TarefaInterna[],
   }
 })

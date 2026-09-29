@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Compromisso, Contato, ContatoInput } from '../../shared/types/crm'
+import { dataCompromisso, type Compromisso, type Contato, type ContatoInput, type TarefaInterna } from '../../shared/types/crm'
 
 interface ListaResponse { records: Contato[]; total: number; page: number; pageSize: number }
 
@@ -12,6 +12,7 @@ export interface Agenda {
   transferidas: Contato[]
   sugestoes?: Contato[]
   compromissos: Compromisso[]
+  tarefas: TarefaInterna[]
   aniversarios: Pick<Contato, 'id' | 'nome' | 'telefone' | 'data_nascimento' | 'classificacao'>[]
   semRelatorio?: Contato[]
 }
@@ -46,9 +47,15 @@ export const useCrmStore = defineStore('crm', () => {
   const funilLoading = ref(false)
 
   // ─── Agenda "Hoje" ───────────────────────────────────────────────────────
-  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], transferidas: [], aniversarios: [], compromissos: [] })
+  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], transferidas: [], aniversarios: [], compromissos: [], tarefas: [] })
   const agendaLoading = ref(false)
-  const pendencias = computed(() => agenda.value.atrasadas.length + agenda.value.hoje.length + agenda.value.semAcao.length)
+  // Contador do menu "Hoje": tudo que já venceu ou vence hoje (contatos, prazos e tarefas) + casos sem próxima ação.
+  const pendencias = computed(() => {
+    const hoje = hojeISO()
+    return agenda.value.atrasadas.length + agenda.value.hoje.length + agenda.value.semAcao.length
+      + agenda.value.compromissos.filter(c => dataCompromisso(c) <= hoje).length
+      + (agenda.value.tarefas ?? []).filter(t => t.prazo <= hoje).length
+  })
 
   async function fetchRecords() {
     loading.value = true

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { Compromisso } from '~~/shared/types/crm'
+import { situacaoData, type Compromisso } from '~~/shared/types/crm'
 import { hojeISO } from '~/stores/crm'
 import { dataCurta } from '~/utils/formatadores'
 
@@ -28,17 +28,19 @@ function diasRestantes(c: Compromisso) {
   if (!d) return null
   return Math.round((new Date(`${d}T00:00:00`).getTime() - new Date(`${hoje}T00:00:00`).getTime()) / 864e5)
 }
+// Régua de urgência: atrasado / vence hoje / próximos 7 dias / depois.
 function status(c: Compromisso) {
   const dias = diasRestantes(c)
   if (dias === null) return 'sem-data'
-  if (dias < 0) return 'atrasado'
-  if (dias <= 3) return 'proximo'
-  return 'ok'
+  const sit = situacaoData(dataDo(c)!, hoje)
+  if (sit !== 'futuro') return sit
+  return dias <= 7 ? 'proximo' : 'ok'
 }
-const CORES: Record<string, string> = { atrasado: 'border-danger', proximo: 'border-warning', ok: 'border-secondary', 'sem-data': 'border-gray-300 dark:border-zinc-700' }
+const CORES: Record<string, string> = { atrasado: 'border-danger', hoje: 'border-secondary', proximo: 'border-warning', ok: 'border-gray-300 dark:border-zinc-700', 'sem-data': 'border-gray-300 dark:border-zinc-700' }
 const atrasados = computed(() => prazos.value.filter(c => status(c) === 'atrasado'))
+const vencemHoje = computed(() => prazos.value.filter(c => status(c) === 'hoje'))
 const proximos = computed(() => prazos.value.filter(c => status(c) === 'proximo'))
-const futuros = computed(() => prazos.value.filter(c => !['atrasado', 'proximo'].includes(status(c))))
+const futuros = computed(() => prazos.value.filter(c => !['atrasado', 'hoje', 'proximo'].includes(status(c))))
 
 async function concluir(c: Compromisso) {
   await $fetch(`/api/compromissos/${c.id}`, { method: 'PATCH', body: { status: 'concluido' } })
@@ -51,7 +53,7 @@ async function concluir(c: Compromisso) {
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-sm text-gray-500 mt-2 max-w-2xl">
-          Prazos processuais em aberto, contados em dias úteis. Pra criar um novo prazo, use
+          Só compromissos com data-limite, do mais urgente ao mais distante. Pra criar um novo prazo, use
           <NuxtLink to="/crm?ver=calendario" class="underline hover:text-primary">a Agenda</NuxtLink> — aqui é só acompanhamento.
         </p>
       </div>
@@ -65,8 +67,9 @@ async function concluir(c: Compromisso) {
     <div v-else class="space-y-8">
       <section v-for="grupo in [
         { titulo: 'Atrasados', itens: atrasados, cor: 'text-danger' },
-        { titulo: 'Próximos (até 3 dias)', itens: proximos, cor: 'text-warning-dark' },
-        { titulo: 'Demais prazos', itens: futuros, cor: 'text-primary dark:text-zinc-100' },
+        { titulo: 'Vencem hoje', itens: vencemHoje, cor: 'text-secondary-dark' },
+        { titulo: 'Próximos 7 dias', itens: proximos, cor: 'text-warning-dark' },
+        { titulo: 'Depois', itens: futuros, cor: 'text-primary dark:text-zinc-100' },
       ]" :key="grupo.titulo">
         <h2 class="text-xl font-serif mb-2" :class="grupo.cor">{{ grupo.titulo }} <span class="text-sm font-sans text-gray-400">({{ grupo.itens.length }})</span></h2>
         <p v-if="!grupo.itens.length" class="text-sm text-gray-400 italic">Nada aqui.</p>
@@ -82,8 +85,8 @@ async function concluir(c: Compromisso) {
             </p>
             <p v-if="c.observacao" class="text-xs text-gray-500">{{ c.observacao }}</p>
             <div class="flex items-center justify-between pt-1">
-              <span class="text-[10px] font-semibold uppercase tracking-wider" :class="status(c) === 'atrasado' ? 'text-danger' : status(c) === 'proximo' ? 'text-warning-dark' : 'text-gray-400'">
-                {{ status(c) === 'atrasado' ? `${Math.abs(diasRestantes(c)!)} dia(s) atrasado` : status(c) === 'proximo' ? `${diasRestantes(c)} dia(s)` : 'em dia' }}
+              <span class="text-[10px] font-semibold uppercase tracking-wider" :class="status(c) === 'atrasado' ? 'text-danger' : status(c) === 'hoje' ? 'text-secondary-dark' : status(c) === 'proximo' ? 'text-warning-dark' : 'text-gray-400'">
+                {{ status(c) === 'atrasado' ? `${Math.abs(diasRestantes(c)!)} dia(s) atrasado` : status(c) === 'hoje' ? 'vence hoje' : `faltam ${diasRestantes(c)} dia(s)` }}
               </span>
               <button class="btn-mini bg-primary text-white" @click="concluir(c)">Concluído</button>
             </div>

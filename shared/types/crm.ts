@@ -373,15 +373,14 @@ export const STATUS_CASO = { ativo: 'Ativo', suspenso: 'Suspenso', encerrado: 'E
 export const FASES_PROCESSUAIS = ['Postulatória (petição inicial)', 'Instrução', 'Sentença', 'Recurso', 'Execução/cumprimento de sentença', 'Arquivado aguardando'] as const
 
 // Tarefas internas do escritório, sem vínculo com cliente ou caso.
-export const COLUNAS_TAREFA = { hoje: 'Hoje', semana: 'Essa semana', mes: 'Esse mês', quando_der: 'Quando der' } as const
 export const PRIORIDADES_TAREFA = { baixa: 'Baixa', media: 'Média', alta: 'Alta' } as const
 export interface TarefaInterna {
   id: number
   titulo: string
   descricao: string | null
-  coluna: keyof typeof COLUNAS_TAREFA
   concluida: boolean
-  prazo: string | null
+  /** Data da tarefa (AAAA-MM-DD). Obrigatória: é o que separa "hoje" de "depois". */
+  prazo: string
   prioridade: keyof typeof PRIORIDADES_TAREFA
   contato_id: number | null
   caso_id: number | null
@@ -440,6 +439,12 @@ export interface Compromisso {
   caso?: Pick<Caso, 'id' | 'titulo' | 'numero_processo'> | null
 }
 export const COMPROMISSO_CAMPOS = ['tipo', 'titulo', 'contato_id', 'caso_id', 'inicio', 'data_limite', 'data_publicacao', 'dias_prazo', 'local', 'status', 'observacao'] as const
+
+/** Onde uma data (de tarefa ou prazo) está em relação a hoje — mesmo critério em Hoje, Tarefas e Prazos. */
+export type SituacaoData = 'atrasado' | 'hoje' | 'futuro'
+export function situacaoData(data: string, hoje: string): SituacaoData {
+  return data < hoje ? 'atrasado' : data === hoje ? 'hoje' : 'futuro'
+}
 
 /** Data de referência do compromisso (AAAA-MM-DD). */
 export function dataCompromisso(c: Pick<Compromisso, 'inicio' | 'data_limite'>): string {

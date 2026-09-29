@@ -2,10 +2,9 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
-import { COLUNAS_TAREFA, PRIORIDADES_TAREFA, type Caso, type Contato, type TarefaInterna } from '~~/shared/types/crm'
+import { PRIORIDADES_TAREFA, situacaoData, type Caso, type Contato, type SituacaoData, type TarefaInterna } from '~~/shared/types/crm'
 import { hojeISO } from '~/stores/crm'
 
-const visao = ref<'lista' | 'kanban'>('lista')
 const tarefas = ref<TarefaInterna[]>([])
 const carregando = ref(false)
 async function carregar() {
@@ -19,33 +18,43 @@ async function carregar() {
 onMounted(carregar)
 
 const hoje = hojeISO()
-const abertas = computed(() => tarefas.value.filter(t => !t.concluida))
-const atrasadas = computed(() => abertas.value.filter(t => t.prazo && t.prazo < hoje))
-const deHoje = computed(() => abertas.value.filter(t => t.prazo === hoje))
-const proximas = computed(() => abertas.value.filter(t => !t.prazo || t.prazo > hoje))
-const concluidas = computed(() => tarefas.value.filter(t => t.concluida))
 
-const PRIORIDADE_COR: Record<string, string> = { alta: 'border-danger', media: 'border-warning', baixa: 'border-gray-300 dark:border-zinc-700' }
-
-// ─── Kanban (mesmas colunas do quadro na tela Hoje) ──────────────────────────
-const colunasKanban = computed(() => Object.entries(COLUNAS_TAREFA).map(([id, titulo]) => ({
-  id, titulo, itens: abertas.value.filter(t => t.coluna === id),
-})))
-const arrastandoSobre = ref<string | null>(null)
-async function soltar(colunaId: string, e: DragEvent) {
-  arrastandoSobre.value = null
-  const id = Number(e.dataTransfer?.getData('text/plain'))
-  const t = tarefas.value.find(x => x.id === id)
-  if (!t || t.coluna === colunaId) return
-  await $fetch(`/api/tarefas/${id}`, { method: 'PATCH', body: { coluna: colunaId } })
-  await carregar()
+// Tarefas é o inventário: TODAS as tarefas, em qualquer data, filtráveis por situação.
+type Filtro = 'abertas' | SituacaoData | 'concluidas' | 'todas'
+const filtro = ref<Filtro>('abertas')
+const busca = ref('')
+const situacao = (t: TarefaInterna): SituacaoData | 'concluida' => t.concluida ? 'concluida' : situacaoData(t.prazo, hoje)
+const contagem = computed(() => ({
+  abertas: tarefas.value.filter(t => !t.concluida).length,
+  atrasado: tarefas.value.filter(t => situacao(t) === 'atrasado').length,
+  hoje: tarefas.value.filter(t => situacao(t) === 'hoje').length,
+  futuro: tarefas.value.filter(t => situacao(t) === 'futuro').length,
+  concluidas: tarefas.value.filter(t => t.concluida).length,
+  todas: tarefas.value.length,
+}))
+const FILTROS: { id: Filtro; nome: string }[] = [
+  { id: 'abertas', nome: 'Abertas' }, { id: 'atrasado', nome: 'Atrasadas' }, { id: 'hoje', nome: 'Hoje' },
+  { id: 'futuro', nome: 'Futuras' }, { id: 'concluidas', nome: 'Concluídas' }, { id: 'todas', nome: 'Todas' },
+]
+const lista = computed(() => {
+  const q = busca.value.trim().toLowerCase()
+  return tarefas.value
+    .filter(t => filtro.value === 'todas' || (filtro.value === 'abertas' ? !t.concluida : situacao(t) === (filtro.value === 'concluidas' ? 'concluida' : filtro.value)))
+    .filter(t => !q || [t.titulo, t.descricao, t.contato?.nome, t.caso?.titulo].some(v => v?.toLowerCase().includes(q)))
+})
+const SITUACAO: Record<string, { nome: string; classe: string }> = {
+  atrasado: { nome: 'Atrasada', classe: 'bg-danger/15 text-danger-dark' },
+  hoje: { nome: 'Hoje', classe: 'bg-secondary/15 text-secondary-dark' },
+  futuro: { nome: 'Futura', classe: 'bg-gray-100 dark:bg-zinc-800 text-gray-500' },
+  concluida: { nome: 'Concluída', classe: 'bg-gray-100 dark:bg-zinc-800 text-gray-400' },
 }
+const PRIORIDADE_COR: Record<string, string> = { alta: 'text-danger', media: 'text-warning-dark', baixa: 'text-gray-400' }
 
 // ─── Criar / editar ───────────────────────────────────────────────────────────
 const modalAberto = ref(false)
 const salvando = ref(false)
 const editando = ref<TarefaInterna | null>(null)
-const form = reactive({ titulo: '', descricao: '', prazo: '', prioridade: 'media' as keyof typeof PRIORIDADES_TAREFA, coluna: 'hoje' as keyof typeof COLUNAS_TAREFA, contato_id: null as number | null })
+const form = reactive({ titulo: '', descricao: '', prazo: hoje, prioridade: 'media' as keyof typeof PRIORIDADES_TAREFA, contato_id: null as number | null })
 
 const contatoQuery = ref('')
 const contatoResultados = ref<Contato[]>([])
@@ -85,9 +94,8 @@ function abrir(t?: TarefaInterna) {
   editando.value = t ?? null
   form.titulo = t?.titulo ?? ''
   form.descricao = t?.descricao ?? ''
-  form.prazo = t?.prazo ?? ''
+  form.prazo = t?.prazo ?? hoje
   form.prioridade = t?.prioridade ?? 'media'
-  form.coluna = t?.coluna ?? 'hoje'
   form.contato_id = t?.contato_id ?? null
   contatoSelecionado.value = t?.contato ? { id: t.contato.id, nome: t.contato.nome } as Contato : null
   contatoQuery.value = t?.contato?.nome ?? ''
@@ -100,7 +108,7 @@ async function salvar() {
   if (!form.titulo.trim()) return
   salvando.value = true
   try {
-    const body = { ...form, prazo: form.prazo || null, caso_id: casoId.value }
+    const body = { ...form, caso_id: casoId.value }
     if (editando.value) await $fetch(`/api/tarefas/${editando.value.id}`, { method: 'PATCH', body })
     else await $fetch('/api/tarefas', { method: 'POST', body })
     modalAberto.value = false
@@ -122,76 +130,61 @@ async function excluir(t: TarefaInterna) {
   await $fetch(`/api/tarefas/${t.id}`, { method: 'DELETE' })
   await carregar()
 }
-function dataCurta(iso: string | null) {
-  if (!iso) return null
+function dataCurta(iso: string) {
   const [a, m, d] = iso.split('-')
   return `${d}/${m}`
 }
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
     <div class="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-gray-500 mt-2 max-w-2xl">
-          Todas as suas tarefas internas num lugar só, com prazo, prioridade e vínculo a cliente/caso — inclusive as concluídas.
-          As de hoje continuam aparecendo também na tela Hoje.
-        </p>
-      </div>
+      <p class="text-sm text-gray-500 max-w-2xl">
+        Todas as tarefas cadastradas, de qualquer data. O que vence hoje aparece também em <NuxtLink to="/crm" class="underline hover:text-primary">Hoje</NuxtLink>; prazos processuais ficam na aba Prazos.
+      </p>
       <Button icon="ph:plus-bold" @click="abrir()">Nova tarefa</Button>
     </div>
 
-    <div class="flex gap-2">
-      <button type="button" class="tab-btn" :class="{ 'tab-btn-ativo': visao === 'lista' }" @click="visao = 'lista'">Lista</button>
-      <button type="button" class="tab-btn" :class="{ 'tab-btn-ativo': visao === 'kanban' }" @click="visao = 'kanban'">Kanban</button>
+    <div class="flex flex-wrap items-center gap-2">
+      <button v-for="f in FILTROS" :key="f.id" type="button" class="tab-btn" :class="{ 'tab-btn-ativo': filtro === f.id }" @click="filtro = f.id">
+        {{ f.nome }} <span class="opacity-60 ml-0.5">{{ contagem[f.id] }}</span>
+      </button>
+      <input v-model="busca" type="search" class="ml-auto w-full sm:w-64 rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm" placeholder="Buscar tarefa ou cliente…" />
     </div>
 
     <p v-if="carregando" class="text-sm text-gray-400">Carregando…</p>
+    <p v-else-if="!lista.length" class="text-sm text-gray-400 italic py-6 text-center">Nenhuma tarefa neste filtro.</p>
 
-    <!-- LISTA -->
-    <div v-else-if="visao === 'lista'" class="space-y-8">
-      <section v-for="grupo in [
-        { titulo: 'Atrasadas', itens: atrasadas, cor: 'text-danger' },
-        { titulo: 'Hoje', itens: deHoje, cor: 'text-secondary-dark' },
-        { titulo: 'Próximas', itens: proximas, cor: 'text-primary dark:text-zinc-100' },
-        { titulo: 'Concluídas', itens: concluidas, cor: 'text-gray-400' },
-      ]" :key="grupo.titulo">
-        <h2 class="text-xl font-serif mb-2" :class="grupo.cor">{{ grupo.titulo }} <span class="text-sm font-sans text-gray-400">({{ grupo.itens.length }})</span></h2>
-        <p v-if="!grupo.itens.length" class="text-sm text-gray-400 italic">Nada aqui.</p>
-        <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <article v-for="t in grupo.itens" :key="t.id" class="rounded-2xl bg-white/70 dark:bg-zinc-900/60 border-l-[3px] p-3.5 flex flex-col gap-1.5" :class="[PRIORIDADE_COR[t.prioridade], t.concluida ? 'opacity-60' : '']">
-            <div class="flex items-start justify-between gap-2">
-              <p class="font-semibold text-sm cursor-pointer" @click="abrir(t)">{{ t.titulo }}</p>
-              <span v-if="t.prazo" class="text-[10px] text-gray-400 shrink-0">{{ dataCurta(t.prazo) }}</span>
-            </div>
-            <p v-if="t.descricao" class="text-xs text-gray-500">{{ t.descricao }}</p>
-            <p v-if="t.contato" class="text-xs text-secondary-dark">{{ t.contato.nome }}<span v-if="t.caso"> · {{ t.caso.titulo }}</span></p>
-            <div class="flex gap-2 pt-1">
+    <div v-else class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 overflow-x-auto">
+      <table class="w-full min-w-[640px] text-sm">
+        <thead>
+          <tr class="text-left text-[10px] uppercase tracking-wider text-gray-400">
+            <th class="px-4 py-3 font-semibold">Data</th>
+            <th class="px-4 py-3 font-semibold">Tarefa</th>
+            <th class="px-4 py-3 font-semibold">Cliente · Caso</th>
+            <th class="px-4 py-3 font-semibold">Prioridade</th>
+            <th class="px-4 py-3 font-semibold">Situação</th>
+            <th class="px-4 py-3" />
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="t in lista" :key="t.id" class="border-t border-gray-100 dark:border-zinc-800 align-top" :class="t.concluida ? 'opacity-60' : ''">
+            <td class="px-4 py-3 whitespace-nowrap font-semibold">{{ dataCurta(t.prazo) }}</td>
+            <td class="px-4 py-3">
+              <button type="button" class="font-semibold text-left hover:underline" @click="abrir(t)">{{ t.titulo }}</button>
+              <p v-if="t.descricao" class="text-xs text-gray-500 mt-0.5">{{ t.descricao }}</p>
+            </td>
+            <td class="px-4 py-3 text-xs text-secondary-dark">{{ t.contato?.nome || '—' }}<span v-if="t.caso" class="text-gray-500"> · {{ t.caso.titulo }}</span></td>
+            <td class="px-4 py-3 text-xs font-semibold" :class="PRIORIDADE_COR[t.prioridade]">{{ PRIORIDADES_TAREFA[t.prioridade] }}</td>
+            <td class="px-4 py-3"><span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" :class="SITUACAO[situacao(t)]!.classe">{{ SITUACAO[situacao(t)]!.nome }}</span></td>
+            <td class="px-4 py-3 whitespace-nowrap text-right space-x-1.5">
               <button v-if="!t.concluida" class="btn-mini bg-primary text-white" @click="concluir(t)">Feita</button>
               <button v-else class="btn-mini border border-gray-300 dark:border-zinc-700" @click="reabrir(t)">Reabrir</button>
               <button class="btn-mini border border-gray-300 dark:border-zinc-700 hover:border-danger hover:text-danger" @click="excluir(t)">Excluir</button>
-            </div>
-          </article>
-        </div>
-      </section>
-    </div>
-
-    <!-- KANBAN -->
-    <div v-else class="flex gap-4 overflow-x-auto pb-4">
-      <section v-for="col in colunasKanban" :key="col.id" class="w-72 shrink-0 rounded-3xl bg-gray-200/50 dark:bg-zinc-900/60 p-3 flex flex-col gap-2.5 min-h-[260px]"
-               :class="{ 'ring-2 ring-secondary ring-inset': arrastandoSobre === col.id }"
-               @dragover.prevent="arrastandoSobre = col.id" @dragleave="arrastandoSobre = null" @drop.prevent="soltar(col.id, $event)">
-        <header class="px-1.5 pt-1 flex items-baseline justify-between">
-          <h3 class="font-serif text-xl text-primary dark:text-zinc-100">{{ col.titulo }}</h3>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/70 dark:bg-zinc-800">{{ col.itens.length }}</span>
-        </header>
-        <article v-for="t in col.itens" :key="t.id" draggable="true" class="rounded-2xl bg-white dark:bg-zinc-800 p-3 cursor-grab border-l-4 shadow-sm space-y-1"
-                 :class="PRIORIDADE_COR[t.prioridade]" @dragstart="$event.dataTransfer?.setData('text/plain', String(t.id))" @click="abrir(t)">
-          <p class="font-bold text-sm">{{ t.titulo }}</p>
-          <p v-if="t.contato" class="text-xs text-secondary-dark">{{ t.contato.nome }}</p>
-          <p v-if="t.prazo" class="text-[10px] text-gray-400">{{ dataCurta(t.prazo) }}</p>
-        </article>
-      </section>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <Modal :is-open="modalAberto" :title="editando ? 'Editar tarefa' : 'Nova tarefa'" max-width="lg" :loading="salvando" @close="modalAberto = false">
@@ -199,7 +192,7 @@ function dataCurta(iso: string | null) {
         <label class="field"><span>Título</span><input v-model="form.titulo" class="modal-input" required /></label>
         <label class="field"><span>Descrição</span><textarea v-model="form.descricao" rows="2" class="modal-input" /></label>
         <div class="grid grid-cols-2 gap-4">
-          <label class="field"><span>Prazo</span><input v-model="form.prazo" type="date" class="modal-input" /></label>
+          <label class="field"><span>Data</span><input v-model="form.prazo" type="date" class="modal-input" required /></label>
           <label class="field">
             <span>Prioridade</span>
             <select v-model="form.prioridade" class="modal-input">
@@ -207,12 +200,6 @@ function dataCurta(iso: string | null) {
             </select>
           </label>
         </div>
-        <label class="field">
-          <span>Coluna (quadro Hoje)</span>
-          <select v-model="form.coluna" class="modal-input">
-            <option v-for="(nome, id) in COLUNAS_TAREFA" :key="id" :value="id">{{ nome }}</option>
-          </select>
-        </label>
         <div class="field relative">
           <span>Cliente vinculado (opcional)</span>
           <div v-if="contatoSelecionado" class="modal-input flex items-center justify-between">
