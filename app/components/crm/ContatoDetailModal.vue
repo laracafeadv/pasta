@@ -21,6 +21,7 @@
           {{ t.label }}<span v-if="t.badge" class="ml-1.5 opacity-70">{{ t.badge }}</span>
         </button>
         <div class="ml-auto flex gap-2">
+          <Button size="sm" variant="outline" icon="ph:paper-plane-tilt-bold" data-testid="enviar-formulario-topo" title="Escolher um formulário e gerar o link para enviar no WhatsApp" @click="abrirEditorPreFormulario">Enviar formulário</Button>
           <Button size="sm" variant="outline" icon="ph:pencil-simple-bold" @click="emit('editar', dados.contato)">Editar</Button>
           <Button v-if="etapa(dados.contato.etapa).aberta" size="sm" icon="ph:check-bold" @click="emit('andamento', dados.contato)">Registrar andamento</Button>
         </div>
