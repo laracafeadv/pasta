@@ -6,7 +6,7 @@
           <span>Formulário (opcional)</span>
           <select v-model="formularioId" class="modal-input">
             <option :value="null">Nenhum — só o resumo livre</option>
-            <option v-for="f in formularios" :key="f.id" :value="f.id">{{ f.nome }} ({{ f.itens.length }} pergunta(s))</option>
+            <option v-for="f in formularios" :key="f.id" :value="f.id">{{ f.nome }} — {{ f.contexto === 'consulta' ? 'consulta' : 'cliente' }} ({{ f.itens.length }} pergunta(s))</option>
           </select>
         </label>
         <ol v-if="formularioEscolhido" class="text-sm text-gray-600 dark:text-zinc-300 mt-3 space-y-1 list-decimal list-inside">
@@ -17,7 +17,7 @@
         </p>
       </section>
       <p v-else class="text-sm text-gray-400">
-        Nenhum formulário criado ainda. Crie um em <NuxtLink to="/formularios" class="underline hover:text-primary" @click="emit('close')">Formulários</NuxtLink> ou envie só com o resumo livre.
+        Nenhum formulário ativo de contexto <b>cliente</b> ou <b>consulta</b>. Crie um em <NuxtLink to="/formularios" class="underline hover:text-primary" @click="emit('close')">Formulários</NuxtLink> ou envie só com o resumo livre.
       </p>
 
       <div class="flex justify-end gap-2 pt-2">
@@ -42,15 +42,13 @@ const formularios = ref<Formulario[]>([])
 const formularioId = ref<number | null>(null)
 const formularioEscolhido = computed(() => formularios.value.find(f => f.id === formularioId.value))
 
-// A lista só é buscada na primeira vez que o editor abre (ele fica montado dentro da ficha, então
-// buscar ao montar gerava uma chamada à API em toda tela que tem a ficha, mesmo sem abri-la).
-let carregou = false
+// A lista é buscada só quando o editor abre (ele fica montado dentro da ficha; buscar ao montar geraria chamadas à API sem necessidade).
 watch(() => props.isOpen, async (aberto) => {
-  if (!aberto || carregou) return
-  carregou = true
+  if (!aberto) return // recarrega a cada abertura: formulários criados agora aparecem
   try {
     formularios.value = await $fetch<Formulario[]>('/api/formularios', { params: { contexto: 'cliente,consulta' } })
-  } catch { carregou = false /* formulários são opcionais; tenta de novo na próxima abertura */ }
+    if (formularioId.value == null && formularios.value.length) formularioId.value = formularios.value[0]!.id // já vem um formulário escolhido
+  } catch { /* formulários são opcionais; tenta de novo na próxima abertura */ }
 })
 
 async function gerar() {

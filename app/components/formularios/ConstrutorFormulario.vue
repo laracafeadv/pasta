@@ -103,6 +103,9 @@
         <button type="button" class="chip" data-testid="add-secao" @click="adicionarSecao"><Icon name="ph:rows-bold" /> Adicionar seção</button>
       </div>
 
+      <p v-if="form.contexto !== 'demanda'" class="text-xs text-gray-500 text-center pt-4"><Icon name="ph:paper-plane-tilt-bold" class="align-middle" /> Para enviar: abra a ficha da pessoa (Clientes ou Leads) → aba <b>Cliente</b> → <b>Enviar formulário</b>. Salve antes de enviar.</p>
+      <p v-else class="text-xs text-gray-500 text-center pt-4">Formulário de demanda: preenchido na ficha, dentro de cada demanda (não é enviado por link).</p>
+
       <div v-if="form.id" class="flex flex-wrap gap-2 justify-between pt-8 border-t border-gray-200 dark:border-zinc-800 mt-8">
         <button type="button" class="chip" data-testid="duplicar-form" @click="duplicarFormulario"><Icon name="ph:copy-bold" /> Duplicar formulário</button>
         <button type="button" class="chip hover:!text-danger hover:!border-danger" data-testid="excluir-form" @click="excluirFormulario"><Icon name="ph:trash-bold" /> Excluir formulário</button>
