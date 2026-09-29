@@ -9,6 +9,18 @@
       </p>
     </div>
 
+    <!-- A regra: onde cada coisa vive no CRM -->
+    <div class="rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5 sm:p-6">
+      <h2 class="text-lg font-serif text-primary dark:text-zinc-100">Onde cada coisa vive no CRM</h2>
+      <p class="text-sm text-gray-500 mt-1 max-w-3xl">Cada passo deste padrão tem um lugar só. Assim nada é controlado em dois lugares.</p>
+      <dl class="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 text-sm">
+        <div v-for="r in REGRAS" :key="r.nome" class="rounded-2xl bg-white dark:bg-zinc-800/60 p-3.5">
+          <dt class="font-semibold text-primary dark:text-zinc-100 flex items-center gap-1.5"><Icon :name="r.icone" class="text-secondary" />{{ r.nome }}</dt>
+          <dd class="text-gray-600 dark:text-zinc-300 mt-1 leading-relaxed text-[13px]">{{ r.texto }}</dd>
+        </div>
+      </dl>
+    </div>
+
     <!-- Alternância Fluxo / Serviços -->
     <div class="flex gap-2">
       <button type="button" class="tab-btn" :class="{ 'tab-btn-ativo': modo === 'fluxo' }" @click="modo = 'fluxo'">
@@ -60,6 +72,7 @@
             <div class="min-w-0">
               <p class="text-sm text-primary dark:text-zinc-100 font-semibold">{{ passo.titulo }}</p>
               <p class="text-sm text-gray-600 dark:text-zinc-300 mt-0.5 leading-relaxed">{{ passo.texto }}</p>
+              <p class="mt-1.5 text-[11px] text-gray-400 flex items-center gap-1.5"><Icon name="ph:map-pin-bold" /> No CRM: <b class="text-gray-600 dark:text-zinc-300 font-semibold">{{ ONDE[`${atual.id}:${i}`] ?? '—' }}</b></p>
               <p v-if="passo.automatico === 'faz'" class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-success-dark bg-success/10 px-2.5 py-1 rounded-full">
                 <Icon name="ph:sparkle-bold" /> O sistema faz isso sozinho, sem você clicar em nada
               </p>
@@ -105,6 +118,9 @@
           >{{ v.nome }}</button>
         </div>
 
+        <p v-if="varianteAtual" class="text-xs text-gray-500 -mb-1">
+          Estas etapas viram o checklist do caso: na ficha do cliente, escolha o <b>procedimento</b> do caso (“{{ servicoAtual.nome }}”) e marque cada etapa ao concluir.
+        </p>
         <ol v-if="varianteAtual" class="space-y-2.5">
           <li v-for="(f, i) in varianteAtual.fases" :key="i"
               class="rounded-2xl border-l-[3px] border-secondary p-3.5 flex gap-3.5 bg-white dark:bg-zinc-800/60">
@@ -143,6 +159,24 @@ useHead({ title: 'Padrões operacionais' })
 
 interface Passo { titulo: string; texto: string; automatico?: 'faz' | 'avisa' }
 interface Fase { id: string; nome: string; resumo: string; passos: Passo[]; links?: { nome: string; to: string }[] }
+
+// Regra do CRM: cada tipo de coisa tem um único lugar.
+const REGRAS = [
+  { nome: 'Checklist', icone: 'ph:list-checks-bold', texto: 'Verificação ou etapa simples, que só precisa ser marcada como feita. Fica na ficha do cliente (atendimento) e do caso (etapas do procedimento). Sem responsável nem prazo.' },
+  { nome: 'Tarefa', icone: 'ph:check-square-bold', texto: 'Algo que exige execução, acompanhamento, responsável ou prazo interno. Fica em Tarefas e aparece no Hoje quando vence.' },
+  { nome: 'Prazo', icone: 'ph:hourglass-high-bold', texto: 'Tem uma data-limite relevante (processual ou combinada). Fica em Prazos, contado em dias úteis.' },
+  { nome: 'Documento', icone: 'ph:folder-bold', texto: 'Obter, conferir ou organizar documento. Fica no checklist de Documentos da ficha; o checklist do atendimento só lê o resultado.' },
+  { nome: 'Hoje', icone: 'ph:sun-bold', texto: 'O que o sistema lembra e você envia (mensagens, follow-ups, aniversário). Não vira checkbox: já vira aviso no dia certo.' },
+]
+// Onde cada passo do fluxo vive no CRM (fase:posição).
+const ONDE: Record<string, string> = {
+  'atendimento:0': 'Automático (o contato é criado)', 'atendimento:1': 'Só orientação', 'atendimento:2': 'Hoje (próxima ação)', 'atendimento:3': 'Checklist (automático)', 'atendimento:4': 'Checklist (automático)', 'atendimento:5': 'Hoje',
+  'consulta:0': 'Aba Diagnóstico', 'consulta:1': 'Aba Diagnóstico + Checklist (automático)', 'consulta:2': 'Aba Diagnóstico', 'consulta:3': 'Aba Diagnóstico', 'consulta:4': 'Checklist (você marca)',
+  'fechamento:0': 'Aba Diagnóstico', 'fechamento:1': 'Financeiro + Checklist (automático)', 'fechamento:2': 'Hoje', 'fechamento:3': 'Checklist (automático)', 'fechamento:4': 'Checklist (enviado: você marca; assinado: Documentos)',
+  'caso:0': 'Checklist (automático)', 'caso:1': 'Automático', 'caso:2': 'Só orientação', 'caso:3': 'Checklist (automático)', 'caso:4': 'Documentos',
+  'acompanhamento:0': 'Prazos', 'acompanhamento:1': 'Hoje', 'acompanhamento:2': 'Relatórios (Qualidade)', 'acompanhamento:3': 'Hoje', 'acompanhamento:4': 'Automático',
+  'encerramento:0': 'Checklist (automático)', 'encerramento:1': 'Hoje', 'encerramento:2': 'Checklist (você marca) + NPS automático', 'encerramento:3': 'Checklist (você marca)', 'encerramento:4': 'Remarketing',
+}
 
 const FASES: Fase[] = [
   {

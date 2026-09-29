@@ -29,6 +29,7 @@
       <!-- Caso -->
       <div v-if="aba === 'resumo'" class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <p class="md:col-span-2 text-xs text-gray-500 -mb-2">Visão geral: dados de contato, situação do caso, relacionamento e o que ela já contou com as próprias palavras.</p>
+        <ChecklistPainel v-if="dados.checklist?.atendimento?.total" class="md:col-span-2" :escopo="dados.checklist.atendimento" @alternar="i => alternarChecklist(i, null)" />
         <div class="card">
           <h3>Contato</h3>
           <p><b>WhatsApp:</b> <a :href="whatsappLink(dados.contato.telefone)" target="_blank" rel="noopener" class="text-primary">{{ telefoneFormatado(dados.contato.telefone) }}</a></p>
@@ -250,6 +251,8 @@
             <button v-if="ehAdmin" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração deste caso</button>
             <a v-if="k.link_tribunal" :href="k.link_tribunal" target="_blank" rel="noopener" class="underline underline-offset-2">Ver no tribunal</a>
           </div>
+          <ChecklistPainel v-if="dados.checklist?.casos[k.id]" class="mt-2" :escopo="dados.checklist.casos[k.id]!" @alternar="i => alternarChecklist(i, k.id)" />
+          <p v-else class="text-xs text-gray-400 pt-1">Sem procedimento definido. <button type="button" class="underline underline-offset-2 hover:text-primary" @click="editarCaso(k)">Escolha o procedimento</button> para acompanhar as etapas deste caso.</p>
         </article>
         <div v-if="dados.compromissos.length">
           <h3 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Próximos prazos e compromissos</h3>
@@ -345,6 +348,8 @@ import PreFormularioEditor from './PreFormularioEditor.vue'
 import { CADENCIA, CLASSIFICACOES, STATUS_CASO, TIPOS_ATIVIDADE, TIPOS_CASO, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Caso, type Compromisso, type Contato, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import CasoFormModal from './CasoFormModal.vue'
+import ChecklistPainel from './ChecklistPainel.vue'
+import type { ChecklistFicha, ItemChecklist } from '../../../shared/types/checklist'
 import DiagnosticoPanel from './DiagnosticoPanel.vue'
 import { useProfileStore } from '../../stores/profile'
 import ModeloPicker from './ModeloPicker.vue'
@@ -352,7 +357,7 @@ import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[] }
+interface Detalhe { contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Caso[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string; modeloInicial?: string | null }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
@@ -442,6 +447,31 @@ async function enviar() {
     erroEnvio.value = e?.data?.message || 'Não foi possível enviar a mensagem.'
   } finally {
     enviando.value = false
+  }
+}
+
+// Checklist: só itens manuais são marcados aqui; os automáticos vêm dos dados que o CRM já tem.
+async function alternarChecklist(item: ItemChecklist, casoId: number | null) {
+  const d = dados.value
+  if (!d?.checklist || item.tipo !== 'manual') return
+  const escopo = casoId ? d.checklist.casos[casoId] : d.checklist.atendimento
+  if (!escopo) return
+  const marcar = !item.concluido
+  const contar = () => { escopo.feitos = escopo.itens.filter(i => i.concluido).length }
+  item.concluido = marcar // aparece na hora; volta atrás se o servidor recusar
+  item.quando = marcar ? new Date().toISOString() : null
+  item.quem = null
+  contar()
+  try {
+    const url: string = `/api/crm/contatos/${d.contato.id}/checklist`
+    const r = await $fetch<{ quando: string | null; quem: string | null }>(url, { method: 'PUT', body: { chave: item.chave, caso_id: casoId, concluido: marcar } })
+    item.quando = r.quando
+    item.quem = r.quem
+  } catch (e: any) {
+    item.concluido = !marcar
+    item.quando = null
+    contar()
+    alert(e?.data?.message || 'Não foi possível atualizar o checklist.')
   }
 }
 

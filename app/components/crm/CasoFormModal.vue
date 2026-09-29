@@ -20,6 +20,13 @@
         <label class="field"><span>Comarca</span><input v-model="form.comarca" class="modal-input" /></label>
         <label class="field"><span>UF</span><select v-model="form.uf" class="modal-input"><option value="">—</option><option v-for="u in UFS" :key="u">{{ u }}</option></select></label>
       </div>
+      <label class="field sm:col-span-2">
+        <span>Procedimento (define as etapas do checklist do caso)</span>
+        <select v-model="form.procedimento" class="modal-input" @change="procedimentoTocado = true">
+          <option value="">Nenhum</option>
+          <option v-for="p in PROCEDIMENTOS" :key="p.valor" :value="p.valor">{{ p.rotulo }}</option>
+        </select>
+      </label>
       <label class="field sm:col-span-2"><span>Parte contrária</span><input v-model="form.parte_contraria" class="modal-input" /></label>
       <label class="field">
         <span>Status</span>
@@ -58,6 +65,7 @@ import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import { AREAS, FASES_PROCESSUAIS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, UFS, type Caso, type Contato } from '../../../shared/types/crm'
 import { hojeISO } from '../../stores/crm'
+import { PROCEDIMENTOS, sugerirProcedimento } from '~~/shared/data/checklist'
 
 const props = defineProps<{ isOpen: boolean; contato: Pick<Contato, 'id' | 'nome' | 'area' | 'demanda' | 'parte_contraria'> | null; caso?: Caso | null }>()
 const emit = defineEmits<{ close: []; salvo: [c: Caso] }>()
@@ -65,6 +73,7 @@ const emit = defineEmits<{ close: []; salvo: [c: Caso] }>()
 const form = reactive<Record<string, any>>({})
 const salvando = ref(false)
 const erro = ref<string | null>(null)
+const procedimentoTocado = ref(false)
 const cnjOk = computed(() => !form.numero_processo || numeroCnjValido(form.numero_processo))
 
 watch(() => props.isOpen, (open) => {
@@ -76,7 +85,15 @@ watch(() => props.isOpen, (open) => {
     tipo: 'extrajudicial', area: c?.area ?? '', numero_processo: '', orgao: '', comarca: '', uf: '',
     parte_contraria: c?.parte_contraria ?? '', status: 'ativo', fase_processual: '', valor_causa: null, link_tribunal: '',
     data_abertura: hojeISO(), observacoes: '', resultado: null, data_encerramento: null,
+    procedimento: sugerirProcedimento(c?.demanda, 'extrajudicial') ?? '',
   })
+  if (props.caso) form.procedimento = props.caso.procedimento ?? ''
+  procedimentoTocado.value = !!props.caso
+})
+// Novo caso: a sugestão acompanha o tipo (judicial/extrajudicial) enquanto você não escolher outra.
+watch(() => form.tipo, (tipo) => {
+  if (props.caso || procedimentoTocado.value) return
+  form.procedimento = sugerirProcedimento(props.contato?.demanda, tipo) ?? ''
 })
 
 async function salvar() {

@@ -1,5 +1,6 @@
 import { AREAS, CASO_CAMPOS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, pick } from '../../shared/types/crm'
 import { formatarCnj, numeroCnjValido } from '../../shared/utils/juridico'
+import { PROCEDIMENTOS } from '../../shared/data/checklist'
 
 export function limparCaso(body: Record<string, any>) {
   const d = pick(body ?? {}, CASO_CAMPOS) as Record<string, any>
@@ -8,6 +9,7 @@ export function limparCaso(body: Record<string, any>) {
   if (d.tipo && !(d.tipo in TIPOS_CASO)) throw createError({ statusCode: 400, message: 'Tipo inválido.' })
   if (d.status && !(d.status in STATUS_CASO)) throw createError({ statusCode: 400, message: 'Status inválido.' })
   if (d.resultado && !(d.resultado in RESULTADOS_CASO)) throw createError({ statusCode: 400, message: 'Resultado inválido.' })
+  if (d.procedimento && !PROCEDIMENTOS.some(p => p.valor === d.procedimento)) throw createError({ statusCode: 400, message: 'Procedimento inválido.' })
   if (d.area && !(d.area in AREAS)) throw createError({ statusCode: 400, message: 'Área inválida.' })
   if (d.numero_processo) {
     if (!numeroCnjValido(d.numero_processo)) {
