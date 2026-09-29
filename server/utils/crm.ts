@@ -66,6 +66,11 @@ export async function notificarEquipe(event: H3Event, title: string, message: st
     if (error) console.error('[notificacoes] Erro ao buscar equipe:', error)
     return
   }
+  // Um aviso não lido por assunto: se a mesma pessoa manda dez mensagens, vira um aviso só (o último).
+  if (metadata.contato_id) {
+    await admin.from('notifications').delete().in('user_id', staff.map(s => s.id))
+      .eq('is_read', false).eq('title', title).contains('metadata', { contato_id: metadata.contato_id })
+  }
   const { error: insertError } = await admin.from('notifications').insert(
     staff.map(s => ({ user_id: s.id, title, message, type, metadata, is_read: false })),
   )

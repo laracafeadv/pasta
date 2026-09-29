@@ -368,11 +368,15 @@ const loading = ref(false)
 const aba = ref('resumo')
 const scrollBox = ref<HTMLElement | null>(null)
 
-// Seis abas na ordem do atendimento: quem é → conversa → diagnóstico → caso → financeiro → histórico.
+// Abas na ordem do atendimento: quem é → conversa → consulta → caso → financeiro → histórico.
+// "Consulta" (análise feita na consulta) só aparece enquanto é útil: antes de fechar contrato,
+// ou depois se já houver análise registrada — para cliente antigo sem análise, não vira aba vazia.
+const temAnalise = computed(() => !!dados.value?.checklist?.atendimento?.itens.find(i => i.chave === 'diagnostico')?.concluido)
+const emPreVenda = computed(() => !['ativo', 'concluido'].includes(dados.value?.contato.etapa ?? ''))
 const abas = computed(() => [
   { id: 'resumo', label: 'Resumo' },
   { id: 'conversa', label: 'Conversa', badge: dados.value?.mensagens.length || undefined },
-  { id: 'diagnostico', label: 'Diagnóstico' },
+  ...(emPreVenda.value || temAnalise.value ? [{ id: 'diagnostico', label: 'Consulta' }] : []),
   { id: 'processo', label: 'Caso', badge: pendentes.value.length ? `${pendentes.value.length} doc.` : dados.value?.casos.length || undefined },
   { id: 'honorarios', label: 'Financeiro', badge: dados.value?.honorarios.length || undefined },
   { id: 'atividades', label: 'Histórico', badge: dados.value?.atividades.length || undefined },

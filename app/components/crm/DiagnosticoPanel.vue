@@ -12,7 +12,7 @@
         <li v-for="p in roteiro" :key="p">{{ p }}</li>
       </ol>
       <p class="mt-3 text-xs text-gray-500">
-        <b>Triagem x consulta:</b> a triagem (Ana ou você) é gratuita e só entende os fatos. A partir do momento em que você analisa direitos, riscos e estratégia do caso concreto, é consulta.
+        <b>Triagem x consulta:</b> a triagem é gratuita e só entende os fatos. A partir do momento em que você analisa direitos, riscos e estratégia do caso concreto, é consulta.
         Se a pessoa pedir isso antes, use a mensagem <code>/triagem-x-consulta</code>.
       </p>
     </details>

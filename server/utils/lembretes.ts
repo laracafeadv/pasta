@@ -13,9 +13,9 @@ export async function enviarLembretes(event: H3Event): Promise<number> {
   const hoje = hojeBR()
   const alvo = new Set([hoje, hojeBR(1), hojeBR(3)])
   const { data } = await admin.from('compromissos')
-    .select('id, tipo, titulo, inicio, data_limite, responsavel_id, lembrete_em, contato:contatos(nome)')
+    .select('id, tipo, titulo, inicio, data_limite, responsavel_id, lembrete_em, contato_id, contato:contatos(nome)')
     .eq('status', 'pendente').in('tipo', ['prazo', 'audiencia']).limit(500)
-  const pendentes = ((data ?? []) as unknown as (Compromisso & { responsavel_id: string | null; lembrete_em: string | null })[])
+  const pendentes = ((data ?? []) as unknown as (Compromisso & { responsavel_id: string | null; lembrete_em: string | null; contato_id: number | null })[])
     .filter(c => alvo.has(dataCompromisso(c)) && c.lembrete_em !== hoje)
   if (!pendentes.length) return 0
 
@@ -30,10 +30,13 @@ export async function enviarLembretes(event: H3Event): Promise<number> {
       title: `${TIPOS_COMPROMISSO[c.tipo].nome} ${quando}`,
       message: `${c.titulo}${c.contato?.nome ? ` — ${c.contato.nome}` : ''} (${d.split('-').reverse().join('/')})`,
       type: d === hoje ? 'warning' : 'info',
-      metadata: { compromisso_id: c.id },
+      metadata: { compromisso_id: c.id, contato_id: c.contato_id },
       is_read: false,
     }))
   })
+  // O lembrete de hoje substitui os de 3 dias e 1 dia (ainda não lidos) do mesmo prazo.
+  await admin.from('notifications').delete().eq('is_read', false)
+    .or(pendentes.map(c => `metadata->>compromisso_id.eq.${c.id}`).join(','))
   const { error } = await admin.from('notifications').insert(notificacoes)
   if (error) {
     console.error('[lembretes] Erro:', error)

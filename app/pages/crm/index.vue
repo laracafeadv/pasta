@@ -37,6 +37,8 @@ onMounted(() => {
   if (aba.value !== 'hoje') crm.fetchAgenda() // alimenta o contador do menu
 })
 watch(aba, carregarAba)
+// Vindo do sino/busca com a tela já aberta: abre a ficha pedida.
+watch(() => route.query.abrir, (v) => { if (v) abrir({ id: Number(v) } as Contato, String(route.query.ficha || 'casos')) })
 
 // ─── Ficha (criar / editar) ─────────────────────────────────────────────────
 const formAberto = ref(false)

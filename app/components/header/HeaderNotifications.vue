@@ -41,7 +41,7 @@
 
         <div v-else>
           <div
-            v-for="notification in notifications.slice(0, 12)"
+            v-for="notification in visiveis"
             :key="notification.id"
             class="group border-b border-slate-100 dark:border-white/5 last:border-b-0"
           >
@@ -54,7 +54,8 @@
                 <div class="min-w-0">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-xs font-bold text-slate-900 dark:text-white truncate">{{ notification.title }}</span>
-                    <span v-if="!notification.is_read" class="h-2 w-2 rounded-full bg-primary shrink-0"></span>
+                    <span v-if="!notification.is_read" class="h-2 w-2 rounded-full shrink-0" :class="notification.type === 'warning' ? 'bg-danger' : 'bg-primary'"></span>
+                    <span v-if="notification.type === 'warning' && !notification.is_read" class="text-[9px] font-black uppercase tracking-wider text-danger">Urgente</span>
                   </div>
                   <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
                     {{ notification.message }}
@@ -100,6 +101,10 @@ const canShowNotifications = computed(() => {
   return Boolean(user.value)
 })
 
+// Não lidas primeiro (urgentes antes); lidas só completam até 12.
+const visiveis = computed(() => [...notifications.value]
+  .sort((a, b) => Number(a.is_read) - Number(b.is_read) || Number(b.type === 'warning') - Number(a.type === 'warning'))
+  .slice(0, 12))
 const unreadLabel = computed(() => (unreadCount.value > 99 ? '99+' : String(unreadCount.value)))
 
 watch(
@@ -135,11 +140,15 @@ async function openNotification(
   close: () => void
 ) {
   await notificationsStore.markAsRead(id)
-
-  const vendaId = metadata?.venda_id
-  if (vendaId) {
+  // Toda notificação leva ao registro: a ficha do cliente (conversa, prazos ou resumo).
+  const contatoId = metadata?.contato_id
+  if (contatoId) {
     close()
-    await navigateTo('/crm')
+    const ficha = metadata?.compromisso_id ? 'casos' : metadata?.tipo === 'mensagem' ? 'conversa' : 'resumo'
+    await navigateTo({ path: '/crm', query: { abrir: String(contatoId), ficha } })
+  } else if (metadata?.compromisso_id) {
+    close()
+    await navigateTo('/clientes?aba=prazos')
   }
 }
 

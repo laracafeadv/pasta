@@ -17,7 +17,7 @@ export async function auditar(event: H3Event, acao: string, entidade: string, en
       const { data } = await admin.from('profiles').select('name').eq('id', user.sub).maybeSingle()
       usuarioNome = data?.name || (user.email as string) || 'Usuário'
     } else if (entidade === 'whatsapp') {
-      usuarioNome = 'Ana (assistente)'
+      usuarioNome = 'Sistema (WhatsApp)'
     }
     const { error } = await admin.from('auditoria').insert({
       usuario_id: usuarioId,

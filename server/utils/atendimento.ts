@@ -34,7 +34,7 @@ async function obterOuCriarContato(event: H3Event, admin: SupabaseClient, msg: M
   }
 
   await registrarAtividade(event, data.id, 'Sistema', 'Contato criado pelo WhatsApp.')
-  await notificarEquipe(event, 'Novo contato no WhatsApp', `${data.nome || telefone} iniciou uma conversa.`, { contato_id: data.id })
+  // O aviso vem da primeira mensagem (processarMensagem) — sem notificação dupla de "novo contato".
   return data as Contato
 }
 
@@ -62,7 +62,7 @@ export async function processarMensagem(event: H3Event, msg: MensagemRecebida): 
   let textoMensagem = msg.texto
   if (msg.midia) textoMensagem = await processarMidia(admin, contato.id, gravada.id, msg)
 
-  await notificarEquipe(event, 'Nova mensagem no WhatsApp', `${contato.nome || contato.telefone}: ${textoMensagem.slice(0, 120)}`, { contato_id: contato.id })
+  await notificarEquipe(event, 'Nova mensagem no WhatsApp', `${contato.nome || contato.telefone}: ${textoMensagem.slice(0, 120)}`, { contato_id: contato.id, tipo: 'mensagem' })
 }
 
 /** Mensagem enviada pela equipe pelo CRM: envia e grava na conversa. */

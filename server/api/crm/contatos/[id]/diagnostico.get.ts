@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
   const d: Diagnostico = diag ?? {
     contato_id: id,
-    // Ponto de partida: o que a Ana ouviu na triagem.
+    // Ponto de partida: o que foi dito na triagem (campos dor/objetivo do contato).
     problema_relatado: contato?.dor ?? null,
     porques: [], causa_raiz: null,
     objetivo_cliente: contato?.objetivo ?? null,
