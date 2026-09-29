@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   let query = (await serverSupabaseClient(event))
     .from('compromissos')
-    .select('*, contato:contatos(id, nome), caso:casos(id, titulo, processos(numero))')
+    .select('*, contato:contatos(id, nome), caso:casos(id, titulo, processos(numero)), processo:processos(id, numero, natureza)')
     .order('data_limite', { ascending: true, nullsFirst: false })
     .order('inicio', { ascending: true })
     .limit(500)

@@ -2,7 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { requireStaff } from '../utils/security'
 import { sanitizarBusca } from '../utils/crm'
 
-interface Resultado { tipo: 'contato' | 'caso' | 'processo' | 'parte' | 'tarefa'; titulo: string; subtitulo: string; link: string }
+interface Resultado { tipo: 'contato' | 'caso' | 'processo' | 'parte' | 'documento' | 'tarefa'; titulo: string; subtitulo: string; link: string }
 
 /** Busca global: pessoa, demanda, processo/procedimento (por número), parte/interessado e tarefa. Tudo leva à ficha do cliente. */
 export default defineEventHandler(async (event): Promise<Resultado[]> => {
@@ -12,12 +12,13 @@ export default defineEventHandler(async (event): Promise<Resultado[]> => {
   const client = await serverSupabaseClient(event)
   const digitos = q.replace(/\D/g, '')
 
-  const [contatos, casos, processos, partes, tarefas] = await Promise.all([
+  const [contatos, casos, processos, partes, documentos, tarefas] = await Promise.all([
     client.from('contatos').select('id, nome, telefone, email, etapa, demanda')
       .or(`nome.ilike.%${q}%,email.ilike.%${q}%,demanda.ilike.%${q}%${digitos.length >= 4 ? `,telefone.ilike.%${digitos}%` : ''}`).limit(6),
     client.from('casos').select('id, titulo, contato_id, contato:contatos(nome)').ilike('titulo', `%${q}%`).limit(6),
     client.from('processos').select('id, numero, natureza, orgao, contato_id, contato:contatos(nome), caso:casos(titulo)').or(`numero.ilike.%${q}%,orgao.ilike.%${q}%`).limit(6),
     client.from('partes').select('id, nome, papel, caso:casos(titulo, contato_id, contato:contatos(nome))').ilike('nome', `%${q}%`).limit(6),
+    client.from('documentos').select('id, descricao, status, contato_id, caso:casos(titulo), contato:contatos(nome)').ilike('descricao', `%${q}%`).limit(6),
     client.from('tarefas_internas').select('id, titulo').eq('concluida', false).ilike('titulo', `%${q}%`).limit(6),
   ])
 
@@ -36,6 +37,7 @@ export default defineEventHandler(async (event): Promise<Resultado[]> => {
     const caso = p.caso as any
     if (caso?.contato_id) r.push({ tipo: 'parte', titulo: p.nome, subtitulo: [p.papel, caso.titulo, caso.contato?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${caso.contato_id}&ficha=casos` })
   }
+  for (const d of documentos.data ?? []) r.push({ tipo: 'documento', titulo: d.descricao, subtitulo: [d.status === 'pendente' ? 'Documento pendente' : 'Documento', (d.caso as any)?.titulo, (d.contato as any)?.nome].filter(Boolean).join(' · '), link: `/crm?abrir=${d.contato_id}&ficha=documentos` })
   for (const t of tarefas.data ?? []) r.push({ tipo: 'tarefa', titulo: t.titulo, subtitulo: 'Tarefa', link: '/tarefas' })
   return r
 })

@@ -28,6 +28,14 @@
 
       <!-- Cliente: quem é (permanente) -->
       <div v-if="aba === 'resumo'" class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <!-- Visão geral: o que está acontecendo com este cliente, com acesso direto ao detalhe -->
+        <div class="md:col-span-2 grid grid-cols-2 lg:grid-cols-5 gap-2">
+          <button v-for="c in resumoFicha" :key="c.rotulo" type="button" class="text-left rounded-2xl border px-3 py-2.5 hover:border-primary transition-colors" :class="c.alerta ? 'border-warning/50 bg-warning/5' : 'border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50'" @click="aba = c.aba">
+            <span class="block text-[10px] font-bold uppercase tracking-widest text-gray-400">{{ c.rotulo }}</span>
+            <span class="block text-lg font-serif text-primary dark:text-zinc-100 leading-tight">{{ c.valor }}</span>
+            <span class="block text-[11px] text-gray-500 truncate">{{ c.sub }}</span>
+          </button>
+        </div>
         <ChecklistPainel v-if="dados.checklist?.atendimento?.total" class="md:col-span-2" :escopo="dados.checklist.atendimento" @alternar="i => alternarChecklist(i, null)" />
         <div class="card">
           <h3>Contato</h3>
@@ -497,6 +505,25 @@ const processoNatureza = ref<'judicial' | 'extrajudicial'>('judicial')
 const processoEditando = ref<Processo | null>(null)
 function novoProcesso(k: Caso, natureza: 'judicial' | 'extrajudicial') { processoCaso.value = k.id; processoNatureza.value = natureza; processoEditando.value = null; processoAberto.value = true }
 function editarProcesso(p: Processo) { processoCaso.value = p.caso_id; processoNatureza.value = p.natureza; processoEditando.value = p; processoAberto.value = true }
+// Resumo do cliente: só números e o próximo passo; o detalhe fica nas abas.
+const resumoFicha = computed(() => {
+  const d = dados.value
+  if (!d) return []
+  const ativas = d.casos.filter(c => c.status !== 'encerrado')
+  const encerradas = d.casos.length - ativas.length
+  const procs = d.processos.filter(p => p.status !== 'encerrado')
+  const proximo = [...d.compromissos].sort((a, b) => dataCompromisso(a).localeCompare(dataCompromisso(b)))[0]
+  const docsPend = d.documentos.filter(x => x.status === 'pendente' && x.obrigatorio).length
+  const contratado = d.honorarios.filter(h => ['Contratado', 'Pago'].includes(h.status) && h.tipo !== 'Consulta').reduce((t, h) => t + Number(h.valor), 0)
+  const propostas = d.honorarios.filter(h => h.status === 'Proposta' && h.tipo !== 'Consulta').length
+  return [
+    { rotulo: 'Demandas', valor: `${ativas.length} ativa${ativas.length === 1 ? '' : 's'}`, sub: encerradas ? `${encerradas} encerrada${encerradas === 1 ? '' : 's'}` : 'nenhuma encerrada', aba: 'processo', alerta: false },
+    { rotulo: 'Processos', valor: String(procs.length), sub: procs.length ? `${procs.filter(p => p.natureza === 'judicial').length} judicial · ${procs.filter(p => p.natureza === 'extrajudicial').length} extrajudicial` : 'sem processo em andamento', aba: 'processo', alerta: false },
+    { rotulo: 'Próximo prazo', valor: proximo ? dataCurta(dataCompromisso(proximo)) : '—', sub: proximo ? proximo.titulo : 'nada agendado', aba: 'processo', alerta: !!proximo && dataCompromisso(proximo) <= hojeIso },
+    { rotulo: 'Pendências', valor: `${d.tarefas.length} tarefa${d.tarefas.length === 1 ? '' : 's'}`, sub: `${docsPend} documento${docsPend === 1 ? '' : 's'} a receber`, aba: 'processo', alerta: docsPend > 0 },
+    { rotulo: 'Financeiro', valor: contratado ? brl(contratado) : '—', sub: propostas ? `${propostas} proposta(s) em aberto` : contratado ? 'contratado' : 'sem contratação', aba: 'honorarios', alerta: false },
+  ]
+})
 const verEncerradas = ref(false)
 const encerradas = computed(() => (dados.value?.casos ?? []).filter(c => c.status === 'encerrado'))
 const demandasVisiveis = computed(() => (dados.value?.casos ?? []).filter(c => c.status !== 'encerrado' || verEncerradas.value))

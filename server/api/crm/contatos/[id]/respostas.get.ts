@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const [perguntas, respostas] = await Promise.all([
-    client.from('formulario_perguntas').select('id, texto, tipo, opcoes, ajuda, arquivada, secao, ordem, procedimentos').eq('escopo', casoId ? 'demanda' : 'cliente').order('ordem').order('id'),
+    client.from('formulario_perguntas').select('id, texto, tipo, opcoes, ajuda, arquivada, secao, ordem, procedimentos, mostrar_se').eq('escopo', casoId ? 'demanda' : 'cliente').order('ordem').order('id'),
     casoId
       ? client.from('caso_respostas').select('pergunta_id, resposta, updated_at').eq('caso_id', casoId)
       : client.from('contato_respostas').select('pergunta_id, resposta, updated_at').eq('contato_id', id),
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
     // Pergunta restrita a procedimentos: só aparece nas demandas desses procedimentos (ou se já tem resposta).
     if (casoId && p.procedimentos?.length && !r && !(procedimento && p.procedimentos.includes(procedimento))) continue
     const item: PerguntaDaFicha = {
-      id: p.id, texto: p.texto, tipo: p.tipo, opcoes: p.opcoes ?? [], ajuda: p.ajuda, arquivada: p.arquivada,
+      id: p.id, texto: p.texto, tipo: p.tipo, opcoes: p.opcoes ?? [], ajuda: p.ajuda, arquivada: p.arquivada, mostrar_se: p.mostrar_se ?? null,
       resposta: (r?.resposta ?? null) as ValorResposta, respondido_em: r?.updated_at ?? null,
     }
     const nome = p.arquivada ? 'Perguntas arquivadas' : (p.secao || 'Geral')

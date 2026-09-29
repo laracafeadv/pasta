@@ -7,6 +7,7 @@
         <input v-model="form.numero" class="modal-input font-mono" :placeholder="form.natureza === 'judicial' ? '0000000-00.0000.0.00.0000' : 'Protocolo, livro/folha…'" />
         <small v-if="form.natureza === 'judicial' && form.numero" :class="cnjOk ? 'text-success-dark' : 'text-danger'">{{ cnjOk ? 'Número válido' : 'Dígito verificador não confere' }}</small>
       </label>
+      <label v-if="form.natureza === 'judicial'" class="field sm:col-span-2"><span>Tribunal</span><input v-model="form.tribunal" class="modal-input" placeholder="Ex.: TJBA" /></label>
       <label class="field"><span>{{ form.natureza === 'judicial' ? 'Vara / juízo' : 'Cartório / serventia / órgão' }}</span><input v-model="form.orgao" class="modal-input" /></label>
       <div class="grid grid-cols-[1fr_90px] gap-2">
         <label class="field"><span>Comarca / cidade</span><input v-model="form.comarca" class="modal-input" /></label>
@@ -56,7 +57,7 @@ watch(() => props.isOpen, (aberto) => {
   if (!aberto) return
   erro.value = null
   Object.assign(form, props.processo ?? {
-    natureza: props.natureza, numero: '', orgao: '', comarca: '', uf: '', fase: '', status: 'ativo', valor: null, link: '',
+    natureza: props.natureza, numero: '', tribunal: '', orgao: '', comarca: '', uf: '', fase: '', status: 'ativo', valor: null, link: '',
     data_inicio: hojeISO(), data_encerramento: null, observacoes: '',
   })
 })

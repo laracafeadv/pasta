@@ -37,7 +37,7 @@ const perguntaAberta = ref(false)
 const perguntaSalvando = ref(false)
 const perguntaErro = ref<string | null>(null)
 const perguntaEditando = ref<FormularioPergunta | null>(null)
-const formPergunta = reactive<{ texto: string; tipo: TipoPergunta; opcoes: string[]; secao: string; ajuda: string; escopo: 'cliente' | 'demanda'; procedimentos: string[] }>({ texto: '', tipo: 'texto_curto', opcoes: [], secao: 'Geral', ajuda: '', escopo: 'cliente', procedimentos: [] })
+const formPergunta = reactive<{ texto: string; tipo: TipoPergunta; opcoes: string[]; secao: string; ajuda: string; escopo: 'cliente' | 'demanda'; procedimentos: string[]; condId: number | null; condValor: string }>({ texto: '', tipo: 'texto_curto', opcoes: [], secao: 'Geral', ajuda: '', escopo: 'cliente', procedimentos: [], condId: null, condValor: '' })
 
 function abrirPergunta(p?: FormularioPergunta) {
   perguntaEditando.value = p ?? null
@@ -49,13 +49,15 @@ function abrirPergunta(p?: FormularioPergunta) {
   formPergunta.ajuda = p?.ajuda ?? ''
   formPergunta.escopo = p?.escopo ?? 'cliente'
   formPergunta.procedimentos = [...(p?.procedimentos ?? [])]
+  formPergunta.condId = p?.mostrar_se?.pergunta_id ?? null
+  formPergunta.condValor = p?.mostrar_se?.igual_a ?? ''
   perguntaAberta.value = true
 }
 async function salvarPergunta() {
   perguntaSalvando.value = true
   perguntaErro.value = null
   try {
-    const body = { texto: formPergunta.texto, tipo: formPergunta.tipo, opcoes: formPergunta.opcoes, secao: formPergunta.secao, ajuda: formPergunta.ajuda, escopo: formPergunta.escopo, procedimentos: formPergunta.procedimentos }
+    const body = { texto: formPergunta.texto, tipo: formPergunta.tipo, opcoes: formPergunta.opcoes, secao: formPergunta.secao, ajuda: formPergunta.ajuda, escopo: formPergunta.escopo, procedimentos: formPergunta.procedimentos, mostrar_se: formPergunta.condId && formPergunta.condValor ? { pergunta_id: formPergunta.condId, igual_a: formPergunta.condValor } : null }
     if (perguntaEditando.value) await $fetch(`/api/formulario-perguntas/${perguntaEditando.value.id}`, { method: 'PUT', body })
     else await $fetch('/api/formulario-perguntas', { method: 'POST', body })
     perguntaAberta.value = false
@@ -75,7 +77,7 @@ async function arquivarPergunta() {
 async function restaurarPergunta() {
   const p = perguntaEditando.value
   if (!p) return
-  await $fetch(`/api/formulario-perguntas/${p.id}`, { method: 'PUT', body: { texto: p.texto, tipo: p.tipo, opcoes: p.opcoes, secao: p.secao, ajuda: p.ajuda, escopo: p.escopo, procedimentos: p.procedimentos, arquivada: false } })
+  await $fetch(`/api/formulario-perguntas/${p.id}`, { method: 'PUT', body: { texto: p.texto, tipo: p.tipo, opcoes: p.opcoes, secao: p.secao, ajuda: p.ajuda, escopo: p.escopo, procedimentos: p.procedimentos, mostrar_se: p.mostrar_se, arquivada: false } })
   perguntaAberta.value = false
   await carregarPerguntas()
 }
@@ -100,6 +102,9 @@ async function duplicarPergunta() {
 }
 
 // Seções = agrupamento das perguntas (mesma organização que a ficha do cliente usa).
+// Perguntas que podem condicionar esta: mesmo nível (cliente/demanda), com opções fixas.
+const candidatasCondicao = computed(() => perguntasAtivas.value.filter(p => p.escopo === formPergunta.escopo && p.id !== perguntaEditando.value?.id && ['sim_nao', 'selecao_unica', 'selecao_multipla', 'checklist'].includes(p.tipo)))
+const opcoesDaCondicao = computed(() => { const c = perguntas.value.find(p => p.id === formPergunta.condId); return c ? (c.tipo === 'sim_nao' ? ['Sim', 'Não'] : c.opcoes) : [] })
 const secoesExistentes = computed(() => [...new Set(perguntasAtivas.value.map(p => p.secao))])
 const secoesComPerguntas = computed(() => secoesExistentes.value.map(nome => ({ nome, itens: perguntasAtivas.value.filter(p => p.secao === nome) })))
 const perguntasArquivadas = computed(() => perguntas.value.filter(p => p.arquivada))
@@ -377,6 +382,20 @@ onMounted(async () => {
               <input v-model="formPergunta.procedimentos" type="checkbox" :value="pr.valor" class="sr-only" />{{ pr.rotulo }}
             </label>
           </div>
+        </div>
+        <div class="field">
+          <span>Mostrar só se… (opcional)</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <select v-model="formPergunta.condId" class="modal-input" @change="formPergunta.condValor = ''">
+              <option :value="null">Sempre mostrar</option>
+              <option v-for="c in candidatasCondicao" :key="c.id" :value="c.id">{{ c.texto }}</option>
+            </select>
+            <select v-if="formPergunta.condId" v-model="formPergunta.condValor" class="modal-input">
+              <option value="">Escolha a resposta…</option>
+              <option v-for="o in opcoesDaCondicao" :key="o">{{ o }}</option>
+            </select>
+          </div>
+          <small class="text-gray-400">Ex.: "Quantidade de filhos?" só aparece se "Possui filhos?" = Sim. Respostas já guardadas nunca somem.</small>
         </div>
         <label class="field"><span>Ajuda (opcional)</span><input v-model="formPergunta.ajuda" class="modal-input" placeholder="Instrução curta que aparece junto da pergunta" /></label>
         <p v-if="perguntaErro" class="text-sm text-danger">{{ perguntaErro }}</p>

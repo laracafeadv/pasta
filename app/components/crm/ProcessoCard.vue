@@ -6,7 +6,7 @@
       <span class="tag ml-auto">{{ STATUS_CASO[processo.status] }}</span>
     </div>
     <p class="text-xs text-gray-500 mt-0.5">
-      {{ [processo.orgao, processo.comarca && `${processo.comarca}${processo.uf ? '/' + processo.uf : ''}`].filter(Boolean).join(' · ') || 'Órgão não informado' }}
+      {{ [processo.tribunal, processo.orgao, processo.comarca && `${processo.comarca}${processo.uf ? '/' + processo.uf : ''}`].filter(Boolean).join(' · ') || 'Órgão não informado' }}
       <span v-if="processo.fase"> · {{ processo.fase }}</span>
       <span v-if="processo.valor"> · {{ brl(processo.valor) }}</span>
     </p>

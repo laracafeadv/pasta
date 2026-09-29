@@ -279,6 +279,8 @@ export interface FormularioPergunta {
   arquivada: boolean
   escopo: 'cliente' | 'demanda'
   procedimentos: string[]
+  /** Só aparece na ficha quando a resposta da pergunta indicada for igual ao valor. */
+  mostrar_se?: { pergunta_id: number; igual_a: string } | null
   secao: string
   ordem: number
   ajuda: string | null
@@ -288,7 +290,7 @@ export interface FormularioPergunta {
 export type ValorResposta = string | string[] | null
 
 /** Uma pergunta na ficha: a definição (do construtor) + a resposta atual do cliente. */
-export interface PerguntaDaFicha extends Pick<FormularioPergunta, 'id' | 'texto' | 'tipo' | 'opcoes' | 'ajuda' | 'arquivada'> {
+export interface PerguntaDaFicha extends Pick<FormularioPergunta, 'id' | 'texto' | 'tipo' | 'opcoes' | 'ajuda' | 'arquivada' | 'mostrar_se'> {
   resposta: ValorResposta
   respondido_em: string | null
 }
@@ -441,6 +443,7 @@ export interface Processo {
   contato_id: number
   natureza: keyof typeof NATUREZAS_PROCESSO
   numero: string | null
+  tribunal?: string | null
   orgao: string | null
   comarca: string | null
   uf: string | null
@@ -454,7 +457,7 @@ export interface Processo {
   caso?: Pick<Caso, 'id' | 'titulo' | 'tipo'> | null
   contato?: Pick<Contato, 'id' | 'nome'> | null
 }
-export const PROCESSO_CAMPOS = ['caso_id', 'natureza', 'numero', 'orgao', 'comarca', 'uf', 'fase', 'status', 'valor', 'link', 'data_inicio', 'data_encerramento', 'observacoes'] as const
+export const PROCESSO_CAMPOS = ['caso_id', 'natureza', 'numero', 'tribunal', 'orgao', 'comarca', 'uf', 'fase', 'status', 'valor', 'link', 'data_inicio', 'data_encerramento', 'observacoes'] as const
 
 // ─── Partes e interessados de uma demanda ───────────────────────────────────────────────────
 export const PAPEIS_PARTE = ['Parte contrária', 'Cônjuge / companheiro(a)', 'Herdeiro', 'Inventariante', 'Interessado', 'Testemunha', 'Advogado da parte contrária', 'Outro'] as const
@@ -509,6 +512,7 @@ export interface Compromisso {
   contato?: Pick<Contato, 'id' | 'nome'> | null
   caso?: (Pick<Caso, 'id' | 'titulo'> & { numero_processo?: string | null }) | null
   processo_id?: number | null
+  processo?: { id: number; numero: string | null; natureza: string } | null
 }
 export const COMPROMISSO_CAMPOS = ['tipo', 'titulo', 'contato_id', 'caso_id', 'processo_id', 'inicio', 'data_limite', 'data_publicacao', 'dias_prazo', 'local', 'status', 'observacao'] as const
 

@@ -12,10 +12,10 @@
     <div v-if="aberto" class="border-t border-gray-100 dark:border-zinc-800 px-4 pb-4 pt-3 space-y-5">
       <p v-if="carregando" class="text-sm text-gray-400">Carregando…</p>
       <p v-else-if="erro" class="text-sm text-danger">{{ erro }}</p>
-      <p v-else-if="!secoes?.length" class="text-sm text-gray-400">
+      <p v-else-if="!secoesVisiveis.length" class="text-sm text-gray-400">
         {{ casoId ? 'Nenhuma pergunta de demanda para este procedimento.' : 'Nenhuma pergunta criada ainda.' }} Crie em <NuxtLink to="/formularios?aba=perguntas" class="underline hover:text-primary">Formulários › Banco de perguntas</NuxtLink> e ela aparece aqui sozinha.
       </p>
-      <div v-for="s in secoes" :key="s.nome">
+      <div v-for="s in secoesVisiveis" :key="s.nome">
         <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{{ s.nome }}</p>
         <ul class="divide-y divide-gray-50 dark:divide-zinc-800/60">
           <li v-for="p in s.perguntas" :key="p.id" class="py-2">
@@ -76,7 +76,17 @@ const rascunho = ref('')
 const salvando = ref(new Set<number>())
 const msgErro = reactive<Record<number, string>>({})
 
-const perguntas = computed(() => (secoes.value ?? []).flatMap(s => s.perguntas).filter(p => !p.arquivada))
+// Pergunta condicional ("Quantidade de filhos?" só se "Tem filhos?" = Sim): aparece quando a condição é atendida
+// ou quando já tem resposta (dado guardado nunca some da tela).
+const respostaDe = (id: number) => (secoes.value ?? []).flatMap(s => s.perguntas).find(p => p.id === id)?.resposta ?? null
+function atende(p: PerguntaDaFicha) {
+  if (!p.mostrar_se) return true
+  const r = respostaDe(p.mostrar_se.pergunta_id)
+  const ok = Array.isArray(r) ? r.includes(p.mostrar_se.igual_a) : r === p.mostrar_se.igual_a
+  return ok || !vazia(p)
+}
+const secoesVisiveis = computed(() => (secoes.value ?? []).map(s => ({ ...s, perguntas: s.perguntas.filter(atende) })).filter(s => s.perguntas.length))
+const perguntas = computed(() => secoesVisiveis.value.flatMap(s => s.perguntas).filter(p => !p.arquivada))
 const total = computed(() => perguntas.value.length)
 const respondidas = computed(() => perguntas.value.filter(p => !vazia(p)).length)
 

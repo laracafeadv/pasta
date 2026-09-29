@@ -17,7 +17,9 @@ export function limparPergunta(body: any) {
   const escopo = body?.escopo === 'demanda' ? 'demanda' : 'cliente'
   const validos = new Set(PROCEDIMENTOS.map(p => p.valor))
   const procedimentos = escopo === 'demanda' && Array.isArray(body?.procedimentos) ? [...new Set<string>(body.procedimentos.map(String).filter((v: string) => validos.has(v)))] : []
-  return { texto, tipo, opcoes, secao, ajuda, escopo, procedimentos }
+  const ms = body?.mostrar_se
+  const mostrar_se = ms && Number.isInteger(Number(ms.pergunta_id)) && String(ms.igual_a ?? '').trim() ? { pergunta_id: Number(ms.pergunta_id), igual_a: String(ms.igual_a).trim().slice(0, 200) } : null
+  return { texto, tipo, opcoes, secao, ajuda, escopo, procedimentos, mostrar_se }
 }
 
 /**

@@ -81,7 +81,7 @@ async function concluir(c: Compromisso) {
             </div>
             <p v-if="c.contato || c.caso" class="text-xs text-secondary-dark">
               <NuxtLink v-if="c.contato" :to="`/crm?abrir=${c.contato.id}&ficha=casos`" class="hover:underline">{{ c.contato.nome }}</NuxtLink>
-              <span v-if="c.caso"> · {{ c.caso.titulo }}{{ c.caso.numero_processo ? ` (${c.caso.numero_processo})` : '' }}</span>
+              <span v-if="c.caso"> · {{ c.caso.titulo }}{{ (c.processo?.numero || c.caso.numero_processo) ? ` (${c.processo?.numero || c.caso.numero_processo})` : '' }}</span>
             </p>
             <p v-if="c.observacao" class="text-xs text-gray-500">{{ c.observacao }}</p>
             <div class="flex items-center justify-between pt-1">
