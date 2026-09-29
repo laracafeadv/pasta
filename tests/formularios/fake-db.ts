@@ -14,6 +14,7 @@ class Q {
   private one: 'single' | 'maybe' | null = null
   private cols = '*'
   private ret = false
+  private lim = 0
   constructor(private t: string) {}
   select(c = '*') { this.cols = c; this.ret = true; return this }
   insert(p: any) { this.op = 'insert'; this.payload = p; return this }
@@ -22,6 +23,8 @@ class Q {
   eq(k: string, v: any) { this.filtros.push(r => r[k] === v); return this }
   neq(k: string, v: any) { this.filtros.push(r => r[k] !== v); return this }
   in(k: string, vs: any[]) { this.filtros.push(r => vs.includes(r[k])); return this }
+  is(k: string, v: any) { this.filtros.push(r => (r[k] ?? null) === v); return this }
+  limit(n: number) { this.lim = n; return this }
   order(c: string) { this.ordens.push(c); return this }
   single() { this.one = 'single'; return this }
   maybeSingle() { this.one = 'maybe'; return this }
@@ -63,6 +66,7 @@ class Q {
       }
     }
     if (this.ordens.length) rows = [...rows].sort((a, b) => { for (const c of this.ordens) { if (a[c] !== b[c]) return (a[c] ?? 0) < (b[c] ?? 0) ? -1 : 1 } return 0 })
+    if (this.lim) rows = rows.slice(0, this.lim)
     rows = rows.map(r => this.embed(r))
     if (this.one) {
       if (rows.length !== 1 && this.one === 'single') return { data: null, error: { message: 'not single' } }

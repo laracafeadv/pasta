@@ -254,19 +254,19 @@
           </p>
           <div class="flex flex-wrap gap-3 pt-1 text-xs">
             <button class="underline underline-offset-2" @click="editarCaso(k)">Editar demanda</button>
-            <button type="button" class="underline underline-offset-2" @click="novoProcesso(k, 'judicial')">+ Processo judicial</button>
+            <button type="button" class="underline underline-offset-2" title="A demanda é a mesma: o processo é a execução formal dela" @click="novoProcesso(k, 'judicial')">+ Processo judicial</button>
             <button type="button" class="underline underline-offset-2" @click="novoProcesso(k, 'extrajudicial')">+ Procedimento extrajudicial</button>
             <NuxtLink :to="`/agenda?contato=${dados.contato.id}&demanda=${k.id}`" class="underline underline-offset-2">Novo prazo / compromisso</NuxtLink>
             <NuxtLink v-if="k.status !== 'encerrado' && situacaoComercial(k.id).nome === 'Sem proposta'" :to="`/honorarios?contato=${dados.contato.id}&demanda=${k.id}`" class="underline underline-offset-2">Registrar proposta</NuxtLink>
             <button v-if="ehAdmin && k.tipo !== 'consultivo'" type="button" class="underline underline-offset-2" @click="peca(`/api/pecas/procuracao?contato=${dados.contato.id}&caso=${k.id}`)">Procuração desta demanda</button>
           </div>
           <div v-if="processosDaDemanda(k.id).length" class="mt-3 space-y-2">
-            <ProcessoCard v-for="pr in processosDaDemanda(k.id)" :key="pr.id" :processo="pr" :movimentacoes="movsDoProcesso(pr.id)" @editar="editarProcesso" @mudou="carregar" />
+            <ProcessoCard v-for="pr in processosDaDemanda(k.id)" :key="pr.id" :processo="pr" :movimentacoes="movsDoProcesso(pr.id)" :etapas="etapasDoProcesso(pr.id)" :pendencias="pendenciasDoProcesso(pr.id)" :responsavel="(pr.responsavel_id && dados.responsaveis?.[pr.responsavel_id]) || null" @editar="editarProcesso" @mudou="carregar" />
           </div>
           <p v-else class="text-xs text-gray-400 pt-1">Sem processo ou procedimento: a demanda é {{ k.tipo === 'consultivo' ? 'consultiva' : k.tipo === 'documental' ? 'documental' : 'só um serviço a acompanhar' }}. Ao registrar um processo ou procedimento, a atuação evolui sozinha e a mudança entra no histórico.</p>
           <details class="mt-3" :open="partesDaDemanda(k.id).length > 0">
             <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Partes e interessados <span class="normal-case tracking-normal font-normal">· {{ partesDaDemanda(k.id).length }}</span></summary>
-            <PartesDemanda class="mt-2" :partes="partesDaDemanda(k.id)" :caso-id="k.id" @mudou="carregar" />
+            <PartesDemanda class="mt-2" :partes="partesDaDemanda(k.id)" :caso-id="k.id" :judicial="processosDaDemanda(k.id).some(p => p.natureza === 'judicial')" :extrajudicial="processosDaDemanda(k.id).some(p => p.natureza === 'extrajudicial')" @mudou="carregar" />
           </details>
           <InformacoesCliente :key="`d${k.id}`" class="mt-3" :contato-id="dados.contato.id" :caso-id="k.id" :sem-servico="!k.procedimento" iniciar-aberto />
           <details class="mt-3" :open="!!(k.analise || k.fatos || k.estrategia || k.conclusao || k.riscos || k.decisao || notasDaDemanda(k.id).length)">
@@ -299,7 +299,7 @@
           </ul>
           <DocumentosDemanda v-if="docsGerais.length" :docs="docsGerais" :contato-id="dados.contato.id" :caso-id="null" @mudou="carregar" @cobrar="cobrarDocs" />
         </div>
-        <ProcessoFormModal :is-open="processoAberto" :caso-id="processoCaso" :natureza="processoNatureza" :processo="processoEditando" @close="processoAberto = false" @salvo="processoAberto = false; carregar()" />
+        <ProcessoFormModal :is-open="processoAberto" :caso-id="processoCaso" :natureza="processoNatureza" :processo="processoEditando" :tipo-sugerido="processoTipo" @close="processoAberto = false" @salvo="processoAberto = false; carregar()" />
         <DemandaFormModal :is-open="casoAberto" :contato="dados.contato" :demanda="casoEditando" @close="casoAberto = false" @salvo="casoAberto = false; carregar()" />
       </div>
 
@@ -367,6 +367,7 @@ import InformacoesCliente from './InformacoesCliente.vue'
 import type { ChecklistFicha, ItemChecklist } from '../../../shared/types/checklist'
 import DocumentosDemanda from './DocumentosDemanda.vue'
 import ProcessoCard from './ProcessoCard.vue'
+import { sugerirTipoProcedimento, type ProcessoEtapa, type ProcessoPendencia } from '~~/shared/data/procedimentos'
 import ProcessoFormModal from './ProcessoFormModal.vue'
 import PartesDemanda from './PartesDemanda.vue'
 import AnaliseDemanda from './AnaliseDemanda.vue'
@@ -376,7 +377,7 @@ import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Demanda[]; notas: DemandaNota[]; responsaveis: Record<string, string>; compromissos: Compromisso[]; checklist?: ChecklistFicha }
+interface Detalhe { processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Demanda[]; notas: DemandaNota[]; responsaveis: Record<string, string>; etapas: ProcessoEtapa[]; pendencias: ProcessoPendencia[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string; modeloInicial?: string | null }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
@@ -525,12 +526,15 @@ const ehAdmin = computed(() => useProfileStore().profile?.role === 'admin')
 const casoAberto = ref(false)
 const processosDaDemanda = (id: number) => (dados.value?.processos ?? []).filter(p => p.caso_id === id)
 const partesDaDemanda = (id: number) => (dados.value?.partes ?? []).filter(p => p.caso_id === id)
+const etapasDoProcesso = (id: number) => (dados.value?.etapas ?? []).filter(e => e.processo_id === id)
+const pendenciasDoProcesso = (id: number) => (dados.value?.pendencias ?? []).filter(p => p.processo_id === id)
 const movsDoProcesso = (id: number) => (dados.value?.movimentacoes ?? []).filter(m => m.processo_id === id)
 const processoAberto = ref(false)
 const processoCaso = ref<number>(0)
 const processoNatureza = ref<'judicial' | 'extrajudicial'>('judicial')
+const processoTipo = ref<string | null>(null)
 const processoEditando = ref<Processo | null>(null)
-function novoProcesso(k: Demanda, natureza: 'judicial' | 'extrajudicial') { processoCaso.value = k.id; processoNatureza.value = natureza; processoEditando.value = null; processoAberto.value = true }
+function novoProcesso(k: Demanda, natureza: 'judicial' | 'extrajudicial') { processoTipo.value = sugerirTipoProcedimento(k.procedimento?.split('/')[0])?.nome ?? null; processoCaso.value = k.id; processoNatureza.value = natureza; processoEditando.value = null; processoAberto.value = true }
 function editarProcesso(p: Processo) { processoCaso.value = p.caso_id; processoNatureza.value = p.natureza; processoEditando.value = p; processoAberto.value = true }
 // Resumo do cliente: só números e o próximo passo; o detalhe fica nas abas.
 const resumoFicha = computed(() => {

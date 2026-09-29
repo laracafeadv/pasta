@@ -51,10 +51,10 @@ export function limparContato(body: Record<string, any>): ContatoInput {
 }
 
 /** Registra uma atividade no histórico do contato (falha silenciosa: nunca bloqueia a ação principal). */
-export async function registrarAtividade(event: H3Event, contatoId: number, tipo: string, texto: string, autorId: string | null = null, minutos: number | null = null, casoId: number | null = null) {
+export async function registrarAtividade(event: H3Event, contatoId: number, tipo: string, texto: string, autorId: string | null = null, minutos: number | null = null, casoId: number | null = null, processoId: number | null = null) {
   const { error } = await serverSupabaseServiceRole(event)
     .from('atividades')
-    .insert({ contato_id: contatoId, tipo, texto: texto.slice(0, 4000), autor_id: autorId, ...(minutos ? { minutos } : {}), ...(casoId ? { caso_id: casoId } : {}) })
+    .insert({ contato_id: contatoId, tipo, texto: texto.slice(0, 4000), autor_id: autorId, ...(minutos ? { minutos } : {}), ...(casoId ? { caso_id: casoId } : {}), ...(processoId ? { processo_id: processoId } : {}) })
   if (error) console.error('[crm/atividades] Erro ao registrar atividade:', error)
 }
 

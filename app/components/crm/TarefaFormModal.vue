@@ -25,9 +25,16 @@
       </div>
       <label v-if="casos.length" class="field">
         <span>Demanda vinculada (opcional)</span>
-        <select v-model="casoId" class="modal-input">
+        <select v-model="casoId" class="modal-input" @change="processoId = null">
           <option :value="null">Nenhum</option>
           <option v-for="c in casos" :key="c.id" :value="c.id">{{ c.titulo }}</option>
+        </select>
+      </label>
+      <label v-if="processosDoCaso.length" class="field">
+        <span>Processo / procedimento (opcional)</span>
+        <select v-model="processoId" class="modal-input" data-testid="tarefa-processo">
+          <option :value="null">Nenhum em especial</option>
+          <option v-for="pr in processosDoCaso" :key="pr.id" :value="pr.id">{{ pr.natureza === 'judicial' ? 'Processo' : 'Procedimento' }} {{ pr.numero || pr.orgao || '' }}</option>
         </select>
       </label>
     </form>
@@ -41,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import Button from '../Button.vue'
 import Modal from '../Modal.vue'
 import { PRIORIDADES_TAREFA, type Demanda, type Contato, type TarefaInterna } from '../../../shared/types/crm'
@@ -85,6 +92,8 @@ function limparContato() {
 }
 const casos = ref<Demanda[]>([])
 const casoId = ref<number | null>(null)
+const processoId = ref<number | null>(null)
+const processosDoCaso = computed(() => casos.value.find(c => c.id === casoId.value)?.processos ?? [])
 async function carregarCasos() {
   if (!contatoSelecionado.value) return
   casos.value = await $fetch<Demanda[]>('/api/demandas', { params: { contato: contatoSelecionado.value.id } })
@@ -100,6 +109,7 @@ function abrir(t?: TarefaInterna) {
   contatoSelecionado.value = t?.contato ? { id: t.contato.id, nome: t.contato.nome } as Contato : null
   contatoQuery.value = t?.contato?.nome ?? ''
   casoId.value = t?.caso_id ?? null
+  processoId.value = t?.processo_id ?? null
   casos.value = []
   if (contatoSelecionado.value) carregarCasos()
 }
@@ -107,7 +117,7 @@ async function salvar() {
   if (!form.titulo.trim()) return
   salvando.value = true
   try {
-    const body = { ...form, caso_id: casoId.value }
+    const body = { ...form, caso_id: casoId.value, processo_id: casoId.value ? processoId.value : null }
     if (editando.value) await $fetch(`/api/tarefas/${editando.value.id}`, { method: 'PATCH', body })
     else await $fetch('/api/tarefas', { method: 'POST', body })
     emit('salvo')

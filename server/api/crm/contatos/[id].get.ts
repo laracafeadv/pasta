@@ -1,5 +1,6 @@
 import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 import { dataCompromisso, type DemandaNota, type Atividade, type Demanda, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp, type Movimentacao, type Parte, type Processo } from '../../../../shared/types/crm'
+import type { ProcessoEtapa, ProcessoPendencia } from '../../../../shared/data/procedimentos'
 import { requireStaff } from '../../../utils/security'
 import { montarChecklist } from '../../../utils/checklist'
 
@@ -45,9 +46,11 @@ export default defineEventHandler(async (event) => {
 
   // Partes das demandas e movimentações dos processos (carregadas juntas: são poucas por cliente).
   const idsProcessos = (processos.data ?? []).map(p => p.id)
-  const [partes, movimentacoes] = await Promise.all([
+  const [partes, movimentacoes, etapas, pendencias] = await Promise.all([
     idsCasos.length ? client.from('partes').select('*, contato:contatos(id, nome, etapa)').in('caso_id', idsCasos).order('id') : Promise.resolve({ data: [] as Parte[] }),
     idsProcessos.length ? client.from('movimentacoes').select('*').in('processo_id', idsProcessos).order('data', { ascending: false }).order('id', { ascending: false }).limit(400) : Promise.resolve({ data: [] as Movimentacao[] }),
+    idsProcessos.length ? client.from('processo_etapas').select('*').in('processo_id', idsProcessos).order('ordem') : Promise.resolve({ data: [] as ProcessoEtapa[] }),
+    idsProcessos.length ? client.from('processo_pendencias').select('*').in('processo_id', idsProcessos).order('created_at') : Promise.resolve({ data: [] as ProcessoPendencia[] }),
   ])
 
   return {
@@ -62,6 +65,8 @@ export default defineEventHandler(async (event) => {
     processos: (processos.data ?? []) as Processo[],
     partes: (partes.data ?? []) as Parte[],
     movimentacoes: (movimentacoes.data ?? []) as Movimentacao[],
+    etapas: (etapas.data ?? []) as ProcessoEtapa[],
+    pendencias: (pendencias.data ?? []) as ProcessoPendencia[],
     tarefas: (tarefas.data ?? []) as { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[],
     compromissos: ((compromissos.data ?? []) as Compromisso[]).sort((a, b) => dataCompromisso(a).localeCompare(dataCompromisso(b))),
     checklist: montarChecklist({

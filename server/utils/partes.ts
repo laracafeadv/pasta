@@ -7,6 +7,8 @@ export function limparParte(body: Record<string, any>) {
   if ('caso_id' in d) d.caso_id = Number(d.caso_id)
   if ('contato_id' in d) d.contato_id = Number(d.contato_id) || null
   if ('papel' in d && !d.papel) d.papel = 'Interessado'
+  if ('polo' in d && d.polo && !['ativo', 'passivo'].includes(d.polo)) throw createError({ statusCode: 400, message: 'Polo inválido.' })
+  if ('polo' in d && !d.polo) d.polo = null
   if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) throw createError({ statusCode: 400, message: 'E-mail inválido.' })
   return d
 }

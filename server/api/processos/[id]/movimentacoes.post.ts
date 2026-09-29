@@ -1,6 +1,7 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { TIPOS_MOVIMENTACAO } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
+import { registrarAtividade } from '../../../utils/crm'
 
 export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'movimentacoes/create')
@@ -14,6 +15,7 @@ export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient(event)
   const { data: criada, error } = await client.from('movimentacoes').insert({ processo_id: id, data, tipo, texto, autor_id: userId }).select().single()
   if (error) throw createError({ statusCode: 500, message: 'Erro ao registrar a movimentação.' })
-  await client.from('processos').update({ updated_at: new Date().toISOString() }).eq('id', id)
+  const { data: p } = await client.from('processos').update({ updated_at: new Date().toISOString() }).eq('id', id).select('caso_id, contato_id, natureza').maybeSingle()
+  if (p) await registrarAtividade(event, p.contato_id, 'Andamento', `${tipo}: ${texto.slice(0, 300)}`, userId, null, p.caso_id, id)
   return criada
 })

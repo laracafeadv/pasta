@@ -31,14 +31,31 @@ export function limparDemanda(body: Record<string, any>) {
 export async function sincronizarAtuacao(client: any, casoId: number, event?: any, userId: string | null = null) {
   const [{ data }, { data: caso }] = await Promise.all([
     client.from('processos').select('natureza').eq('caso_id', casoId),
-    client.from('casos').select('tipo, titulo, contato_id').eq('id', casoId).maybeSingle(),
+    client.from('casos').select('tipo, titulo, contato_id, procedimento').eq('id', casoId).maybeSingle(),
   ])
   const naturezas = new Set((data ?? []).map((p: { natureza: string }) => p.natureza))
   const tipo = naturezas.has('judicial') ? 'judicial' : naturezas.has('extrajudicial') ? 'extrajudicial' : null
-  if (!tipo || !caso || caso.tipo === tipo) return
-  await client.from('casos').update({ tipo }).eq('id', casoId)
+  if (!tipo || !caso) return
+  const mudou: Record<string, string> = {}
+  if (caso.tipo !== tipo) mudou.tipo = tipo
+  // A demanda é a MESMA: só o roteiro do serviço acompanha a forma (ex.: Divórcio extrajudicial → judicial).
+  const novaVariante = variantePara(caso.procedimento, tipo)
+  if (novaVariante && novaVariante !== caso.procedimento) mudou.procedimento = novaVariante
+  if (!Object.keys(mudou).length) return
+  await client.from('casos').update(mudou).eq('id', casoId)
+  if (!event) return
   // A evolução (consultiva/documental → extrajudicial/judicial) fica no histórico da demanda.
-  if (event) await registrarAtividade(event, caso.contato_id, 'Sistema', `Atuação da demanda "${caso.titulo}": ${TIPOS_DEMANDA[caso.tipo as keyof typeof TIPOS_DEMANDA] ?? caso.tipo} → ${TIPOS_DEMANDA[tipo]}.`, userId, null, casoId)
+  if (mudou.tipo) await registrarAtividade(event, caso.contato_id, 'Sistema', `Atuação da demanda "${caso.titulo}": ${TIPOS_DEMANDA[caso.tipo as keyof typeof TIPOS_DEMANDA] ?? caso.tipo} → ${TIPOS_DEMANDA[tipo]}.`, userId, null, casoId)
+  if (mudou.procedimento) await registrarAtividade(event, caso.contato_id, 'Sistema', `Roteiro do serviço da demanda "${caso.titulo}" ajustado para ${PROCEDIMENTOS.find(p => p.valor === mudou.procedimento)?.rotulo ?? mudou.procedimento}.`, userId, null, casoId)
+}
+
+/** Se o serviço da demanda tem a variante da nova forma (judicial/extrajudicial), devolve o valor dela. */
+export function variantePara(procedimento: string | null | undefined, tipo: 'judicial' | 'extrajudicial'): string | null {
+  if (!procedimento) return null
+  const [servico, variante] = procedimento.split('/')
+  const outra = tipo === 'judicial' ? 'extrajudicial' : 'judicial'
+  if (!variante?.startsWith(outra)) return null
+  return PROCEDIMENTOS.find(p => p.servico === servico && p.variante.startsWith(tipo))?.valor ?? null
 }
 
 /**

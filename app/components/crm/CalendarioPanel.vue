@@ -24,7 +24,7 @@ async function carregar() {
 }
 onMounted(() => {
   carregar()
-  if (route.query.contato) novo(Number(route.query.contato), route.query.demanda ? Number(route.query.demanda) : null)
+  if (route.query.contato) novo(Number(route.query.contato), route.query.demanda ? Number(route.query.demanda) : null).then(() => { if (route.query.processo) form.processo_id = Number(route.query.processo) })
 })
 watch(filtroTipo, carregar)
 
@@ -119,7 +119,9 @@ async function editar(c: Compromisso) {
 defineExpose({ novo })
 
 const usaHorario = computed(() => ['audiencia', 'consulta', 'reuniao'].includes(form.tipo))
-const calculo = computed(() => form.tipo === 'prazo' && form.data_publicacao && form.dias_prazo > 0 ? calcularPrazo(form.data_publicacao, Number(form.dias_prazo)) : null)
+// Prazo de PROCEDIMENTO extrajudicial (validade de certidão, exigência do cartório): data limite direta, sem intimação nem dias úteis.
+const prazoExtrajudicial = computed(() => form.tipo === 'prazo' && processosDaDemanda.value.find(p => p.id === form.processo_id)?.natureza === 'extrajudicial')
+const calculo = computed(() => form.tipo === 'prazo' && !prazoExtrajudicial.value && form.data_publicacao && form.dias_prazo > 0 ? calcularPrazo(form.data_publicacao, Number(form.dias_prazo)) : null)
 
 async function salvar() {
   salvando.value = true
@@ -131,7 +133,7 @@ async function salvar() {
   } else {
     body.inicio = null
   }
-  if (form.tipo !== 'prazo') { body.data_publicacao = null; body.dias_prazo = null }
+  if (form.tipo !== 'prazo' || prazoExtrajudicial.value) { body.data_publicacao = null; body.dias_prazo = null }
   delete body.inicio_local
   try {
     if (editando.value) await $fetch(`/api/compromissos/${editando.value.id}`, { method: 'PATCH', body })
@@ -209,7 +211,8 @@ async function excluir() {
         </label>
         <label class="field sm:col-span-2"><span>Descrição *</span><input v-model="form.titulo" class="modal-input" required :placeholder="form.tipo === 'prazo' ? 'Ex.: Contestação' : 'Ex.: Audiência de conciliação'" /></label>
 
-        <template v-if="form.tipo === 'prazo'">
+        <label v-if="prazoExtrajudicial" class="field sm:col-span-2" data-testid="prazo-extrajudicial"><span>Data limite (validade de certidão, exigência do cartório…)</span><input v-model="form.data_limite" type="date" class="modal-input" required /></label>
+        <template v-else-if="form.tipo === 'prazo'">
           <label class="field"><span>Publicação / intimação</span><input v-model="form.data_publicacao" type="date" class="modal-input" /></label>
           <label class="field"><span>Prazo (dias úteis)</span><input v-model="form.dias_prazo" type="number" min="1" max="365" class="modal-input" /></label>
           <div v-if="calculo" class="sm:col-span-2 rounded-xl bg-primary/5 border border-primary/10 p-3 text-sm space-y-1">

@@ -26,7 +26,7 @@ await form('Cliente', [], [P(-1, 'Profissão')], 'cliente')
 const dem = (id: number, titulo: string, tipo: string, procedimento: string | null) => db.casos.push({ id, contato_id: 1, titulo, tipo, procedimento, status: 'ativo' })
 db.casos = []
 dem(10, 'Pacto antenupcial — Maria e João', 'documental', 'pacto-antenupcial/padrao')
-dem(11, 'Inventário — Roberto', 'judicial', 'inventario/padrao')
+dem(11, 'Inventário — Roberto', 'judicial', 'inventario/judicial')
 dem(12, 'Divórcio consensual — Maria', 'extrajudicial', 'divorcio/extrajudicial')
 dem(13, 'Divórcio litigioso — Ana', 'judicial', 'divorcio/judicial')
 dem(14, 'Consulta — sem serviço definido', 'consultivo', null)
@@ -55,7 +55,7 @@ ok(aposTroca.flatMap(s => s.perguntas).some(p => p.texto === 'Regime de bens des
 db.casos.find((c: any) => c.id === 10).procedimento = 'pacto-antenupcial/padrao'
 
 // Wildcard
-ok(procedimentoCasa([], null) && !procedimentoCasa(['divorcio/*'], null) && procedimentoCasa(['divorcio/*'], 'divorcio/judicial') && !procedimentoCasa(['divorcio/*'], 'dissolucao-ue/judicial') && procedimentoCasa(['inventario/padrao'], 'inventario/padrao') && !procedimentoCasa(['divorcio/judicial'], 'divorcio/extrajudicial'), 'procedimentoCasa: vazio=todas; serviço/*; variante exata')
+ok(procedimentoCasa([], null) && !procedimentoCasa(['divorcio/*'], null) && procedimentoCasa(['divorcio/*'], 'divorcio/judicial') && !procedimentoCasa(['divorcio/*'], 'dissolucao-ue/judicial') && procedimentoCasa(['inventario/judicial'], 'inventario/judicial') && !procedimentoCasa(['divorcio/judicial'], 'divorcio/extrajudicial'), 'procedimentoCasa: vazio=todas; serviço/*; variante exata')
 ok(lanca(() => limparEstrutura({ nome: 'x', contexto: 'demanda', procedimentos: ['nao-existe/*'], secoes: [{ titulo: 'S', itens: [] }] })) === false, 'serviço inexistente em procedimentos é ignorado (não quebra)')
 
 // Análise profissional: campos próprios da demanda

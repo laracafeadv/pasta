@@ -113,3 +113,21 @@ A demanda é a unidade central: **tudo que é do serviço fica nela** e não apa
 - **Evolução**: uma demanda consultiva/documental evolui ao registrar o processo ou procedimento (extrajudicial → judicial): a atuação acompanha e a mudança entra no histórico da demanda.
 - **Formulários por serviço**: um formulário de demanda pode valer para todas as demandas, para um serviço inteiro (`divorcio/*`) ou para uma forma específica (`divorcio/judicial`). Demanda sem serviço definido só recebe o que vale para todas. Se o serviço da demanda muda, respostas já dadas continuam visíveis em "Fora do formulário".
 - Testes: `tests/fase3/` (isolamento por serviço, análise, evolução; interface da análise) e `supabase/tests/fase3_demandas.sql`.
+
+## Judicial × Extrajudicial (Fase 4)
+**Demanda é o serviço; processo/procedimento é a execução formal.** Os dois compartilham a tabela `processos` (infraestrutura: partes, documentos, prazos, tarefas, histórico, movimentações), mas têm **fluxos próprios** — e a demanda **nunca é duplicada** quando evolui (consultiva → extrajudicial → judicial): o processo/procedimento é registrado na mesma demanda, a atuação acompanha e o histórico registra.
+
+| | Judicial | Extrajudicial |
+|---|---|---|
+| Identificação | número **CNJ** (validado; pode faltar até a distribuição), **tribunal**, **vara/juízo**, comarca/UF, valor da causa, link no tribunal | **tipo de procedimento** (obrigatório), **cartório/serventia**, protocolo/livro-folha, cidade/UF, valor do ato, link de acompanhamento |
+| Andamento | **fase processual** + movimentações (decisões, intimações, audiências) | **etapas formais** (protocolo, exigências, ITCMD, lavratura, registro…) — a "fase" é a etapa em andamento |
+| Travas | diligências/pendências | **pendências / exigências** (aguardando cliente, cartório, escritório ou terceiro; com prazo) |
+| Prazos | prazo processual: intimação + dias úteis (calculadora) | data limite direta (validade de certidão, exigência do cartório) |
+| Partes | papéis judiciais (autor/réu, inventariante, herdeiro…) + **polo** | papéis do ato (outorgante, cônjuge, herdeiro, procurador, escrevente…) |
+| Conclusão | desfecho: sentença, acordo, partilha homologada, extinção, desistência, arquivamento | desfecho: escritura lavrada, lavrada e registrada, registro concluído, desistência, cancelado, **convertido em processo judicial** |
+| Regra de conclusão | desfecho obrigatório | sucesso exige todas as etapas cumpridas/dispensadas e nenhuma pendência aberta |
+
+- O banco impede misturar campos: extrajudicial não tem tribunal; judicial não tem tipo de procedimento (`processos_campos_por_natureza`). A natureza não muda depois de criada.
+- Tarefas, prazos, documentos e histórico podem apontar para o processo/procedimento; o banco garante que ele é da mesma demanda (e herda demanda e pessoa quando só o processo é informado).
+- Inventário e divórcio têm roteiro (POP) próprio para cada forma: `inventario/extrajudicial`, `inventario/judicial`, `divorcio/extrajudicial`, `divorcio/judicial`. Ao evoluir de uma para outra, o roteiro do serviço acompanha (registrado no histórico).
+- Testes: `tests/fase4/` (fluxos e interface) e `supabase/tests/fase4_judicial_extrajudicial.sql`.

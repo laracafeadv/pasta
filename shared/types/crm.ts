@@ -176,6 +176,7 @@ export interface Atividade {
   texto: string
   minutos?: number | null
   caso_id?: number | null
+  processo_id?: number | null
   autor?: { name: string } | null
 }
 
@@ -437,6 +438,7 @@ export interface TarefaInterna {
   prioridade: keyof typeof PRIORIDADES_TAREFA
   contato_id: number | null
   caso_id: number | null
+  processo_id?: number | null
   created_at: string
   updated_at: string
   contato?: Pick<Contato, 'id' | 'nome'> | null
@@ -490,6 +492,8 @@ export const DECISOES_DEMANDA = {
 export const NATUREZAS_PROCESSO = { judicial: 'Processo judicial', extrajudicial: 'Procedimento extrajudicial' } as const
 export const FASES_EXTRAJUDICIAIS = ['Preparação', 'Protocolo / agendamento', 'Aguardando cartório', 'Lavratura / assinatura', 'Registro / averbação'] as const
 export interface Processo {
+  responsavel_id?: string | null
+  desfecho?: string | null
   responsavel_nome?: string | null
   tipo_procedimento?: string | null
   id: number
@@ -512,7 +516,7 @@ export interface Processo {
   caso?: Pick<Demanda, 'id' | 'titulo' | 'tipo'> | null
   contato?: Pick<Contato, 'id' | 'nome'> | null
 }
-export const PROCESSO_CAMPOS = ['caso_id', 'natureza', 'numero', 'responsavel_nome', 'tipo_procedimento', 'tribunal', 'orgao', 'comarca', 'uf', 'fase', 'status', 'valor', 'link', 'data_inicio', 'data_encerramento', 'observacoes'] as const
+export const PROCESSO_CAMPOS = ['caso_id', 'natureza', 'numero', 'responsavel_nome', 'tipo_procedimento', 'tribunal', 'orgao', 'comarca', 'uf', 'fase', 'status', 'valor', 'link', 'data_inicio', 'data_encerramento', 'observacoes', 'responsavel_id'] as const
 
 // ─── Partes e interessados de uma demanda ───────────────────────────────────────────────────
 export const PAPEIS_PARTE = ['Parte contrária', 'Cônjuge / companheiro(a)', 'Herdeiro', 'Inventariante', 'Interessado', 'Testemunha', 'Advogado da parte contrária', 'Outro'] as const
@@ -523,16 +527,17 @@ export interface Parte {
   contato_id: number | null
   nome: string
   papel: string
+  polo?: 'ativo' | 'passivo' | null
   documento: string | null
   telefone: string | null
   email: string | null
   observacao: string | null
   contato?: { id: number; nome: string | null; etapa: string } | null
 }
-export const PARTE_CAMPOS = ['caso_id', 'contato_id', 'nome', 'papel', 'documento', 'telefone', 'email', 'observacao'] as const
+export const PARTE_CAMPOS = ['caso_id', 'contato_id', 'nome', 'papel', 'polo', 'documento', 'telefone', 'email', 'observacao'] as const
 
 // ─── Movimentações (andamentos) de um processo/procedimento ────────────────────────────────
-export const TIPOS_MOVIMENTACAO = ['Andamento', 'Petição / protocolo', 'Decisão / despacho', 'Publicação / intimação', 'Audiência / ato', 'Registro / certidão', 'Outro'] as const
+export const TIPOS_MOVIMENTACAO = ['Andamento', 'Petição / protocolo', 'Decisão / despacho', 'Publicação / intimação', 'Audiência / ato', 'Registro / certidão', 'Conclusão', 'Outro'] as const
 export interface Movimentacao {
   id: number
   created_at: string

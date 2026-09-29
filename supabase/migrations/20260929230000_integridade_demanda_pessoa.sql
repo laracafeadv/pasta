@@ -37,9 +37,11 @@ begin
     if new.caso_id is null then new.caso_id := pc;
     elsif pc is distinct from new.caso_id then raise exception 'O processo/procedimento % não pertence à demanda %.', new.processo_id, new.caso_id using errcode = '23514'; end if;
   end if;
-  if tg_table_name = 'documentos' and new.parte_id is not null then
-    select caso_id into pc from public.partes where id = new.parte_id;
-    if pc is distinct from new.caso_id then raise exception 'A parte % não pertence à demanda %.', new.parte_id, new.caso_id using errcode = '23514'; end if;
+  if tg_table_name = 'documentos' then
+    if new.parte_id is not null then
+      select caso_id into pc from public.partes where id = new.parte_id;
+      if pc is distinct from new.caso_id then raise exception 'A parte % não pertence à demanda %.', new.parte_id, new.caso_id using errcode = '23514'; end if;
+    end if;
   end if;
   return new;
 end $$;

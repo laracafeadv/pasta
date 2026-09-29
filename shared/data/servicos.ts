@@ -259,13 +259,26 @@ export const SERVICOS: Servico[] = [
     resumo: 'Partilha dos bens depois do falecimento — em cartório (extrajudicial, sem litígio) ou judicial.',
     variantes: [
       {
-        id: 'padrao',
-        nome: 'Padrão',
+        id: 'extrajudicial',
+        nome: 'Extrajudicial (cartório)',
         fases: [
           { titulo: '1. Solicitação de documentos', texto: 'Peça conforme o checklist. Oriente o certificado digital desde o início, se a lavratura for virtual.' },
           { titulo: '2. Análise dos documentos e protocolo', texto: 'Onde: qualquer tabelionato de notas do país (presencial) ou pelo e-notariado, se algum bem ou herdeiro estiver fora do local.' },
           { titulo: '3. SEFAZ', texto: 'Encaminhe ao sistema da Fazenda Estadual (SEI, na Bahia) pra cálculo e recolhimento do imposto de transmissão. Se houver parcelamento, o inventário só finaliza depois da quitação total.' },
           { titulo: '4. Averbação', texto: 'Depois de finalizado: Registro de Imóveis (bens imóveis), Junta Comercial (empresas), DETRAN (automóveis).' },
+        ],
+      },
+      {
+        id: 'judicial',
+        nome: 'Judicial',
+        fases: [
+          { titulo: '1. Solicitação de documentos', texto: 'Peça conforme o checklist. Há herdeiro menor/incapaz, testamento ou litígio entre herdeiros? É o que leva o inventário ao Judiciário.' },
+          { titulo: '2. Petição inicial e nomeação do inventariante', texto: 'Redija a inicial (abertura do inventário), indique o inventariante e junte a certidão de óbito e a prova do parentesco.' },
+          { titulo: '3. Primeiras declarações e citação dos herdeiros', texto: 'Acompanhe as citações e o prazo de impugnação; junte as primeiras declarações com a relação de bens.' },
+          { titulo: '4. Avaliação e últimas declarações', texto: 'Avaliação dos bens, cálculo do imposto e últimas declarações.' },
+          { titulo: '5. ITCMD (SEFAZ)', texto: 'Recolhimento do imposto de transmissão conforme o cálculo homologado.' },
+          { titulo: '6. Partilha e sentença', texto: 'Esboço da partilha, homologação e expedição do formal de partilha.' },
+          { titulo: '7. Registro / averbação', texto: 'Com o formal de partilha: Registro de Imóveis, Junta Comercial e DETRAN.' },
         ],
       },
     ],

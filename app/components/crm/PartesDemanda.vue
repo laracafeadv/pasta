@@ -5,6 +5,7 @@
         <NuxtLink v-if="p.contato" :to="`/crm?abrir=${p.contato.id}`" class="font-medium underline underline-offset-2 hover:text-primary" title="Abrir a ficha desta pessoa">{{ p.nome }}</NuxtLink>
         <span v-else class="font-medium">{{ p.nome }}</span>
         <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-500">{{ p.papel }}</span>
+        <span v-if="p.polo" class="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:text-zinc-200">{{ POLOS_PARTE[p.polo] }}</span>
         <span v-if="p.contato && ['ativo', 'concluido'].includes(p.contato.etapa)" class="text-[11px] px-2 py-0.5 rounded-full bg-success/15 text-success-dark">também é cliente</span>
         <span v-if="p.telefone || p.email" class="text-xs text-gray-400">{{ [p.telefone, p.email].filter(Boolean).join(' · ') }}</span>
         <button type="button" class="ml-auto text-gray-300 hover:text-danger" title="Remover da demanda" @click="remover(p.id)"><Icon name="ph:x-bold" /></button>
@@ -26,8 +27,9 @@
       <div class="grid grid-cols-1 sm:grid-cols-[1fr_190px] gap-2">
         <input v-if="!escolhida" v-model="form.nome" class="modal-input" placeholder="…ou o nome de uma nova pessoa" required />
         <div v-else />
-        <select v-model="form.papel" class="modal-input"><option v-for="p in PAPEIS_PARTE" :key="p">{{ p }}</option></select>
+        <select v-model="form.papel" class="modal-input" data-testid="parte-papel"><option v-for="p in papeis" :key="p">{{ p }}</option></select>
       </div>
+      <select v-if="judicial" v-model="form.polo" class="modal-input sm:w-56" data-testid="parte-polo"><option value="">Polo (opcional)</option><option v-for="(n, k) in POLOS_PARTE" :key="k" :value="k">{{ n }}</option></select>
       <div v-if="!escolhida" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input v-model="form.telefone" class="modal-input" placeholder="Telefone / WhatsApp" />
         <input v-model="form.email" class="modal-input" placeholder="E-mail (opcional)" />
@@ -45,17 +47,21 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import Button from '../Button.vue'
-import { PAPEIS_PARTE, type Contato, type Parte } from '../../../shared/types/crm'
+import { computed } from 'vue'
+import { type Contato, type Parte } from '../../../shared/types/crm'
+import { PAPEIS_EXTRAJUDICIAL, PAPEIS_JUDICIAL, POLOS_PARTE } from '~~/shared/data/procedimentos'
 
 // Partes e interessados de uma demanda. A pessoa é escolhida entre as já cadastradas ou cadastrada na hora
 // (como "pessoa cadastrada", sem entrar no funil de leads): nunca há duas fichas para a mesma pessoa.
-const props = defineProps<{ partes: Parte[]; casoId: number }>()
+const props = withDefaults(defineProps<{ partes: Parte[]; casoId: number; judicial?: boolean; extrajudicial?: boolean }>(), { judicial: false, extrajudicial: false })
+// Os papéis acompanham o fluxo: processo judicial (autor/réu, polo) × procedimento extrajudicial (outorgantes, interessados).
+const papeis = computed(() => (props.judicial && !props.extrajudicial ? PAPEIS_JUDICIAL : props.extrajudicial && !props.judicial ? PAPEIS_EXTRAJUDICIAL : [...new Set([...PAPEIS_EXTRAJUDICIAL, ...PAPEIS_JUDICIAL])]))
 const emit = defineEmits<{ mudou: [] }>()
 
 const adicionando = ref(false)
 const salvando = ref(false)
 const erro = ref<string | null>(null)
-const form = reactive({ nome: '', papel: 'Interessado', telefone: '', email: '' })
+const form = reactive({ nome: '', papel: 'Herdeiro', polo: '', telefone: '', email: '' })
 const cadastrar = ref(true)
 const busca = ref('')
 const resultados = ref<Contato[]>([])
@@ -85,7 +91,7 @@ async function adicionar() {
       contatoId = criado.id
       nome = criado.nome ?? form.nome
     }
-    await $fetch('/api/partes', { method: 'POST', body: { caso_id: props.casoId, contato_id: contatoId, nome, papel: form.papel, telefone: escolhida.value ? null : form.telefone, email: escolhida.value ? null : form.email } })
+    await $fetch('/api/partes', { method: 'POST', body: { caso_id: props.casoId, contato_id: contatoId, nome, papel: form.papel, polo: props.judicial ? (form.polo || null) : null, telefone: escolhida.value ? null : form.telefone, email: escolhida.value ? null : form.email } })
     fechar()
     emit('mudou')
   } catch (e: any) {
