@@ -1,5 +1,6 @@
 import { AREAS, CASO_CAMPOS, RESULTADOS_CASO, STATUS_CASO, TIPOS_CASO, pick } from '../../shared/types/crm'
 import { PROCEDIMENTOS } from '../../shared/data/checklist'
+import { registrarAtividade } from './crm'
 
 /** Valida os campos da DEMANDA (os dados de processo/procedimento vivem em processos). */
 export function limparCaso(body: Record<string, any>) {
@@ -25,4 +26,21 @@ export async function sincronizarAtuacao(client: any, casoId: number) {
   const naturezas = new Set((data ?? []).map((p: { natureza: string }) => p.natureza))
   const tipo = naturezas.has('judicial') ? 'judicial' : naturezas.has('extrajudicial') ? 'extrajudicial' : null
   if (tipo) await client.from('casos').update({ tipo }).eq('id', casoId)
+}
+
+/**
+ * Ciclo de vida do cliente acompanha as demandas: cliente ativo com todas as demandas encerradas
+ * passa a "Concluído" (continua cadastrado, para o relacionamento futuro); ao abrir ou reabrir
+ * uma demanda, volta a "Ativo". Leads não são afetados.
+ */
+export async function sincronizarClienteComDemandas(event: any, client: any, contatoId: number, userId: string | null = null) {
+  const { data: contato } = await client.from('contatos').select('etapa').eq('id', contatoId).maybeSingle()
+  if (!contato || !['ativo', 'concluido'].includes(contato.etapa)) return
+  const { data: demandas } = await client.from('casos').select('status').eq('contato_id', contatoId)
+  if (!demandas?.length) return
+  const abertas = demandas.some((d: { status: string }) => d.status !== 'encerrado')
+  const destino = abertas ? 'ativo' : 'concluido'
+  if (destino === contato.etapa) return
+  await client.from('contatos').update({ etapa: destino, etapa_desde: new Date().toISOString() }).eq('id', contatoId)
+  await registrarAtividade(event, contatoId, 'Sistema', destino === 'concluido' ? 'Todas as demandas foram encerradas: cliente concluído (segue cadastrado para novas demandas).' : 'Nova demanda em andamento: cliente ativo.', userId)
 }
