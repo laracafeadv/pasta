@@ -131,3 +131,12 @@ A demanda é a unidade central: **tudo que é do serviço fica nela** e não apa
 - Tarefas, prazos, documentos e histórico podem apontar para o processo/procedimento; o banco garante que ele é da mesma demanda (e herda demanda e pessoa quando só o processo é informado).
 - Inventário e divórcio têm roteiro (POP) próprio para cada forma: `inventario/extrajudicial`, `inventario/judicial`, `divorcio/extrajudicial`, `divorcio/judicial`. Ao evoluir de uma para outra, o roteiro do serviço acompanha (registrado no histórico).
 - Testes: `tests/fase4/` (fluxos e interface) e `supabase/tests/fase4_judicial_extrajudicial.sql`.
+
+## Intimações (registro manual)
+Tela **Intimações** (`/intimacoes`, menu Trabalho): o escritório registra cada intimação/publicação de um **processo judicial**. Não há integração com tribunais; o valor está em transformar o registro em ação:
+- **Prazo** na agenda: dias úteis a partir da publicação (calculadora existente), ligado ao processo, à demanda e ao cliente.
+- **Tarefa** de trabalho (2 dias antes do vencimento por padrão, editável; nunca no passado). Sem prazo informado, nasce a tarefa "analisar intimação e definir o prazo" para hoje: intimação nunca fica sem próxima ação.
+- **Andamento** lançado no processo (tipo "Publicação / intimação") e histórico da demanda.
+- Fila **A tratar / Tratadas**, com os sem prazo em destaque no topo; "tratada" dá baixa no prazo e na tarefa; reabrir desfaz; excluir remove o prazo e a tarefa pendentes gerados.
+- Só processo judicial (o banco recusa intimação em procedimento extrajudicial, que usa "Exigências / pendências"). Tabela `intimacoes`; regras em `server/utils/intimacoes.ts`. Testes: `tests/intimacoes/` e `supabase/tests/intimacoes.sql`.
+- Limite conhecido: a calculadora não conhece feriados estaduais/municipais nem suspensões do tribunal; a tela avisa para conferir o vencimento no tribunal.

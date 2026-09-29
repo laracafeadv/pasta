@@ -3,7 +3,7 @@ export const db: Record<string, any[]> = {}
 export const zerar = () => { for (const k of Object.keys(db)) delete db[k]; seq = 1 }
 let seq = 1
 // alias -> tabela (relação muitos-para-um pela coluna <alias>_id)
-const FK: Record<string, string> = { pergunta: 'formulario_perguntas', formulario: 'formularios', contato: 'contatos' }
+const FK: Record<string, string> = { pergunta: 'formulario_perguntas', formulario: 'formularios', contato: 'contatos', caso: 'casos' }
 const CASCATA: Record<string, [string, string][]> = { formularios: [['formulario_secoes', 'formulario_id'], ['formulario_itens', 'formulario_id']] }
 
 class Q {
@@ -42,7 +42,7 @@ class Q {
     const tab = db[this.t] ?? (db[this.t] = [])
     let rows: any[]
     if (this.op === 'insert') {
-      const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(p => ({ id: seq++, created_at: new Date().toISOString(), ...(this.t === 'formulario_perguntas' ? { versao: 1, arquivada: false } : {}), ...(this.t === 'formularios' ? { ativo: true } : {}), ...p }))
+      const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(p => ({ id: seq++, created_at: new Date().toISOString(), ...(this.t === 'formulario_perguntas' ? { versao: 1, arquivada: false } : {}), ...(this.t === 'formularios' ? { ativo: true } : {}), ...(this.t === 'intimacoes' ? { status: 'a_tratar' } : {}), ...(this.t === 'compromissos' ? { status: 'pendente' } : {}), ...(this.t === 'tarefas_internas' ? { concluida: false } : {}), ...p }))
       tab.push(...novos); rows = novos
     } else if (this.op === 'delete') {
       rows = tab.filter(r => this.filtros.every(f => f(r)))

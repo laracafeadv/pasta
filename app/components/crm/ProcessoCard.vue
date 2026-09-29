@@ -30,6 +30,7 @@
       <button v-if="!judicial" type="button" class="underline underline-offset-2" data-testid="ver-etapas" @click="abrir('etapas')">Etapas ({{ concluidas }}/{{ etapas.length }})</button>
       <button type="button" class="underline underline-offset-2" data-testid="ver-pendencias" @click="abrir('pendencias')">{{ judicial ? 'Diligências / pendências' : 'Exigências / pendências' }} ({{ abertas }})</button>
       <button type="button" class="underline underline-offset-2" data-testid="ver-movimentacoes" @click="abrir('mov')">{{ judicial ? 'Movimentações' : 'Andamentos' }} ({{ movimentacoes.length }})</button>
+      <NuxtLink v-if="judicial && processo.status !== 'encerrado'" :to="`/intimacoes?processo=${processo.id}`" class="underline underline-offset-2" data-testid="registrar-intimacao">Registrar intimação</NuxtLink>
       <NuxtLink v-if="processo.status !== 'encerrado'" :to="`/agenda?contato=${processo.contato_id}&demanda=${processo.caso_id}&processo=${processo.id}`" class="underline underline-offset-2">{{ judicial ? 'Novo prazo' : 'Novo prazo / compromisso' }}</NuxtLink>
       <button v-if="processo.status !== 'encerrado'" type="button" class="font-semibold text-primary dark:text-zinc-200 underline underline-offset-2" data-testid="concluir" @click="concluindo = !concluindo">{{ judicial ? 'Encerrar processo' : 'Concluir procedimento' }}</button>
       <button v-else type="button" class="underline underline-offset-2" data-testid="reabrir" @click="reabrir">Reabrir</button>

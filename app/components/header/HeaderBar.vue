@@ -80,6 +80,7 @@ const navItems = computed(() => {
     { label: 'Hoje', path: '/crm', badge: crm.pendencias || undefined },
     { label: 'Tarefas', path: '/tarefas' },
     { label: 'Prazos', path: '/prazos' },
+    { label: 'Intimações', path: '/intimacoes' },
     { label: 'Agenda', path: '/agenda' },
     { label: 'Leads', path: '/leads' },
     { label: 'Clientes', path: '/clientes' },

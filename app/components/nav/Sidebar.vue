@@ -54,6 +54,7 @@ const grupos = computed(() => {
         { label: 'Hoje', path: '/crm', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
         { label: 'Tarefas', path: '/tarefas', icone: 'ph:check-square-bold' },
         { label: 'Prazos', path: '/prazos', icone: 'ph:hourglass-high-bold' },
+        { label: 'Intimações', path: '/intimacoes', icone: 'ph:megaphone-bold' },
         { label: 'Agenda', path: '/agenda', icone: 'ph:calendar-bold' },
       ] as { label: string; path: string; icone: string; badge?: number }[],
     },

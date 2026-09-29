@@ -708,3 +708,28 @@ export function nomeArquivoPadrao(o: { data: string; contatoId: number; tipo: st
   return `${partes.join('_')}.${o.extensao}`
 }
 
+
+// ─── Intimações (registro manual) de um processo judicial ──────────────────────────────────
+export const TIPOS_INTIMACAO = ['Despacho', 'Decisão', 'Sentença', 'Citação', 'Intimação para manifestação', 'Audiência designada', 'Publicação no Diário', 'Outro'] as const
+export const STATUS_INTIMACAO = { a_tratar: 'A tratar', tratada: 'Tratada' } as const
+export interface Intimacao {
+  id: number
+  created_at: string
+  processo_id: number
+  caso_id: number
+  contato_id: number
+  data_publicacao: string
+  tipo: typeof TIPOS_INTIMACAO[number]
+  conteudo: string | null
+  dias_prazo: number | null
+  compromisso_id: number | null
+  tarefa_id: number | null
+  status: keyof typeof STATUS_INTIMACAO
+  tratada_em: string | null
+  tratada_obs: string | null
+  processo?: { id: number; numero: string | null; tribunal: string | null; orgao: string | null; status: string } | null
+  caso?: { id: number; titulo: string } | null
+  contato?: { id: number; nome: string | null } | null
+  compromisso?: { id: number; data_limite: string | null; status: string } | null
+  tarefa?: { id: number; prazo: string; concluida: boolean } | null
+}

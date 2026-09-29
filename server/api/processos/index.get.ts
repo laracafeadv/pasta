@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const client = await serverSupabaseClient(event)
   let query = client.from('processos').select('*, caso:casos(id, titulo, tipo), contato:contatos(id, nome)').order('updated_at', { ascending: false }).limit(300)
+  if (q.id) query = query.eq('id', Number(q.id))
   if (q.natureza) query = query.eq('natureza', String(q.natureza))
   if (q.status) query = query.eq('status', String(q.status))
   if (q.contato) query = query.eq('contato_id', Number(q.contato))
