@@ -5,7 +5,13 @@
       <label class="field">
         <span>Atuação</span>
         <select v-model="form.tipo" class="modal-input"><option v-for="(n, k) in TIPOS_DEMANDA" :key="k" :value="k">{{ n }}</option></select>
-        <small class="text-gray-400">Processo ou procedimento, se houver, é registrado depois, dentro da demanda; a atuação acompanha.</small>
+        <small class="text-gray-400">{{ DICA_TIPO[form.tipo] }} Processo ou procedimento, se houver, é registrado depois, dentro da demanda; a atuação acompanha.</small>
+      </label>
+      <label class="field">
+        <span>Responsável</span>
+        <select v-model="form.responsavel_id" class="modal-input" data-testid="dem-responsavel">
+          <option v-for="m in equipe" :key="m.id" :value="m.id">{{ m.name || m.id }}</option>
+        </select>
       </label>
       <label class="field">
         <span>Área</span>
@@ -58,15 +64,27 @@ const salvando = ref(false)
 const erro = ref<string | null>(null)
 const procedimentoTocado = ref(false)
 
-// Serviços de aconselhamento e instrumentos não nascem como processo.
-const DEMANDAS_CONSULTIVAS = ['Pacto antenupcial', 'Contrato de convivência', 'Regime de bens', 'Planejamento sucessório', 'Testamento', 'Parecer', 'Consultoria contínua']
-function tipoInicial(c: { area?: string | null; demanda?: string | null } | null) {
-  return DEMANDAS_CONSULTIVAS.includes(c?.demanda ?? '') || ['Planejamento Matrimonial', 'Consultoria Jurídica'].includes(c?.area ?? '') ? 'consultivo' : 'extrajudicial'
+const DICA_TIPO: Record<string, string> = {
+  consultivo: 'Consultiva: orientação, parecer, consultoria.',
+  documental: 'Documental: elaboração de documentos (pacto, testamento, contratos).',
+  extrajudicial: 'Extrajudicial: cartório ou via administrativa.',
+  judicial: 'Judicial: processo em juízo.',
 }
+// Serviços que são orientação ou instrumentos (documentos) não nascem como processo.
+const DEMANDAS_DOCUMENTAIS = ['Pacto antenupcial', 'Contrato de convivência', 'Regime de bens', 'Planejamento sucessório', 'Testamento']
+const DEMANDAS_CONSULTIVAS = ['Parecer', 'Consultoria contínua']
+function tipoInicial(c: { area?: string | null; demanda?: string | null } | null) {
+  if (DEMANDAS_DOCUMENTAIS.includes(c?.demanda ?? '')) return 'documental'
+  if (DEMANDAS_CONSULTIVAS.includes(c?.demanda ?? '') || c?.area === 'Consultoria Jurídica') return 'consultivo'
+  return c?.area === 'Planejamento Matrimonial' ? 'documental' : 'extrajudicial'
+}
+const equipe = ref<{ id: string; name: string | null }[]>([])
+const eu = useSupabaseUser()
 
 watch(() => props.isOpen, (open) => {
   if (!open) return
   erro.value = null
+  $fetch<{ id: string; name: string | null }[]>('/api/equipe').then((l) => { equipe.value = l }).catch(() => {})
   const c = props.contato
   Object.assign(form, props.demanda ?? {
     titulo: c ? `${c.demanda || c.area || 'Demanda'} — ${c.nome ?? ''}`.trim() : '',
@@ -74,8 +92,9 @@ watch(() => props.isOpen, (open) => {
     status: 'ativo',
     data_abertura: hojeISO(), observacoes: '', resultado: null, data_encerramento: null,
     procedimento: sugerirProcedimento(c?.demanda, tipoInicial(c)) ?? '',
+    responsavel_id: eu.value?.id ?? '',
   })
-  if (props.demanda) form.procedimento = props.demanda.procedimento ?? ''
+  if (props.demanda) { form.procedimento = props.demanda.procedimento ?? ''; form.responsavel_id = props.demanda.responsavel_id ?? '' }
   procedimentoTocado.value = !!props.demanda
 })
 // Nova demanda: a sugestão acompanha o tipo (judicial/extrajudicial) enquanto você não escolher outra.

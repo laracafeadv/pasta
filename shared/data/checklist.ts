@@ -54,6 +54,18 @@ export const PROCEDIMENTOS: Procedimento[] = SERVICOS.flatMap(s => s.variantes.m
   variante: v.id,
 })))
 
+/**
+ * A demanda (pelo seu procedimento) é alvo de um formulário/pergunta restrito a certos serviços?
+ * Lista vazia = vale para todas. "servico/*" = todas as formas daquele serviço (ex.: "divorcio/*").
+ * Demanda sem procedimento só recebe o que vale para todas.
+ */
+export const SERVICOS_IDS: string[] = SERVICOS.map(s => s.id)
+export function procedimentoCasa(lista: string[] | null | undefined, procedimento: string | null | undefined): boolean {
+  if (!lista?.length) return true
+  if (!procedimento) return false
+  return lista.some(v => v === procedimento || (v.endsWith('/*') && procedimento.startsWith(v.slice(0, -1))))
+}
+
 /** Sugere o procedimento a partir da demanda do contato e do tipo do caso (o usuário pode trocar). */
 const SERVICO_POR_DEMANDA: Record<string, string> = {
   'Divórcio': 'divorcio',

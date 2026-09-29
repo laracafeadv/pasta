@@ -248,8 +248,9 @@
               <span class="tag">{{ STATUS_DEMANDA[k.status] }}</span>
             </span>
           </div>
-          <p class="text-xs text-gray-500">
-            Atuação {{ TIPOS_DEMANDA[k.tipo].toLowerCase() }}<span v-if="k.procedimento"> · {{ PROCEDIMENTOS.find(p => p.valor === k.procedimento)?.rotulo }}</span>
+          <p class="text-xs text-gray-500" data-testid="demanda-contexto">
+            Atuação {{ TIPOS_DEMANDA[k.tipo].toLowerCase() }}<span v-if="k.procedimento"> · {{ PROCEDIMENTOS.find(p => p.valor === k.procedimento)?.rotulo }}</span><span v-else class="text-warning-dark"> · serviço não definido</span>
+            · Responsável: {{ (k.responsavel_id && dados.responsaveis?.[k.responsavel_id]) || 'não definido' }}
           </p>
           <div class="flex flex-wrap gap-3 pt-1 text-xs">
             <button class="underline underline-offset-2" @click="editarCaso(k)">Editar demanda</button>
@@ -262,18 +263,18 @@
           <div v-if="processosDaDemanda(k.id).length" class="mt-3 space-y-2">
             <ProcessoCard v-for="pr in processosDaDemanda(k.id)" :key="pr.id" :processo="pr" :movimentacoes="movsDoProcesso(pr.id)" @editar="editarProcesso" @mudou="carregar" />
           </div>
-          <p v-else class="text-xs text-gray-400 pt-1">Sem processo ou procedimento: a demanda é {{ k.tipo === 'consultivo' ? 'consultiva/documental' : 'só um serviço a acompanhar' }}. Registre um quando existir.</p>
+          <p v-else class="text-xs text-gray-400 pt-1">Sem processo ou procedimento: a demanda é {{ k.tipo === 'consultivo' ? 'consultiva' : k.tipo === 'documental' ? 'documental' : 'só um serviço a acompanhar' }}. Ao registrar um processo ou procedimento, a atuação evolui sozinha e a mudança entra no histórico.</p>
           <details class="mt-3" :open="partesDaDemanda(k.id).length > 0">
             <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Partes e interessados <span class="normal-case tracking-normal font-normal">· {{ partesDaDemanda(k.id).length }}</span></summary>
             <PartesDemanda class="mt-2" :partes="partesDaDemanda(k.id)" :caso-id="k.id" @mudou="carregar" />
           </details>
-          <details class="mt-3" :open="!!(k.analise || k.riscos || k.decisao)">
-            <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Análise do escritório <span v-if="k.decisao" class="normal-case tracking-normal font-normal">· {{ DECISOES_DEMANDA[k.decisao].nome }}</span></summary>
-            <AnaliseDemanda class="mt-2" :demanda="k" @mudou="carregar" />
+          <InformacoesCliente :key="`d${k.id}`" class="mt-3" :contato-id="dados.contato.id" :caso-id="k.id" :sem-servico="!k.procedimento" iniciar-aberto />
+          <details class="mt-3" :open="!!(k.analise || k.fatos || k.estrategia || k.conclusao || k.riscos || k.decisao || notasDaDemanda(k.id).length)">
+            <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Análise profissional <span v-if="k.decisao" class="normal-case tracking-normal font-normal">· {{ DECISOES_DEMANDA[k.decisao].nome }}</span></summary>
+            <AnaliseDemanda class="mt-2" :demanda="k" :notas="notasDaDemanda(k.id)" @mudou="carregar" />
           </details>
           <ChecklistPainel v-if="dados.checklist?.casos[k.id]" class="mt-2" :escopo="dados.checklist.casos[k.id]!" @alternar="i => alternarChecklist(i, k.id)" />
           <p v-else class="text-xs text-gray-400 pt-1">Sem procedimento definido. <button type="button" class="underline underline-offset-2 hover:text-primary" @click="editarCaso(k)">Escolha o procedimento</button> para acompanhar as etapas desta demanda.</p>
-          <InformacoesCliente :key="`d${k.id}`" class="mt-2" :contato-id="dados.contato.id" :caso-id="k.id" iniciar-aberto />
           <div v-if="prazosDaDemanda(k.id).length || tarefasDaDemanda(k.id).length" class="mt-3">
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Prazos e tarefas</p>
             <ul class="text-sm divide-y divide-gray-50 dark:divide-zinc-800/60">
@@ -358,7 +359,7 @@ import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import PreFormularioEditor from './PreFormularioEditor.vue'
 import { PROCEDIMENTOS } from '~~/shared/data/checklist'
-import { CADENCIA, CLASSIFICACOES, DECISOES_DEMANDA, STATUS_DEMANDA, TIPOS_ATIVIDADE, TIPOS_DEMANDA, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Demanda, type Compromisso, type Contato, type Movimentacao, type Parte, type Processo, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
+import { CADENCIA, CLASSIFICACOES, DECISOES_DEMANDA, STATUS_DEMANDA, TIPOS_ATIVIDADE, TIPOS_DEMANDA, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Demanda, type DemandaNota, type Compromisso, type Contato, type Movimentacao, type Parte, type Processo, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
 import DemandaFormModal from './DemandaFormModal.vue'
 import ChecklistPainel from './ChecklistPainel.vue'
@@ -375,7 +376,7 @@ import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Demanda[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
+interface Detalhe { processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Demanda[]; notas: DemandaNota[]; responsaveis: Record<string, string>; compromissos: Compromisso[]; checklist?: ChecklistFicha }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string; modeloInicial?: string | null }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()
@@ -594,6 +595,7 @@ function editarCaso(k: Demanda | null) {
 }
 
 // ─── Documentos, prazos e tarefas: cada um dentro da sua demanda (ou "gerais") ───────────
+const notasDaDemanda = (id: number) => (dados.value?.notas ?? []).filter(n => n.caso_id === id)
 const docsDaDemanda = (id: number) => (dados.value?.documentos ?? []).filter(d => d.caso_id === id)
 const docsGerais = computed(() => (dados.value?.documentos ?? []).filter(d => !d.caso_id))
 const prazosDaDemanda = (id: number) => (dados.value?.compromissos ?? []).filter(c => c.caso_id === id)

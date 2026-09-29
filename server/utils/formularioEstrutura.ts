@@ -2,7 +2,7 @@ import {
   CONTEXTOS, escopoDoContexto, calcularVisibilidade, normalizarCondicao, tipoComOpcoes, tipoInterno, validarCondicoes,
   TIPOS_PERGUNTA, type Condicao, type PerguntaForm, type SecaoForm, type TipoPergunta, type Valor,
 } from '../../shared/data/formulario'
-import { PROCEDIMENTOS } from '../../shared/data/checklist'
+import { PROCEDIMENTOS, SERVICOS_IDS, procedimentoCasa } from '../../shared/data/checklist'
 import { normalizarRespostaCliente } from './formularioPerguntas'
 
 /**
@@ -29,7 +29,7 @@ export function limparEstrutura(body: any): EstruturaEntrada {
   const nome = String(body?.nome ?? '').trim().slice(0, 120)
   if (!nome) throw erro(400, 'Dê um título ao formulário.')
   const contexto = (body?.contexto in CONTEXTOS ? body.contexto : 'cliente') as keyof typeof CONTEXTOS
-  const validos = new Set(PROCEDIMENTOS.map(p => p.valor))
+  const validos = new Set([...PROCEDIMENTOS.map(p => p.valor), ...SERVICOS_IDS.map(id => `${id}/*`)])
   const procedimentos = contexto === 'demanda' && Array.isArray(body?.procedimentos) ? [...new Set<string>(body.procedimentos.map(String).filter((v: string) => validos.has(v)))] : []
   const brutas: any[] = Array.isArray(body?.secoes) ? body.secoes.slice(0, 40) : []
   if (!brutas.length) throw erro(400, 'O formulário precisa de ao menos uma seção.')
@@ -280,7 +280,7 @@ export async function montarFicha(client: any, contatoId: number, casoId: number
     respostasQ,
   ])
   const porPergunta = new Map<number, { resposta: Valor; updated_at: string }>((respostas ?? []).map((r: any) => [r.pergunta_id, r]))
-  const elegiveis = (forms ?? []).filter((f: any) => !casoId || !f.procedimentos?.length || (procedimento && f.procedimentos.includes(procedimento)))
+  const elegiveis = (forms ?? []).filter((f: any) => !casoId || procedimentoCasa(f.procedimentos, procedimento))
   const cobertas = new Set<number>()
   const saida: SecaoFicha[] = []
   for (const f of elegiveis) {

@@ -416,7 +416,12 @@ export interface Qualificacao {
 export const QUALIFICACAO_CAMPOS = ['nome_completo', 'cpf', 'rg', 'orgao_emissor', 'nacionalidade', 'estado_civil', 'profissao', 'endereco', 'bairro', 'cep', 'cidade', 'uf'] as const
 export const CAMPOS_CONFIDENCIAIS = ['cpf', 'rg'] as const
 
-export const TIPOS_DEMANDA = { consultivo: 'Consultiva / documental', extrajudicial: 'Extrajudicial', judicial: 'Judicial' } as const
+/**
+ * Atuação da demanda. Consultiva = orientação/parecer; documental = elaboração de documentos (pacto, testamento, contratos);
+ * extrajudicial e judicial = há procedimento/processo. Uma demanda consultiva/documental pode evoluir: ao registrar
+ * o processo ou procedimento, a atuação acompanha (e a mudança fica no histórico).
+ */
+export const TIPOS_DEMANDA = { consultivo: 'Consultiva', documental: 'Documental', extrajudicial: 'Extrajudicial', judicial: 'Judicial' } as const
 export const STATUS_DEMANDA = { ativo: 'Ativo', suspenso: 'Suspenso', encerrado: 'Encerrado' } as const
 export const FASES_PROCESSUAIS = ['Postulatória (petição inicial)', 'Instrução', 'Sentença', 'Recurso', 'Execução/cumprimento de sentença', 'Arquivado aguardando'] as const
 
@@ -457,15 +462,23 @@ export interface Demanda {
   /** 'servico/variante' do Padrão Operacional; define as etapas do checklist da demanda. */
   procedimento?: string | null
   /** Análise jurídica do escritório (estratégia, fundamentos), separada das respostas do formulário. */
+  /** Análise profissional (escritório): fundamentos/raciocínio, fatos, estratégia, riscos, conclusão e decisão. */
   analise?: string | null
+  fatos?: string | null
+  estrategia?: string | null
+  conclusao?: string | null
   riscos?: string | null
   decisao?: keyof typeof DECISOES_DEMANDA | null
+  responsavel_id?: string | null
   updated_at?: string
   contato?: Pick<Contato, 'id' | 'nome'> | null
   processos?: Pick<Processo, 'id' | 'natureza' | 'numero' | 'orgao' | 'fase' | 'status'>[]
   partes?: Pick<Parte, 'id' | 'nome' | 'papel'>[]
 }
-export const DEMANDA_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'status', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado', 'procedimento', 'analise', 'riscos', 'decisao'] as const
+export const DEMANDA_CAMPOS = ['contato_id', 'titulo', 'area', 'tipo', 'status', 'data_abertura', 'data_encerramento', 'observacoes', 'resultado', 'procedimento', 'analise', 'fatos', 'estrategia', 'conclusao', 'riscos', 'decisao', 'responsavel_id'] as const
+/** Anotação datada da análise profissional (o raciocínio evolui; nada se sobrescreve). */
+export const TIPOS_NOTA_DEMANDA = { anotacao: 'Anotação', conclusao: 'Conclusão', observacao: 'Observação' } as const
+export interface DemandaNota { id: number; created_at: string; caso_id: number; tipo: keyof typeof TIPOS_NOTA_DEMANDA; texto: string; autor_id: string | null; autor_nome?: string | null }
 /** Decisão do escritório depois de analisar a demanda (não é resposta de formulário). */
 export const DECISOES_DEMANDA = {
   viavel: { nome: 'Viável', dica: 'Seguir para a proposta.' },

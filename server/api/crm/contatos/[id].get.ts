@@ -1,5 +1,5 @@
 import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
-import { dataCompromisso, type Atividade, type Demanda, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp, type Movimentacao, type Parte, type Processo } from '../../../../shared/types/crm'
+import { dataCompromisso, type DemandaNota, type Atividade, type Demanda, type Compromisso, type Contato, type Documento, type Honorario, type MensagemWhatsapp, type Movimentacao, type Parte, type Processo } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { montarChecklist } from '../../../utils/checklist'
 
@@ -29,7 +29,17 @@ export default defineEventHandler(async (event) => {
   for (const r of [honorarios, mensagens, atividades, documentos, casos, compromissos, tarefas, marcas, processos]) if (r.error) console.error('[crm/detail] Erro parcial:', r.error)
 
   // Análise do escritório (antigo Diagnóstico): vem dos campos próprios da demanda.
-  const comAnalise = (casos.data ?? []).filter(c => c.analise || c.decisao || c.riscos).map(c => c.updated_at as string).sort().reverse()
+  const idsCasos0 = (casos.data ?? []).map(c => c.id)
+  const [notasQ, equipeQ] = await Promise.all([
+    idsCasos0.length ? client.from('demanda_notas').select('id, created_at, caso_id, tipo, texto, autor_id, autor:profiles(name)').in('caso_id', idsCasos0).order('created_at', { ascending: false }).order('id', { ascending: false }) : Promise.resolve({ data: [] as any[] }),
+    client.from('profiles').select('id, name').in('role', ['admin', 'equipe']),
+  ])
+  const notas = ((notasQ.data ?? []) as any[]).map(n => ({ id: n.id, created_at: n.created_at, caso_id: n.caso_id, tipo: n.tipo, texto: n.texto, autor_id: n.autor_id, autor_nome: n.autor?.name ?? null })) as DemandaNota[]
+  const responsaveis = Object.fromEntries(((equipeQ.data ?? []) as { id: string; name: string | null }[]).map(p => [p.id, p.name ?? '—']))
+  const comAnalise = [
+    ...(casos.data ?? []).filter(c => c.analise || c.fatos || c.estrategia || c.conclusao || c.decisao || c.riscos).map(c => c.updated_at as string),
+    ...notas.map(n => n.created_at),
+  ].sort().reverse()
   const analise: { updated_at: string | null } | null = comAnalise.length ? { updated_at: comAnalise[0] ?? null } : null
   const idsCasos = (casos.data ?? []).map(c => c.id)
 
@@ -47,6 +57,8 @@ export default defineEventHandler(async (event) => {
     atividades: (atividades.data ?? []) as Atividade[],
     documentos: (documentos.data ?? []) as Documento[],
     casos: (casos.data ?? []) as Demanda[],
+    notas,
+    responsaveis,
     processos: (processos.data ?? []) as Processo[],
     partes: (partes.data ?? []) as Parte[],
     movimentacoes: (movimentacoes.data ?? []) as Movimentacao[],

@@ -5,7 +5,7 @@ import { sincronizarAtuacao } from '../../utils/demandas'
 import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
-  await requireStaff(event, 'processos/update')
+  const { userId } = await requireStaff(event, 'processos/update')
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) throw createError({ statusCode: 400, message: 'ID inválido.' })
   const client = await serverSupabaseClient(event)
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     if (error.code === '23505') throw createError({ statusCode: 409, message: 'Já existe um processo com este número.' })
     throw createError({ statusCode: 500, message: 'Erro ao salvar.' })
   }
-  if (d.natureza && d.natureza !== atual.natureza) await sincronizarAtuacao(client, atual.caso_id)
+  if (d.natureza && d.natureza !== atual.natureza) await sincronizarAtuacao(client, atual.caso_id, event, userId)
   await auditar(event, 'editou processo', 'processo', id, { campos: Object.keys(d) })
   return data
 })

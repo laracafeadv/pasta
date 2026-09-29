@@ -42,10 +42,17 @@
           <p class="text-xs text-gray-400">{{ CONTEXTOS[form.contexto].dica }}</p>
           <div v-if="form.contexto === 'demanda'" class="space-y-1.5">
             <span class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Só para estes serviços <span class="normal-case tracking-normal font-normal text-gray-400">(nenhum marcado = todas as demandas)</span></span>
-            <div class="flex flex-wrap gap-1.5">
-              <label v-for="pr in PROCEDIMENTOS" :key="pr.valor" class="text-xs px-2.5 py-1 rounded-full border cursor-pointer" :class="form.procedimentos.includes(pr.valor) ? 'bg-secondary/20 border-secondary' : 'border-gray-300 dark:border-zinc-700'">
-                <input v-model="form.procedimentos" type="checkbox" :value="pr.valor" class="sr-only" />{{ pr.rotulo }}
-              </label>
+            <div class="space-y-1.5" data-testid="servicos">
+              <div v-for="sv in SERVICOS" :key="sv.id" class="flex flex-wrap items-center gap-1.5">
+                <label class="text-xs px-2.5 py-1 rounded-full border cursor-pointer font-semibold" :class="form.procedimentos.includes(`${sv.id}/*`) ? 'bg-secondary/30 border-secondary' : 'border-gray-300 dark:border-zinc-700'" :data-testid="`servico-${sv.id}`">
+                  <input v-model="form.procedimentos" type="checkbox" :value="`${sv.id}/*`" class="sr-only" />{{ sv.nome }}
+                </label>
+                <template v-if="sv.variantes.length > 1 && !form.procedimentos.includes(`${sv.id}/*`)">
+                  <label v-for="vr in sv.variantes" :key="vr.id" class="text-[11px] px-2 py-0.5 rounded-full border cursor-pointer" :class="form.procedimentos.includes(`${sv.id}/${vr.id}`) ? 'bg-secondary/20 border-secondary' : 'border-gray-200 dark:border-zinc-800 text-gray-500'">
+                    <input v-model="form.procedimentos" type="checkbox" :value="`${sv.id}/${vr.id}`" class="sr-only" />só {{ vr.nome }}
+                  </label>
+                </template>
+              </div>
             </div>
           </div>
         </div>
@@ -135,7 +142,7 @@ import PerguntaCard, { type ItemEditavel } from './PerguntaCard.vue'
 import CondicaoEditor, { type PerguntaAnterior } from './CondicaoEditor.vue'
 import FormularioPreenchimento from './FormularioPreenchimento.vue'
 import { CONTEXTOS, TIPO, operadorValido, podeCondicionar, validarCondicoes, tipoComOpcoes, type Condicao, type ContextoFormulario, type SecaoForm, type Valor } from '../../../shared/data/formulario'
-import { PROCEDIMENTOS } from '../../../shared/data/checklist'
+import { SERVICOS } from '../../../shared/data/servicos'
 import type { FormularioPergunta } from '../../../shared/types/crm'
 
 interface SecaoEditavel { key: string; id: number | null; titulo: string; descricao: string | null; mostrar_se: Condicao | null; itens: ItemEditavel[] }

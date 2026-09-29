@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     console.error('[processos] Erro:', error)
     throw createError({ statusCode: 500, message: 'Erro ao registrar.' })
   }
-  await sincronizarAtuacao(client, caso.id)
+  await sincronizarAtuacao(client, caso.id, event, userId)
   await registrarAtividade(event, caso.contato_id, 'Sistema', `${NATUREZAS_PROCESSO[data.natureza as keyof typeof NATUREZAS_PROCESSO]} registrado em "${caso.titulo}"${data.numero ? ` (${data.numero})` : ''}.`, userId, null, caso.id)
   await auditar(event, 'registrou processo', 'processo', data.id, { caso_id: caso.id })
   return data

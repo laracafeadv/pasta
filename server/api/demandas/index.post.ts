@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'casos/create')
   const d = limparDemanda(await readBody(event))
   if (!d.contato_id) throw createError({ statusCode: 400, message: 'Escolha o cliente.' })
-  const { data, error } = await (await serverSupabaseClient(event)).from('casos').insert({ responsavel_id: userId, ...d }).select().single()
+  const { data, error } = await (await serverSupabaseClient(event)).from('casos').insert({ ...d, responsavel_id: d.responsavel_id || userId }).select().single()
   if (error) {
     console.error('[casos] Erro:', error)
     throw createError({ statusCode: 500, message: 'Erro ao abrir a demanda.' })

@@ -2,7 +2,7 @@
   <section class="rounded-2xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
     <button type="button" class="w-full flex items-center gap-3 p-4 text-left" :aria-expanded="aberto" @click="alternar">
       <span class="min-w-0 flex-1">
-        <span class="block text-[10px] font-bold uppercase tracking-widest text-primary dark:text-zinc-200">{{ casoId ? 'Informações da demanda' : 'Informações do cliente' }}</span>
+        <span class="block text-[10px] font-bold uppercase tracking-widest text-primary dark:text-zinc-200">{{ casoId ? 'Dados coletados da demanda' : 'Informações do cliente' }}</span>
         <span v-if="secoes" class="block text-xs text-gray-500 mt-1">{{ respondidas }} de {{ total }} respondidas</span>
         <span v-else class="block text-xs text-gray-400 mt-1">Vem dos formulários que você monta em Formulários</span>
       </span>
@@ -13,7 +13,7 @@
       <p v-if="carregando" class="text-sm text-gray-400">Carregando…</p>
       <p v-else-if="erro" class="text-sm text-danger">{{ erro }}</p>
       <p v-else-if="!secoesVisiveis.length" class="text-sm text-gray-400">
-        {{ casoId ? 'Nenhum formulário de demanda vale para este procedimento.' : 'Nenhum formulário de cliente ou consulta ainda.' }} Monte em <NuxtLink to="/formularios" class="underline hover:text-primary">Formulários</NuxtLink> (contexto {{ casoId ? 'demanda' : 'cliente ou consulta' }}) e as perguntas aparecem aqui sozinhas.
+        {{ casoId ? (semServico ? 'Nenhuma pergunta geral de demanda. Defina o serviço (procedimento) da demanda para ver as perguntas específicas dele.' : 'Nenhum formulário de demanda vale para este serviço.') : 'Nenhum formulário de cliente ou consulta ainda.' }} Monte em <NuxtLink to="/formularios" class="underline hover:text-primary">Formulários</NuxtLink> (contexto {{ casoId ? 'demanda' : 'cliente ou consulta' }}) e as perguntas aparecem aqui sozinhas.
       </p>
       <div v-for="s in secoesVisiveis" :key="s.nome">
         <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{{ s.nome }}</p>
@@ -65,7 +65,7 @@ import type { PerguntaDaFicha, SecaoDaFicha, ValorResposta } from '../../../shar
 import { avaliarCondicao } from '../../../shared/data/formulario'
 
 // Carrega só quando a ficha abre este cartão (a ficha tem muito mais coisa que isso).
-const props = withDefaults(defineProps<{ contatoId: number; casoId?: number | null; iniciarAberto?: boolean }>(), { casoId: null, iniciarAberto: false })
+const props = withDefaults(defineProps<{ contatoId: number; casoId?: number | null; iniciarAberto?: boolean; semServico?: boolean }>(), { casoId: null, iniciarAberto: false, semServico: false })
 
 const TIPO_INPUT: Record<string, string> = { numero: 'text', data: 'date', email: 'email', telefone: 'tel' }
 const aberto = ref(props.iniciarAberto)

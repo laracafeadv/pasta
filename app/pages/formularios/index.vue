@@ -5,6 +5,7 @@ import Button from '~/components/Button.vue'
 import Modal from '~/components/Modal.vue'
 import { CONTEXTOS, type ContextoFormulario } from '~~/shared/data/formulario'
 import { PROCEDIMENTOS } from '~~/shared/data/checklist'
+import { SERVICOS } from '~~/shared/data/servicos'
 import type { Formulario, FormularioEnvio, FormularioEnvioDetalhe } from '~~/shared/types/crm'
 
 definePageMeta({ middleware: ['auth', 'staff'] })
@@ -22,7 +23,7 @@ async function carregarFormularios() {
 }
 const filtroContexto = ref<'todos' | ContextoFormulario>('todos')
 const visiveis = computed(() => formularios.value.filter(f => filtroContexto.value === 'todos' || f.contexto === filtroContexto.value))
-const nomeProcedimento = (v: string) => PROCEDIMENTOS.find(p => p.valor === v)?.rotulo ?? v
+const nomeProcedimento = (v: string) => (v.endsWith('/*') ? SERVICOS.find(s => s.id === v.slice(0, -2))?.nome : PROCEDIMENTOS.find(p => p.valor === v)?.rotulo) ?? v
 
 const novoAberto = ref(false)
 const novoNome = ref('')

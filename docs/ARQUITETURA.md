@@ -7,7 +7,7 @@
 | **Pessoa / Contato** | Qualquer pessoa conhecida pelo escritório, cadastrada uma única vez. Estados (etapa): novo → em qualificação → consulta agendada → consulta realizada → proposta enviada → cliente ativo → concluído (ou não contratou). "Pessoa cadastrada" (`relacionado`) é quem só aparece como parte/interessado: não é lead nem cliente e não entra em funil nem em Hoje. | `contatos` | Leads, Clientes, Mensagens |
 | **Lead** | Pessoa ainda em atendimento comercial (etapas novo → proposta). Não é outra entidade: é a etapa do contato. | `contatos.etapa` | Leads |
 | **Cliente** | Pessoa que contratou (etapa ativo / concluído). Continua cadastrada depois de tudo encerrado. | `contatos.etapa` | Clientes |
-| **Demanda / Serviço** | O que o cliente contratou: consultivo, documental, extrajudicial ou judicial. Um cliente tem várias ao longo do tempo. Contém procedimento (checklist), informações próprias, documentos, prazos, tarefas, honorário e histórico. | `casos` (nome interno; "Caso" não existe mais na interface) | Demandas |
+| **Demanda / Serviço** | O que o cliente contratou: consultiva, documental, extrajudicial ou judicial. Um cliente tem várias ao longo do tempo. Contém procedimento (checklist), informações próprias, documentos, prazos, tarefas, honorário e histórico. | `casos` (nome interno; "Caso" não existe mais na interface) | Demandas |
 | **Processo** (judicial) | Execução formal em juízo: tribunal, vara, número CNJ, fase, valor, movimentações. Uma demanda tem 0..N. | `processos` (natureza = judicial) | Processos |
 | **Procedimento** (extrajudicial) | Execução formal fora do Judiciário: cartório/serventia, protocolo, etapas, atos. Uma demanda tem 0..N. | `processos` (natureza = extrajudicial) | Processos |
 | **Parte / Interessado** | Quem participa de uma demanda sem ser o cliente: parte contrária, cônjuge, herdeiros, testemunhas. Aponta para uma pessoa já cadastrada (ou cadastra uma na hora), sem duplicar fichas. | `partes` (`contato_id`) | Ficha › Demandas |
@@ -94,3 +94,22 @@ Fluxo: **criar formulário → adicionar perguntas → configurar → organizar 
 - **Contexto**: a ficha do cliente mostra formulários de contexto cliente/consulta; a ficha de cada demanda mostra só os de contexto demanda que valem para o serviço dela. O banco impede pergunta de demanda em formulário de cliente (e vice-versa).
 - **Histórico**: pergunta removida do formulário só é excluída se nunca foi respondida nem é usada noutro formulário; senão é **arquivada** e a resposta continua na ficha em "Fora do formulário". Trocar o **tipo** de pergunta já respondida cria uma pergunta nova e preserva a antiga. Cada edição de texto/opções guarda a versão anterior (`trg_versao_pergunta`). Formulário respondido não muda de contexto cliente↔demanda.
 - Testes: `tests/formularios/` (núcleo, interface) e `supabase/tests/fase3_construtor_formularios.sql`.
+
+## Demanda / Serviço e análise profissional (Fase 3)
+A demanda é a unidade central: **tudo que é do serviço fica nela** e não aparece em outra demanda do mesmo cliente.
+
+| Contexto da demanda | Onde mora |
+|---|---|
+| Tipo de serviço | `casos.procedimento` ("servico/variante", ex.: `pacto-antenupcial/padrao`, `divorcio/judicial`) + `area` |
+| Atuação | `casos.tipo`: **consultiva** (orientação/parecer), **documental** (elaboração de documentos: pacto, testamento, contratos), **extrajudicial** ou **judicial** |
+| Status / resultado | `casos.status` (ativo, suspenso, encerrado) e `resultado` |
+| Responsável | `casos.responsavel_id` (escolhido ao abrir/editar; mudança vai ao histórico) |
+| Dados coletados | perguntas dos formulários de contexto **demanda** que valem para o serviço (`caso_respostas`) |
+| Análise profissional | campos próprios: fatos, fundamentos (`analise`), estratégia, riscos, conclusão, decisão + **anotações datadas** (`demanda_notas`) |
+| Documentos, tarefas, prazos, honorários, histórico | `caso_id` em cada tabela (o banco impede misturar demandas/pessoas) |
+| Processo / procedimento | `processos` (0..N por demanda) |
+
+- **Dados coletados ≠ análise profissional.** As perguntas coletam; a análise é o que o escritório conclui e **não depende do construtor de formulários**. O antigo "Análise da consulta" (perguntas) passou a se chamar "Dados da consulta".
+- **Evolução**: uma demanda consultiva/documental evolui ao registrar o processo ou procedimento (extrajudicial → judicial): a atuação acompanha e a mudança entra no histórico da demanda.
+- **Formulários por serviço**: um formulário de demanda pode valer para todas as demandas, para um serviço inteiro (`divorcio/*`) ou para uma forma específica (`divorcio/judicial`). Demanda sem serviço definido só recebe o que vale para todas. Se o serviço da demanda muda, respostas já dadas continuam visíveis em "Fora do formulário".
+- Testes: `tests/fase3/` (isolamento por serviço, análise, evolução; interface da análise) e `supabase/tests/fase3_demandas.sql`.
