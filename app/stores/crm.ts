@@ -25,6 +25,7 @@ export interface AndamentoPayload {
   consulta_em?: string | null
   pagamento_confirmado?: boolean
   honorario?: Record<string, unknown> | null
+  caso_id?: number | null
 }
 
 const erro = (e: any, fallback: string) => e?.data?.message || e?.message || fallback

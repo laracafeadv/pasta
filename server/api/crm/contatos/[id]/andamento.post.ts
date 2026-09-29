@@ -5,6 +5,8 @@ import { registrarAtividade } from '../../../../utils/crm'
 import { auditar } from '../../../../utils/auditoria'
 import { limparHonorario } from '../../../../utils/honorarios'
 import { brlServidor } from '../../../../utils/formato'
+import { demandasAbertas, encerrarSemContratacao, resolverDemandaComercial, validarTransicao } from '../../../../utils/ciclo'
+import { sincronizarClienteComDemandas } from '../../../../utils/demandas'
 
 /**
  * Registrar andamento: conclui a próxima ação atual e obriga a decidir a seguinte
@@ -16,7 +18,7 @@ export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) throw createError({ statusCode: 400, message: 'ID inválido.' })
 
-  const body = await readBody<{ resultado?: string; etapa: string; proxima_acao?: string; proxima_data?: string; motivo_perda?: string; consulta_em?: string | null; pagamento_confirmado?: boolean; honorario?: Record<string, any> | null }>(event)
+  const body = await readBody<{ resultado?: string; etapa: string; proxima_acao?: string; proxima_data?: string; motivo_perda?: string; consulta_em?: string | null; pagamento_confirmado?: boolean; honorario?: Record<string, any> | null; caso_id?: number | null }>(event)
   const destino = ETAPAS.find(e => e.id === body?.etapa)
   if (!destino) throw createError({ statusCode: 400, message: 'Etapa inválida.' })
   if (destino.aberta && (!body.proxima_acao?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(body.proxima_data ?? ''))) {
@@ -31,8 +33,9 @@ export default defineEventHandler(async (event) => {
   if (body.honorario && ['proposta', 'ativo'].includes(destino.id) && !(Number(body.honorario.valor) > 0)) {
     throw createError({ statusCode: 400, message: destino.id === 'proposta' ? 'Informe o valor da proposta.' : 'Informe o valor do contrato.' })
   }
-  const { data: atual, error: e1 } = await client.from('contatos').select('etapa, proxima_acao').eq('id', id).single()
+  const { data: atual, error: e1 } = await client.from('contatos').select('etapa, proxima_acao, nome, area, demanda').eq('id', id).single()
   if (e1 || !atual) throw createError({ statusCode: 404, message: 'Contato não encontrado.' })
+  validarTransicao(atual.etapa, destino.id, (await demandasAbertas(client, id)).length)
 
   const resultado = body.resultado?.trim()
   if (atual.proxima_acao) await registrarAtividade(event, id, 'Andamento', `Concluído: ${atual.proxima_acao}${resultado ? `\n${resultado}` : ''}`, userId)
@@ -59,16 +62,18 @@ export default defineEventHandler(async (event) => {
     const h = limparHonorario({ ...body.honorario, contato_id: id })
     if (!(h.valor > 0)) throw createError({ statusCode: 400, message: 'Informe o valor.' })
     const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+    // Proposta e contrato são de UMA demanda (a única aberta, a escolhida, ou uma aberta agora).
+    const casoId = await resolverDemandaComercial(event, client, { id, ...atual }, body.caso_id ?? body.honorario.caso_id ?? null, userId)
     const campos = {
       valor: h.valor, tipo: h.tipo ?? 'Contrato fixo', forma_pagamento: h.forma_pagamento ?? null, parcelas: h.parcelas ?? 1, descricao: h.descricao ?? null,
       valor_mensal: h.valor_mensal ?? null, meses: h.meses ?? null, percentual_exito: h.percentual_exito ?? null, validade_anos: h.validade_anos ?? null,
     }
     if (destino.id === 'proposta') {
-      await client.from('honorarios').insert({ ...campos, contato_id: id, status: 'Proposta', responsavel_id: userId })
+      await client.from('honorarios').insert({ ...campos, contato_id: id, caso_id: casoId, status: 'Proposta', responsavel_id: userId })
       await registrarAtividade(event, id, 'Sistema', `Proposta enviada: ${brlServidor(h.valor)}${h.forma_pagamento ? ` (${h.forma_pagamento})` : ''}.`, userId)
     } else {
-      const { data: prop } = await client.from('honorarios').select('id').eq('contato_id', id).eq('status', 'Proposta').order('created_at', { ascending: false }).limit(1)
-      const contrato = { ...campos, status: 'Contratado', data_contratacao: hoje }
+      const { data: prop } = await client.from('honorarios').select('id').eq('contato_id', id).eq('caso_id', casoId).eq('status', 'Proposta').order('created_at', { ascending: false }).limit(1)
+      const contrato = { ...campos, caso_id: casoId, status: 'Contratado', data_contratacao: hoje }
       const r = prop?.[0]
         ? await client.from('honorarios').update(contrato).eq('id', prop[0].id)
         : await client.from('honorarios').insert({ ...contrato, contato_id: id, responsavel_id: userId })
@@ -81,6 +86,7 @@ export default defineEventHandler(async (event) => {
       await registrarAtividade(event, id, 'Sistema', `Contrato fechado: ${brlServidor(h.valor)}${h.parcelas > 1 ? ` em ${h.parcelas}x` : ''}${h.forma_pagamento ? ` (${h.forma_pagamento})` : ''}.`, userId)
     }
   }
+  if (destino.id === 'perdido' && atual.etapa !== 'perdido') await encerrarSemContratacao(event, client, id, userId)
   // Pós-venda: ao concluir, a agenda já lembra de voltar a falar com ela em 30 dias e em 1 ano.
   if (destino.id === 'concluido' && atual.etapa !== 'concluido') {
     const dia = (n: number) => new Date(Date.now() + n * 864e5).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
@@ -110,6 +116,7 @@ export default defineEventHandler(async (event) => {
     console.error('[crm/andamento] Erro:', error)
     throw createError({ statusCode: 500, message: 'Erro interno ao registrar andamento.' })
   }
+  await sincronizarClienteComDemandas(event, client, id, userId)
   await auditar(event, 'registrou andamento', 'contato', id, { etapa: destino.id })
   return data
 })

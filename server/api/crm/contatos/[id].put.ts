@@ -2,6 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { etapa, type Contato } from '../../../../shared/types/crm'
 import { requireStaff } from '../../../utils/security'
 import { limparContato, registrarAtividade } from '../../../utils/crm'
+import { demandasAbertas, encerrarSemContratacao, validarTransicao } from '../../../utils/ciclo'
 import { auditar, camposAlterados } from '../../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
@@ -14,6 +15,8 @@ export default defineEventHandler(async (event) => {
 
   const { data: anterior } = await client.from('contatos').select('*').eq('id', id).single()
 
+  if (anterior && data.etapa && anterior.etapa !== data.etapa) validarTransicao(anterior.etapa, data.etapa, (await demandasAbertas(client, id)).length)
+
   const { data: updated, error } = await client.from('contatos').update(data).eq('id', id).select().single()
   if (error) {
     if (error.code === '23505') throw createError({ statusCode: 409, message: 'Já existe um contato com este telefone.' })
@@ -25,6 +28,8 @@ export default defineEventHandler(async (event) => {
     const motivo = data.etapa === 'perdido' && updated.motivo_perda ? ` (${updated.motivo_perda})` : ''
     await registrarAtividade(event, id, 'Sistema', `Etapa: ${etapa(anterior.etapa).nome} → ${etapa(data.etapa).nome}${motivo}`, userId)
   }
+
+  if (anterior && data.etapa === 'perdido' && anterior.etapa !== 'perdido') await encerrarSemContratacao(event, client, id, userId)
 
   const alterados = camposAlterados(anterior, data as Record<string, any>)
   if (alterados.length) await auditar(event, 'editou contato', 'contato', id, { campos: alterados })

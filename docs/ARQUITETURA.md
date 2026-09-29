@@ -55,3 +55,23 @@ Hierarquia: **Pessoa → Cliente → Demanda → Processo/Procedimento → Movim
 - `trg_demanda_da_pessoa`: em processos, documentos, honorários, tarefas, compromissos, atividades e lançamentos, a demanda (`caso_id`) tem de pertencer à **mesma pessoa** (`contato_id`); se `contato_id` vier vazio, herda da demanda.
 - `trg_vinculos_da_demanda`: processo e parte ligados a um documento/compromisso têm de ser da **mesma demanda**.
 - Testes executáveis: `supabase/tests/fase1_modelo_conceitual.sql` (7 cenários do modelo + triggers; roda em transação com rollback).
+
+## Ciclo comercial (Fase 2)
+**Pessoa → Lead → Consulta → Demanda → Proposta → Contratação → Cliente ativo → Concluído → (nova demanda)** — sempre a mesma linha em `contatos`; só a etapa muda.
+
+| Situação | Como é representada |
+|---|---|
+| Pessoa cadastrada | etapa `relacionado` (parte/interessado; fora do funil) |
+| Lead | etapas `novo`, `qualificacao`, `agendado` (consulta marcada), `diagnostico` (= "Consulta realizada"), `proposta` |
+| Consulta | compromisso na agenda + honorário tipo "Consulta" (não é proposta e não faz a pessoa virar cliente) |
+| Proposta / contratação | **honorário da demanda** (`honorarios.caso_id`): Proposta → Contratado → Pago |
+| Cliente ativo | etapa `ativo` (com demanda em andamento) |
+| Cliente sem demanda ativa | etapa `concluido` (todas as demandas encerradas; segue cadastrado) |
+| Não contratou | etapa `perdido`: propostas abertas → Cancelado, demandas abertas → encerradas (resultado "desistência"); nada é apagado e a pessoa pode contratar depois na mesma ficha |
+
+Regras (implementadas em `server/utils/ciclo.ts`, usadas por andamento, edição do contato e honorários; trava final no banco em `trg_ciclo_cliente`):
+- Cliente (`ativo`/`concluido`) **não volta ao funil** nem vira "não contratou". Novo serviço = nova demanda, que tem a sua própria proposta/contrato; a etapa do cliente não muda por causa da proposta.
+- Toda proposta/contrato é de **uma demanda**: usa a única demanda aberta; sem nenhuma, abre a demanda; com várias, exige escolher.
+- Contratação registrada (pelo andamento ou pela tela de Honorários) promove lead/"não contratou" a cliente ativo; proposta registrada leva lead antigo a "Proposta enviada".
+- Só quem contratou pode ser "Concluído", e só sem demanda em andamento (acontece sozinho ao encerrar a última). Reativar um concluído = abrir nova demanda.
+- Testes: `tests/fase2/rodar.sh` (cenários A–D sobre as regras) e `supabase/tests/fase2_ciclo_comercial.sql` (trava no banco).

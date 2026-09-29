@@ -3,6 +3,7 @@ import { brlServidor } from '../../utils/formato'
 import { requireStaff } from '../../utils/security'
 import { registrarAtividade } from '../../utils/crm'
 import { conferirDemanda, limparHonorario } from '../../utils/honorarios'
+import { sincronizarCicloPorHonorario } from '../../utils/ciclo'
 import { auditar } from '../../utils/auditoria'
 
 export default defineEventHandler(async (event) => {
@@ -20,6 +21,7 @@ export default defineEventHandler(async (event) => {
     console.error('[honorarios] Erro ao atualizar:', error)
     throw createError({ statusCode: 500, message: 'Erro interno ao atualizar honorário.' })
   }
+  await sincronizarCicloPorHonorario(event, client, updated, userId)
   if (anterior && data.status && anterior.status !== data.status) {
     await registrarAtividade(event, updated.contato_id, 'Sistema', `Honorário de ${brlServidor(updated.valor)}: ${anterior.status} → ${data.status}.`, userId)
   }

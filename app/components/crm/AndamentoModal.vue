@@ -19,8 +19,9 @@
       <label class="field">
         <span>Etapa agora</span>
         <select v-model="form.etapa" class="modal-input">
-          <option v-for="e in ETAPAS.filter(x => x.id !== 'relacionado')" :key="e.id" :value="e.id">{{ e.nome }}</option>
+          <option v-for="e in etapasPermitidas" :key="e.id" :value="e.id">{{ e.nome }}</option>
         </select>
+        <span v-if="ehCliente" class="text-xs text-gray-500 normal-case tracking-normal font-normal">Cliente não volta ao funil. Para um novo serviço, abra uma nova demanda na ficha — ela tem a sua própria proposta.</span>
       </label>
       <template v-if="form.etapa === 'agendado' && contato?.etapa !== 'agendado'">
         <label class="flex items-start gap-2 text-sm cursor-pointer">
@@ -51,6 +52,11 @@
           <label class="field"><span>Validade (anos)</span><input v-model="hon.validade_anos" type="number" min="1" max="20" class="modal-input" placeholder="5" /></label>
           <p class="col-span-2 text-xs text-gray-500">Arranque para começar; mensal a partir do protocolo, por prazo fechado; percentual só se houver proveito patrimonial; revisão do contrato no fim da validade (entra na agenda).</p>
         </div>
+        <label v-if="demandasAbertas.length > 1" class="field">
+          <span>Demanda desta {{ form.etapa === 'proposta' ? 'proposta' : 'contratação' }} *</span>
+          <select v-model="casoEscolhido" class="modal-input" required><option :value="null" disabled>Escolha…</option><option v-for="d in demandasAbertas" :key="d.id" :value="d.id">{{ d.titulo }}</option></select>
+        </label>
+        <p v-else-if="!demandasAbertas.length" class="text-xs text-gray-500">Ainda não há demanda: será aberta uma agora para este serviço (você poderá detalhá-la na ficha).</p>
         <p v-if="form.etapa === 'ativo' && propostaAnterior" class="text-xs text-gray-500">Preenchido com a proposta de {{ brl(propostaAnterior.valor) }}; ajuste se o fechamento foi diferente.</p>
       </div>
       <label v-if="form.etapa === 'perdido'" class="field">
@@ -107,11 +113,19 @@ const form = reactive({ resultado: '', etapa: 'novo', motivo_perda: '', proxima_
 const HON_VAZIO = { valor: '', tipo: 'Contrato fixo', parcelas: 1, forma_pagamento: '', valor_mensal: '', meses: '', percentual_exito: '', validade_anos: '' }
 const hon = reactive<Record<string, any>>({ ...HON_VAZIO })
 const propostaAnterior = ref<Honorario | null>(null)
+const demandasAbertas = ref<{ id: number; titulo: string }[]>([])
+const casoEscolhido = ref<number | null>(null)
+const ehCliente = computed(() => props.contato?.etapa === 'ativo' || props.contato?.etapa === 'concluido')
+// Cliente não volta ao funil (lead) nem vira "não contratou"; lead só vira "concluído" depois de contratar.
+const etapasPermitidas = computed(() => ETAPAS.filter(x => x.id !== 'relacionado' && (ehCliente.value ? x.id === 'ativo' || x.id === 'concluido' : x.id !== 'concluido' || props.contato?.etapa === 'concluido')))
 const pedeValor = computed(() => !!props.contato && props.contato.etapa !== form.etapa && (form.etapa === 'proposta' || form.etapa === 'ativo'))
 async function carregarProposta() {
-  if (form.etapa !== 'ativo' || !props.contato) return
-  const d = await $fetch<{ honorarios: Honorario[] }>(`/api/crm/contatos/${props.contato.id}`).catch(() => null)
-  const p = d?.honorarios.find(h => h.status === 'Proposta') ?? null
+  if (!props.contato || (form.etapa !== 'ativo' && form.etapa !== 'proposta')) return
+  const d = await $fetch<{ honorarios: Honorario[]; casos: { id: number; titulo: string; status: string }[] }>(`/api/crm/contatos/${props.contato.id}`).catch(() => null)
+  demandasAbertas.value = (d?.casos ?? []).filter(k => k.status !== 'encerrado')
+  if (demandasAbertas.value.length === 1) casoEscolhido.value = demandasAbertas.value[0]!.id
+  if (form.etapa !== 'ativo') return
+  const p = d?.honorarios.find(h => h.status === 'Proposta' && (demandasAbertas.value.length < 2 || h.caso_id === casoEscolhido.value)) ?? null
   propostaAnterior.value = p
   if (p && !hon.valor) Object.assign(hon, { valor: p.valor, tipo: p.tipo, parcelas: p.parcelas, forma_pagamento: p.forma_pagamento ?? '', valor_mensal: p.valor_mensal ?? '', meses: p.meses ?? '', percentual_exito: p.percentual_exito ?? '', validade_anos: p.validade_anos ?? '' })
 }
@@ -157,6 +171,8 @@ watch(() => props.isOpen, async (open) => {
   })
   Object.assign(hon, HON_VAZIO)
   propostaAnterior.value = null
+  demandasAbertas.value = []
+  casoEscolhido.value = null
   carregarProposta()
   aplicarSugestao()
   await nextTick()
@@ -175,7 +191,7 @@ watch(sugestao, (s, antiga) => {
 })
 
 function handleSubmit() {
-  emit('submit', { ...form, consulta_em: form.consulta_em ? new Date(form.consulta_em).toISOString() : null, honorario: pedeValor.value ? { ...hon } : null })
+  emit('submit', { ...form, consulta_em: form.consulta_em ? new Date(form.consulta_em).toISOString() : null, honorario: pedeValor.value ? { ...hon } : null, caso_id: pedeValor.value ? casoEscolhido.value : null })
 }
 </script>
 
