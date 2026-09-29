@@ -196,11 +196,15 @@
           <input v-model="nota.minutos" type="number" min="0" max="1440" class="modal-input sm:w-28" placeholder="min" title="Tempo gasto (minutos) — alimenta a rentabilidade" />
           <Button type="submit" :loading="anotando" :disabled="!nota.texto.trim()">Registrar</Button>
         </form>
-        <p v-if="!dados.atividades.length" class="text-sm text-gray-400">Sem registros ainda.</p>
+        <div v-if="dados.casos.length" class="flex flex-wrap gap-1.5 mb-4">
+          <button type="button" class="filtro-hist" :class="!filtroDemanda ? 'filtro-hist-ativo' : ''" @click="filtroDemanda = null">Tudo</button>
+          <button v-for="k in dados.casos" :key="k.id" type="button" class="filtro-hist" :class="filtroDemanda === k.id ? 'filtro-hist-ativo' : ''" @click="filtroDemanda = k.id">{{ k.titulo }}</button>
+        </div>
+        <p v-if="!atividadesFiltradas.length" class="text-sm text-gray-400">Sem registros ainda.</p>
         <ol class="border-l-2 border-gray-100 dark:border-zinc-800 ml-1">
-          <li v-for="a in dados.atividades" :key="a.id" class="pl-4 pb-4 relative text-sm">
+          <li v-for="a in atividadesFiltradas" :key="a.id" class="pl-4 pb-4 relative text-sm">
             <span class="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full" :class="a.tipo === 'Sistema' ? 'bg-gray-300' : 'bg-primary'" />
-            <p class="text-xs text-gray-400">{{ dataHora(a.created_at) }} · {{ a.tipo }}<span v-if="a.autor?.name"> · {{ a.autor.name }}</span><span v-if="a.minutos"> · {{ a.minutos }} min</span></p>
+            <p class="text-xs text-gray-400">{{ dataHora(a.created_at) }} · {{ a.tipo }}<span v-if="a.autor?.name"> · {{ a.autor.name }}</span><span v-if="a.minutos"> · {{ a.minutos }} min</span><span v-if="a.caso_id && !filtroDemanda" class="ml-1 px-1.5 rounded bg-gray-100 dark:bg-zinc-800">{{ dados.casos.find(k => k.id === a.caso_id)?.titulo }}</span></p>
             <p class="whitespace-pre-wrap" :class="a.tipo === 'Sistema' ? 'text-gray-500' : ''">{{ a.texto }}</p>
           </li>
         </ol>
@@ -211,6 +215,7 @@
         <div v-if="!dados.casos.length" class="rounded-2xl bg-secondary/10 border border-secondary/30 p-4 text-sm">
           {{ dados.contato.etapa === 'ativo' ? 'Cliente ativo sem demanda aberta.' : 'Nenhuma demanda ainda.' }}
           Abra a demanda para registrar a análise da consulta, acompanhar as etapas, os documentos e os prazos daquele serviço.
+          <div class="mt-3"><Button size="sm" icon="ph:chat-centered-text-bold" :loading="abrindoConsulta" @click="abrirDemandaDeConsulta">Abrir demanda de consulta</Button></div>
         </div>
         <div class="flex flex-wrap gap-2">
           <Button size="sm" icon="ph:folder-plus-bold" @click="editarCaso(null)">Nova demanda</Button>
@@ -524,6 +529,19 @@ const resumoFicha = computed(() => {
     { rotulo: 'Financeiro', valor: contratado ? brl(contratado) : '—', sub: propostas ? `${propostas} proposta(s) em aberto` : contratado ? 'contratado' : 'sem contratação', aba: 'honorarios', alerta: false },
   ]
 })
+// Um clique: a consulta é um serviço consultivo do cliente (a análise, os documentos e o honorário ficam nela).
+const abrindoConsulta = ref(false)
+async function abrirDemandaDeConsulta() {
+  const d = dados.value
+  if (!d) return
+  abrindoConsulta.value = true
+  try {
+    await $fetch('/api/casos', { method: 'POST', body: { contato_id: d.contato.id, titulo: `Consulta — ${d.contato.demanda || d.contato.area || d.contato.nome || 'análise inicial'}`, tipo: 'consultivo', area: d.contato.area || null, status: 'ativo', data_abertura: hojeIso } })
+    await carregar()
+  } finally {
+    abrindoConsulta.value = false
+  }
+}
 const verEncerradas = ref(false)
 const encerradas = computed(() => (dados.value?.casos ?? []).filter(c => c.status === 'encerrado'))
 const demandasVisiveis = computed(() => (dados.value?.casos ?? []).filter(c => c.status !== 'encerrado' || verEncerradas.value))
@@ -703,13 +721,16 @@ async function peca(url: string) {
 
 // ─── Atividades ───────────────────────────────────────────────────────────
 const nota = reactive<{ tipo: string; texto: string; minutos: number | '' }>({ tipo: 'Anotação', texto: '', minutos: '' })
+// Histórico: tudo do cliente, ou só o que aconteceu numa demanda (novas anotações já vão para a demanda escolhida).
+const filtroDemanda = ref<number | null>(null)
+const atividadesFiltradas = computed(() => (dados.value?.atividades ?? []).filter(a => !filtroDemanda.value || a.caso_id === filtroDemanda.value))
 const anotando = ref(false)
 
 async function anotar() {
   if (!nota.texto.trim() || !dados.value) return
   anotando.value = true
   try {
-    await $fetch(`/api/crm/contatos/${dados.value.contato.id}/atividades`, { method: 'POST', body: { ...nota } })
+    await $fetch(`/api/crm/contatos/${dados.value.contato.id}/atividades`, { method: 'POST', body: { ...nota, caso_id: filtroDemanda.value } })
     nota.texto = ''
     nota.minutos = ''
     await carregar()
@@ -720,6 +741,8 @@ async function anotar() {
 </script>
 
 <style scoped>
+.filtro-hist { @apply rounded-full border border-gray-300 dark:border-zinc-700 px-3 py-1 text-[11px] font-semibold text-gray-500 hover:text-primary transition-colors; }
+.filtro-hist-ativo { @apply bg-primary text-white border-primary hover:text-white; }
 .card { @apply rounded-lg border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-4 space-y-1.5; }
 .card h3 { @apply text-[10px] font-bold uppercase tracking-widest text-primary mb-2; }
 .tag { @apply text-[11px] px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300; }

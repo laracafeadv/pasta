@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     console.error('[compromissos] Erro:', error)
     throw createError({ statusCode: 500, message: 'Erro ao salvar o compromisso.' })
   }
-  if (data.contato_id) await registrarAtividade(event, data.contato_id, 'Sistema', `${TIPOS_COMPROMISSO[data.tipo as keyof typeof TIPOS_COMPROMISSO].nome} agendado: ${data.titulo}.`, userId)
+  if (data.contato_id) await registrarAtividade(event, data.contato_id, 'Sistema', `${TIPOS_COMPROMISSO[data.tipo as keyof typeof TIPOS_COMPROMISSO].nome} agendado: ${data.titulo}.`, userId, null, data.caso_id ?? null)
   await auditar(event, 'criou compromisso', 'compromisso', data.id, { tipo: data.tipo })
   return data
 })

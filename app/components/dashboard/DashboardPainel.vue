@@ -88,9 +88,10 @@
               </div>
             </li>
           </ul>
-          <button v-if="listaAtencao.length > 8" type="button" class="mt-3 text-xs font-semibold text-primary dark:text-zinc-200 underline underline-offset-2" @click="mostrarTodos = !mostrarTodos">
-            {{ mostrarTodos ? 'Mostrar menos' : `Ver os outros ${listaAtencao.length - 8}` }}
+          <button v-if="listaAtencao.length > 5" type="button" class="mt-3 text-xs font-semibold text-primary dark:text-zinc-200 underline underline-offset-2" @click="mostrarTodos = !mostrarTodos">
+            {{ mostrarTodos ? 'Mostrar menos' : `Ver os outros ${listaAtencao.length - 5}` }}
           </button>
+          <NuxtLink to="/crm" class="mt-3 ml-4 inline-block text-xs font-semibold text-primary dark:text-zinc-200 underline underline-offset-2">Abrir Hoje (trabalho do dia)</NuxtLink>
         </section>
 
         <section v-if="visiveis.agenda" id="agenda" class="painel scroll-mt-24">
@@ -366,7 +367,7 @@ const contagemGrupo = computed(() => {
   return { todos: l.length, prazos: l.filter(i => i.grupo === 'prazos').length, tarefas: l.filter(i => i.grupo === 'tarefas').length, clientes: l.filter(i => i.grupo === 'clientes').length }
 })
 const listaAtencao = computed(() => (data.value?.atencao ?? []).filter(i => filtro.value === 'todos' || i.grupo === filtro.value))
-const itensVisiveis = computed(() => (mostrarTodos.value ? listaAtencao.value : listaAtencao.value.slice(0, 8)))
+const itensVisiveis = computed(() => (mostrarTodos.value ? listaAtencao.value : listaAtencao.value.slice(0, 5)))
 
 const SEVERIDADE: Record<Severidade, { nome: string; borda: string; icone: string; texto: string }> = {
   urgente: { nome: 'Urgente', borda: 'border-danger', icone: 'text-danger', texto: 'text-danger' },

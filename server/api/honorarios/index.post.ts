@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     console.error('[honorarios] Erro ao criar:', error)
     throw createError({ statusCode: 500, message: 'Erro interno ao registrar honorário.' })
   }
-  await registrarAtividade(event, created.contato_id, 'Sistema', `Honorário registrado: ${brlServidor(created.valor)} (${created.tipo}, ${created.status}).`, userId)
+  await registrarAtividade(event, created.contato_id, 'Sistema', `Honorário registrado: ${brlServidor(created.valor)} (${created.tipo}, ${created.status}).`, userId, null, created.caso_id ?? null)
   await auditar(event, 'registrou honorário', 'honorario', created.id, { contato_id: created.contato_id })
   return created
 })

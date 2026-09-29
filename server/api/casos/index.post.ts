@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     console.error('[casos] Erro:', error)
     throw createError({ statusCode: 500, message: 'Erro ao abrir a demanda.' })
   }
-  await registrarAtividade(event, data.contato_id, 'Sistema', `Demanda aberta: ${data.titulo}.`, userId)
+  await registrarAtividade(event, data.contato_id, 'Sistema', `Demanda aberta: ${data.titulo}.`, userId, null, data.id)
   await sincronizarClienteComDemandas(event, await serverSupabaseClient(event), data.contato_id, userId)
   await auditar(event, 'abriu demanda', 'caso', data.id, { contato_id: data.contato_id })
   return data

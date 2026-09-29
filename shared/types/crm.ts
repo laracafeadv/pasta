@@ -174,6 +174,7 @@ export interface Atividade {
   tipo: string
   texto: string
   minutos?: number | null
+  caso_id?: number | null
   autor?: { name: string } | null
 }
 

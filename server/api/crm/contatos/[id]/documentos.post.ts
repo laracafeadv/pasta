@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
       console.error('[documentos] Erro:', error)
       throw createError({ statusCode: 500, message: 'Erro ao criar checklist.' })
     }
-    if (body?.gerar) await registrarAtividade(event, id, 'Sistema', `Checklist de documentos criado (${novos.length} itens).`, userId)
+    if (body?.gerar) await registrarAtividade(event, id, 'Sistema', `Checklist de documentos criado (${novos.length} itens${casoId ? ', desta demanda' : ''}).`, userId, null, casoId)
   }
   return { criados: novos.length }
 })
