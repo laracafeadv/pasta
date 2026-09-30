@@ -46,11 +46,13 @@ export default defineEventHandler(async (event) => {
 
   // Partes das demandas e movimentações dos processos (carregadas juntas: são poucas por cliente).
   const idsProcessos = (processos.data ?? []).map(p => p.id)
-  const [partes, movimentacoes, etapas, pendencias] = await Promise.all([
+  const [partes, movimentacoes, etapas, pendencias, participacoes] = await Promise.all([
     idsCasos.length ? client.from('partes').select('*, contato:contatos(id, nome, etapa)').in('caso_id', idsCasos).order('id') : Promise.resolve({ data: [] as Parte[] }),
     idsProcessos.length ? client.from('movimentacoes').select('*').in('processo_id', idsProcessos).order('data', { ascending: false }).order('id', { ascending: false }).limit(400) : Promise.resolve({ data: [] as Movimentacao[] }),
     idsProcessos.length ? client.from('processo_etapas').select('*').in('processo_id', idsProcessos).order('ordem') : Promise.resolve({ data: [] as ProcessoEtapa[] }),
     idsProcessos.length ? client.from('processo_pendencias').select('*').in('processo_id', idsProcessos).order('created_at') : Promise.resolve({ data: [] as ProcessoPendencia[] }),
+    // Onde ESTA pessoa aparece como parte/interessada em demandas (de outros clientes, ou dela mesma).
+    client.from('partes').select('id, papel, polo, caso_id, caso:casos(id, titulo, contato_id, cliente:contatos(id, nome))').eq('contato_id', id).order('id', { ascending: false }).limit(100),
   ])
 
   return {
@@ -64,6 +66,7 @@ export default defineEventHandler(async (event) => {
     responsaveis,
     processos: (processos.data ?? []) as Processo[],
     partes: (partes.data ?? []) as Parte[],
+    participacoes: ((participacoes.data ?? []) as any[]).filter(x => x.caso && x.caso.contato_id !== id).map(x => ({ id: x.id as number, papel: x.papel as string, polo: x.polo as string | null, caso_id: x.caso_id as number, demanda: x.caso.titulo as string, cliente_id: x.caso.contato_id as number, cliente: (x.caso.cliente?.nome ?? '—') as string })),
     movimentacoes: (movimentacoes.data ?? []) as Movimentacao[],
     etapas: (etapas.data ?? []) as ProcessoEtapa[],
     pendencias: (pendencias.data ?? []) as ProcessoPendencia[],

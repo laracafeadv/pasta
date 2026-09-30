@@ -1,108 +1,145 @@
 <template>
   <div>
     <ul v-if="partes.length" class="text-sm divide-y divide-gray-50 dark:divide-zinc-800/60">
-      <li v-for="p in partes" :key="p.id" class="py-1.5 flex flex-wrap items-baseline gap-x-2">
-        <NuxtLink v-if="p.contato" :to="`/crm?abrir=${p.contato.id}`" class="font-medium underline underline-offset-2 hover:text-primary" title="Abrir a ficha desta pessoa">{{ p.nome }}</NuxtLink>
-        <span v-else class="font-medium">{{ p.nome }}</span>
-        <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-500">{{ p.papel }}</span>
-        <span v-if="p.polo" class="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:text-zinc-200">{{ POLOS_PARTE[p.polo] }}</span>
-        <span v-if="p.contato && ['ativo', 'concluido'].includes(p.contato.etapa)" class="text-[11px] px-2 py-0.5 rounded-full bg-success/15 text-success-dark">também é cliente</span>
-        <span v-if="p.telefone || p.email" class="text-xs text-gray-400">{{ [p.telefone, p.email].filter(Boolean).join(' · ') }}</span>
-        <button type="button" class="ml-auto text-gray-300 hover:text-danger" title="Remover da demanda" @click="remover(p.id)"><Icon name="ph:x-bold" /></button>
+      <li v-for="p in partes" :key="p.id" class="py-1.5" :data-testid="`parte-${p.id}`">
+        <div class="flex flex-wrap items-baseline gap-x-2">
+          <NuxtLink v-if="p.contato" :to="`/crm?abrir=${p.contato.id}`" class="font-medium underline underline-offset-2 hover:text-primary" title="Abrir a ficha desta pessoa">{{ p.contato.nome ?? p.nome }}</NuxtLink>
+          <span v-else class="font-medium">{{ p.nome }}</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-500">{{ p.papel }}</span>
+          <span v-if="p.polo" class="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:text-zinc-200">{{ POLOS_PARTE[p.polo] }}</span>
+          <span v-if="p.processo_id && nomeProcesso(p.processo_id)" class="text-[11px] px-2 py-0.5 rounded-full bg-secondary/15 text-secondary-dark">{{ nomeProcesso(p.processo_id) }}</span>
+          <span v-if="p.contato && ['ativo', 'concluido'].includes(p.contato.etapa)" class="text-[11px] px-2 py-0.5 rounded-full bg-success/15 text-success-dark">também é cliente</span>
+          <span v-if="!p.contato" class="text-[11px] px-2 py-0.5 rounded-full bg-warning/15 text-warning-dark" title="Digitada à mão: ainda não é uma pessoa cadastrada">sem cadastro</span>
+          <span v-if="p.telefone || p.email" class="text-xs text-gray-400">{{ [p.telefone, p.email].filter(Boolean).join(' · ') }}</span>
+          <span class="ml-auto flex items-center gap-2">
+            <button v-if="!p.contato" type="button" class="text-[11px] underline text-secondary-dark" data-testid="parte-vincular" @click="abrirVinculo(p)">vincular a pessoa cadastrada</button>
+            <button type="button" class="text-[11px] underline text-gray-400 hover:text-primary" data-testid="parte-editar" @click="editar(p)">editar</button>
+            <button type="button" class="text-gray-300 hover:text-danger" title="Remover da demanda (a pessoa continua cadastrada)" data-testid="parte-remover" @click="remover(p)"><Icon name="ph:x-bold" /></button>
+          </span>
+        </div>
+        <p v-if="p.observacao" class="text-xs text-gray-500 mt-0.5">{{ p.observacao }}</p>
+
+        <form v-if="editando === p.id" class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2" @submit.prevent="salvarEdicao(p)">
+          <div><input v-model="ed.papel" class="modal-input" list="papeis-parte" placeholder="Papel" data-testid="ed-papel" /></div>
+          <select v-if="judicial" v-model="ed.polo" class="modal-input"><option value="">Polo (opcional)</option><option v-for="(n, k) in POLOS_PARTE" :key="k" :value="k">{{ n }}</option></select>
+          <select v-if="processos.length" v-model="ed.processo_id" class="modal-input"><option :value="null">Toda a demanda</option><option v-for="pr in processos" :key="pr.id" :value="pr.id">{{ rotuloProcesso(pr) }}</option></select>
+          <input v-model="ed.observacao" class="modal-input sm:col-span-2" placeholder="Observação (opcional)" />
+          <div class="flex gap-2 sm:col-span-2"><Button type="submit" size="sm" :loading="salvando">Salvar</Button><Button type="button" size="sm" variant="outline" @click="editando = null">Cancelar</Button></div>
+        </form>
+
+        <div v-if="vinculando === p.id" class="mt-2 space-y-2 rounded-xl bg-gray-50 dark:bg-zinc-900/60 p-3">
+          <p class="text-xs text-gray-500">Escolha a pessoa já cadastrada que é "{{ p.nome }}" — ou cadastre-a agora.</p>
+          <SeletorPessoa v-model="pessoaVinculo" @nova="v => (novaVinculo = v)" />
+          <div class="flex gap-2">
+            <Button type="button" size="sm" :loading="salvando" data-testid="vinculo-confirmar" @click="confirmarVinculo(p)">Vincular</Button>
+            <Button type="button" size="sm" variant="outline" @click="vinculando = null">Cancelar</Button>
+          </div>
+        </div>
       </li>
     </ul>
     <p v-else-if="!adicionando" class="text-xs text-gray-400">Nenhuma parte ou interessado registrado.</p>
 
-    <form v-if="adicionando" class="mt-2 space-y-2" @submit.prevent="adicionar">
-      <div class="relative">
-        <input v-model="busca" class="modal-input" placeholder="Buscar pessoa já cadastrada (nome ou telefone)…" :disabled="!!escolhida" @input="buscar" />
-        <div v-if="escolhida" class="absolute inset-0 flex items-center justify-between px-4 rounded-lg bg-secondary/10 border border-secondary/30 text-sm">
-          <span><b>{{ escolhida.nome }}</b> <span class="text-xs text-gray-500">já cadastrada</span></span>
-          <button type="button" class="text-xs underline" @click="limparEscolha">trocar</button>
+    <form v-if="adicionando" class="mt-2 space-y-2" @submit.prevent="adicionar()">
+      <SeletorPessoa v-model="escolhida" :excluir="idsNaDemanda" @nova="v => (nova = v)" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <input v-model="form.papel" class="modal-input" list="papeis-parte" placeholder="Papel (Herdeiro, Cônjuge… ou outro)" data-testid="parte-papel" />
+        <select v-if="judicial" v-model="form.polo" class="modal-input" data-testid="parte-polo"><option value="">Polo (opcional)</option><option v-for="(n, k) in POLOS_PARTE" :key="k" :value="k">{{ n }}</option></select>
+        <select v-if="processos.length" v-model="form.processo_id" class="modal-input" data-testid="parte-processo"><option :value="null">Toda a demanda</option><option v-for="pr in processos" :key="pr.id" :value="pr.id">{{ rotuloProcesso(pr) }}</option></select>
+      </div>
+      <div v-if="candidatas.length" class="rounded-xl border border-warning/50 bg-warning/5 p-3 text-sm space-y-2" data-testid="candidatas">
+        <p>Já existe alguém com esse nome. É a mesma pessoa?</p>
+        <div v-for="c in candidatas" :key="c.id" class="flex items-center justify-between gap-2">
+          <span><b>{{ c.nome }}</b> <span class="text-xs text-gray-400">{{ c.telefone }}</span></span>
+          <Button type="button" size="sm" data-testid="usar-candidata" @click="usarCandidata(c)">Sim, usar esta</Button>
         </div>
-        <ul v-if="resultados.length && !escolhida" class="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg max-h-48 overflow-y-auto">
-          <li v-for="c in resultados" :key="c.id"><button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-secondary/10" @click="escolher(c)">{{ c.nome || 'Sem nome' }} <span class="text-xs text-gray-400">{{ c.telefone }}</span></button></li>
-        </ul>
+        <Button type="button" size="sm" variant="outline" data-testid="e-outra" @click="adicionar(true)">É outra pessoa — cadastrar nova</Button>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-[1fr_190px] gap-2">
-        <input v-if="!escolhida" v-model="form.nome" class="modal-input" placeholder="…ou o nome de uma nova pessoa" required />
-        <div v-else />
-        <select v-model="form.papel" class="modal-input" data-testid="parte-papel"><option v-for="p in papeis" :key="p">{{ p }}</option></select>
-      </div>
-      <select v-if="judicial" v-model="form.polo" class="modal-input sm:w-56" data-testid="parte-polo"><option value="">Polo (opcional)</option><option v-for="(n, k) in POLOS_PARTE" :key="k" :value="k">{{ n }}</option></select>
-      <div v-if="!escolhida" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <input v-model="form.telefone" class="modal-input" placeholder="Telefone / WhatsApp" />
-        <input v-model="form.email" class="modal-input" placeholder="E-mail (opcional)" />
-      </div>
-      <label v-if="!escolhida" class="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400" :class="!form.telefone.trim() ? 'opacity-50' : ''">
-        <input v-model="cadastrar" type="checkbox" class="accent-[#3c2923]" :disabled="!form.telefone.trim()" /> Cadastrar também como pessoa no escritório (precisa do telefone) — assim ela pode virar cliente depois sem novo cadastro
-      </label>
-      <div class="flex gap-2"><Button type="submit" size="sm" :loading="salvando">Adicionar</Button><Button type="button" size="sm" variant="outline" @click="fechar">Cancelar</Button></div>
+      <div class="flex gap-2"><Button type="submit" size="sm" :loading="salvando" data-testid="parte-adicionar">Adicionar</Button><Button type="button" size="sm" variant="outline" @click="fechar">Cancelar</Button></div>
     </form>
-    <button v-else type="button" class="mt-1 text-xs font-semibold text-secondary-dark hover:underline" @click="adicionando = true">+ Parte ou interessado</button>
-    <p v-if="erro" class="text-xs text-danger mt-1">{{ erro }}</p>
+    <button v-else type="button" class="mt-1 text-xs font-semibold text-secondary-dark hover:underline" data-testid="parte-nova" @click="adicionando = true">+ Parte ou interessado</button>
+    <p v-if="erro" class="text-xs text-danger mt-1" data-testid="parte-erro">{{ erro }}</p>
+    <datalist id="papeis-parte"><option v-for="p in papeis" :key="p" :value="p" /></datalist>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import Button from '../Button.vue'
-import { computed } from 'vue'
-import { type Contato, type Parte } from '../../../shared/types/crm'
-import { PAPEIS_EXTRAJUDICIAL, PAPEIS_JUDICIAL, POLOS_PARTE } from '~~/shared/data/procedimentos'
+import SeletorPessoa from './SeletorPessoa.vue'
+import { type Parte, type Processo } from '../../../shared/types/crm'
+import { POLOS_PARTE, papeisSugeridos } from '~~/shared/data/procedimentos'
 
-// Partes e interessados de uma demanda. A pessoa é escolhida entre as já cadastradas ou cadastrada na hora
-// (como "pessoa cadastrada", sem entrar no funil de leads): nunca há duas fichas para a mesma pessoa.
-const props = withDefaults(defineProps<{ partes: Parte[]; casoId: number; judicial?: boolean; extrajudicial?: boolean }>(), { judicial: false, extrajudicial: false })
-// Os papéis acompanham o fluxo: processo judicial (autor/réu, polo) × procedimento extrajudicial (outorgantes, interessados).
-const papeis = computed(() => (props.judicial && !props.extrajudicial ? PAPEIS_JUDICIAL : props.extrajudicial && !props.judicial ? PAPEIS_EXTRAJUDICIAL : [...new Set([...PAPEIS_EXTRAJUDICIAL, ...PAPEIS_JUDICIAL])]))
+// Partes e interessados de uma demanda. A pessoa é escolhida entre as já cadastradas OU cadastrada na hora
+// (como "pessoa cadastrada", fora do funil): o servidor reaproveita telefone/nome já existentes — nunca há duas fichas.
+const props = withDefaults(defineProps<{ partes: Parte[]; casoId: number; judicial?: boolean; extrajudicial?: boolean; processos?: Processo[] }>(), { judicial: false, extrajudicial: false, processos: () => [] })
 const emit = defineEmits<{ mudou: [] }>()
+const papeis = computed(() => papeisSugeridos(props.judicial, props.extrajudicial))
+const idsNaDemanda = computed(() => props.partes.map(p => p.contato_id).filter((x): x is number => !!x))
 
+interface Pessoa { id: number; nome: string | null; telefone?: string | null; etapa?: string }
+interface NovaPessoa { nome: string; telefone: string; email: string }
 const adicionando = ref(false)
 const salvando = ref(false)
 const erro = ref<string | null>(null)
-const form = reactive({ nome: '', papel: 'Herdeiro', polo: '', telefone: '', email: '' })
-const cadastrar = ref(true)
-const busca = ref('')
-const resultados = ref<Contato[]>([])
-const escolhida = ref<Contato | null>(null)
-let timer: ReturnType<typeof setTimeout> | undefined
+const escolhida = ref<Pessoa | null>(null)
+const nova = ref<NovaPessoa>({ nome: '', telefone: '', email: '' })
+const candidatas = ref<Pessoa[]>([])
+const form = reactive<{ papel: string; polo: string; processo_id: number | null }>({ papel: 'Herdeiro', polo: '', processo_id: null })
+const editando = ref<number | null>(null)
+const ed = reactive<{ papel: string; polo: string; processo_id: number | null; observacao: string }>({ papel: '', polo: '', processo_id: null, observacao: '' })
+const vinculando = ref<number | null>(null)
+const pessoaVinculo = ref<Pessoa | null>(null)
+const novaVinculo = ref<NovaPessoa>({ nome: '', telefone: '', email: '' })
 
-function buscar() {
-  clearTimeout(timer)
-  if (busca.value.trim().length < 2) { resultados.value = []; return }
-  timer = setTimeout(async () => {
-    const r = await $fetch<{ records: Contato[] }>('/api/crm/contatos', { params: { search: busca.value.trim(), pageSize: 6 } }).catch(() => ({ records: [] as Contato[] }))
-    resultados.value = r.records
-  }, 250)
+const rotuloProcesso = (pr: Processo) => pr.numero || pr.tipo_procedimento || (pr.natureza === 'judicial' ? 'Processo judicial' : 'Procedimento extrajudicial')
+const nomeProcesso = (id: number) => { const pr = props.processos.find(x => x.id === id); return pr ? rotuloProcesso(pr) : null }
+const msg = (e: any) => e?.data?.message || e?.statusMessage || 'Não foi possível concluir.'
+
+function fechar() {
+  adicionando.value = false; escolhida.value = null; nova.value = { nome: '', telefone: '', email: '' }; candidatas.value = []
+  Object.assign(form, { papel: 'Herdeiro', polo: '', processo_id: null }); erro.value = null
 }
-function escolher(c: Contato) { escolhida.value = c; resultados.value = []; busca.value = c.nome ?? '' }
-function limparEscolha() { escolhida.value = null; busca.value = '' }
-function fechar() { adicionando.value = false; limparEscolha(); Object.assign(form, { nome: '', telefone: '', email: '' }); erro.value = null }
+function usarCandidata(c: Pessoa) { escolhida.value = c; candidatas.value = [] }
 
-async function adicionar() {
-  salvando.value = true
+async function adicionar(confirmarNova = false) {
   erro.value = null
+  if (!escolhida.value && !nova.value.nome.trim()) { erro.value = 'Escolha uma pessoa cadastrada ou digite o nome.'; return }
+  salvando.value = true
   try {
-    let contatoId: number | null = escolhida.value?.id ?? null
-    let nome = escolhida.value?.nome ?? form.nome
-    if (!escolhida.value && cadastrar.value && form.telefone.trim()) {
-      const criado = await $fetch<Contato>('/api/crm/contatos', { method: 'POST', body: { nome: form.nome, telefone: form.telefone, email: form.email || null, etapa: 'relacionado', origem: 'Outros' } })
-      contatoId = criado.id
-      nome = criado.nome ?? form.nome
-    }
-    await $fetch('/api/partes', { method: 'POST', body: { caso_id: props.casoId, contato_id: contatoId, nome, papel: form.papel, polo: props.judicial ? (form.polo || null) : null, telefone: escolhida.value ? null : form.telefone, email: escolhida.value ? null : form.email } })
-    fechar()
-    emit('mudou')
+    await $fetch('/api/partes', { method: 'POST', body: {
+      caso_id: props.casoId, papel: form.papel, polo: props.judicial ? (form.polo || null) : null, processo_id: form.processo_id,
+      ...(escolhida.value ? { pessoa_id: escolhida.value.id } : { nova_pessoa: nova.value, confirmar_nova: confirmarNova }),
+    } })
+    fechar(); emit('mudou')
   } catch (e: any) {
-    erro.value = e?.data?.message || 'Não foi possível adicionar.'
-  } finally {
-    salvando.value = false
-  }
+    if (e?.statusCode === 409 && e?.data?.data?.candidatas?.length) { candidatas.value = e.data.data.candidatas; return }
+    erro.value = msg(e)
+  } finally { salvando.value = false }
 }
-async function remover(id: number) {
-  const url: string = `/api/partes/${id}`
-  await $fetch(url, { method: 'DELETE' })
-  emit('mudou')
+
+function editar(p: Parte) {
+  editando.value = p.id; vinculando.value = null
+  Object.assign(ed, { papel: p.papel, polo: p.polo ?? '', processo_id: p.processo_id ?? null, observacao: p.observacao ?? '' })
+}
+async function salvarEdicao(p: Parte) {
+  salvando.value = true; erro.value = null
+  try {
+    await $fetch(`/api/partes/${p.id}`, { method: 'PUT', body: { papel: ed.papel, polo: props.judicial ? (ed.polo || null) : null, processo_id: ed.processo_id, observacao: ed.observacao } })
+    editando.value = null; emit('mudou')
+  } catch (e: any) { erro.value = msg(e) } finally { salvando.value = false }
+}
+
+function abrirVinculo(p: Parte) { vinculando.value = p.id; editando.value = null; pessoaVinculo.value = null; novaVinculo.value = { nome: p.nome, telefone: p.telefone ?? '', email: p.email ?? '' } }
+async function confirmarVinculo(p: Parte) {
+  salvando.value = true; erro.value = null
+  try {
+    await $fetch(`/api/partes/${p.id}/vincular`, { method: 'POST', body: pessoaVinculo.value ? { pessoa_id: pessoaVinculo.value.id } : { nova_pessoa: novaVinculo.value } })
+    vinculando.value = null; emit('mudou')
+  } catch (e: any) { erro.value = msg(e) } finally { salvando.value = false }
+}
+
+async function remover(p: Parte) {
+  erro.value = null
+  try { await $fetch(`/api/partes/${p.id}`, { method: 'DELETE' }); emit('mudou') } catch (e: any) { erro.value = msg(e) }
 }
 </script>

@@ -7,7 +7,7 @@ import { auditar } from '../../utils/auditoria'
 export default defineEventHandler(async (event) => {
   const { userId } = await requireStaff(event, 'intimacoes/create')
   const d = limparIntimacao((await readBody(event)) ?? {}) as IntimacaoEntrada
-  const r = await registrarIntimacao(event, await serverSupabaseClient(event), { conteudo: null, dias_prazo: null, data_trabalho: null, ...d }, userId)
+  const r = await registrarIntimacao(event, await serverSupabaseClient(event), d, userId)
   await auditar(event, 'registrou intimação', 'intimacao', r.intimacao.id, { processo_id: d.processo_id })
   return r
 })

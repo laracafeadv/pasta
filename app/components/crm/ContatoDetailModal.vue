@@ -65,6 +65,12 @@
           <p v-if="dados.contato.obs_relacionamento"><b>Observação:</b> {{ dados.contato.obs_relacionamento }}</p>
           <p v-if="dados.contato.ultimo_contato_em"><b>Último gesto:</b> {{ dataCurta(dados.contato.ultimo_contato_em) }}</p>
         </div>
+        <div v-if="dados.participacoes?.length" class="card md:col-span-2" data-testid="participacoes">
+          <h3>Também aparece como parte em</h3>
+          <ul class="text-sm divide-y divide-gray-50 dark:divide-zinc-800/60">
+            <li v-for="x in dados.participacoes" :key="x.id" class="py-1.5"><b>{{ x.papel }}</b> na demanda "{{ x.demanda }}" de <NuxtLink :to="`/crm?abrir=${x.cliente_id}`" class="underline underline-offset-2 hover:text-primary">{{ x.cliente }}</NuxtLink></li>
+          </ul>
+        </div>
         <div v-if="!dados.casos.length" class="card">
           <h3>Atendimento</h3>
           <p><b>Área:</b> {{ dados.contato.area || '—' }} <span v-if="dados.contato.demanda">· {{ dados.contato.demanda }}</span></p>
@@ -266,7 +272,7 @@
           <p v-else class="text-xs text-gray-400 pt-1">Sem processo ou procedimento: a demanda é {{ k.tipo === 'consultivo' ? 'consultiva' : k.tipo === 'documental' ? 'documental' : 'só um serviço a acompanhar' }}. Ao registrar um processo ou procedimento, a atuação evolui sozinha e a mudança entra no histórico.</p>
           <details class="mt-3" :open="partesDaDemanda(k.id).length > 0">
             <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Partes e interessados <span class="normal-case tracking-normal font-normal">· {{ partesDaDemanda(k.id).length }}</span></summary>
-            <PartesDemanda class="mt-2" :partes="partesDaDemanda(k.id)" :caso-id="k.id" :judicial="processosDaDemanda(k.id).some(p => p.natureza === 'judicial')" :extrajudicial="processosDaDemanda(k.id).some(p => p.natureza === 'extrajudicial')" @mudou="carregar" />
+            <PartesDemanda class="mt-2" :partes="partesDaDemanda(k.id)" :caso-id="k.id" :judicial="processosDaDemanda(k.id).some(p => p.natureza === 'judicial')" :extrajudicial="processosDaDemanda(k.id).some(p => p.natureza === 'extrajudicial')" :processos="processosDaDemanda(k.id)" @mudou="carregar" />
           </details>
           <InformacoesCliente :key="`d${k.id}`" class="mt-3" :contato-id="dados.contato.id" :caso-id="k.id" :sem-servico="!k.procedimento" iniciar-aberto />
           <details class="mt-3" :open="!!(k.analise || k.fatos || k.estrategia || k.conclusao || k.riscos || k.decisao || notasDaDemanda(k.id).length)">
@@ -377,7 +383,7 @@ import { useModelos } from '../../composables/useModelos'
 import { brl, dataCurta, dataHora, diaRelativo, telefoneFormatado, whatsappLink } from '../../utils/formatadores'
 import { useCrmStore } from '../../stores/crm'
 
-interface Detalhe { processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Demanda[]; notas: DemandaNota[]; responsaveis: Record<string, string>; etapas: ProcessoEtapa[]; pendencias: ProcessoPendencia[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
+interface Detalhe { participacoes?: { id: number; papel: string; polo: string | null; caso_id: number; demanda: string; cliente_id: number; cliente: string }[]; processos: Processo[]; partes: Parte[]; movimentacoes: Movimentacao[]; tarefas: { id: number; titulo: string; prazo: string; prioridade: string; caso_id: number | null }[]; contato: Contato; honorarios: Honorario[]; mensagens: MensagemWhatsapp[]; atividades: Atividade[]; documentos: Documento[]; casos: Demanda[]; notas: DemandaNota[]; responsaveis: Record<string, string>; etapas: ProcessoEtapa[]; pendencias: ProcessoPendencia[]; compromissos: Compromisso[]; checklist?: ChecklistFicha }
 
 const props = defineProps<{ isOpen: boolean; contatoId: number | null; abaInicial?: string; modeloInicial?: string | null }>()
 const emit = defineEmits<{ close: []; editar: [c: Contato]; andamento: [c: Contato] }>()

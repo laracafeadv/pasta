@@ -140,3 +140,14 @@ Tela **Intimações** (`/intimacoes`, menu Trabalho): o escritório registra cad
 - Fila **A tratar / Tratadas**, com os sem prazo em destaque no topo; "tratada" dá baixa no prazo e na tarefa; reabrir desfaz; excluir remove o prazo e a tarefa pendentes gerados.
 - Só processo judicial (o banco recusa intimação em procedimento extrajudicial, que usa "Exigências / pendências"). Tabela `intimacoes`; regras em `server/utils/intimacoes.ts`. Testes: `tests/intimacoes/` e `supabase/tests/intimacoes.sql`.
 - Limite conhecido: a calculadora não conhece feriados estaduais/municipais nem suspensões do tribunal; a tela avisa para conferir o vencimento no tribunal.
+
+## Fase 5 — Partes, interessados e pessoas relacionadas
+
+**Regra:** uma pessoa = um registro em `contatos`. Parte/interessado é só um *papel* dessa pessoa numa demanda (`partes.contato_id`), nunca uma segunda ficha.
+
+- **Escolher ou cadastrar (`SeletorPessoa` + `POST /api/partes`)**: busca única (`GET /api/pessoas/buscar`: nome, e-mail, telefone). `pessoa_id` vincula a existente; `nova_pessoa` passa por `resolverPessoa` (`server/utils/partes.ts`): (1) telefone já cadastrado → reaproveita; (2) nome idêntico (sem acento/caixa) → `409` com `data.candidatas` (usar esta / é outra pessoa → `confirmar_nova`); (3) com telefone cadastra como `relacionado` (fora do funil); (4) sem telefone fica parte "sem cadastro", vinculável depois (`POST /api/partes/:id/vincular`).
+- **Papel** é texto livre com sugestões por contexto (`papeisSugeridos`), então "outro" sempre é possível. **Polo** só em processo judicial. `partes.processo_id` (opcional) liga a parte a um processo/procedimento da mesma demanda (trigger `checar_parte_processo`).
+- **Banco:** índice único `partes_caso_pessoa_uq (caso_id, contato_id)` impede a mesma pessoa duas vezes na demanda; apagar pessoa/processo preserva a parte (FK `set null`).
+- **Edição/remoção:** `PUT /api/partes/:id` (papel, polo, processo, observação); `DELETE` só desvincula — a pessoa continua cadastrada.
+- **Histórico:** ações gravam em `atividades` na demanda do cliente e na ficha da própria pessoa; a ficha mostra "Também aparece como parte em…" (`participacoes`).
+- Testes: `tests/fase5/rodar.sh` (regras) e `supabase/tests/fase5_partes_pessoas.sql` (banco).

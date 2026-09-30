@@ -84,7 +84,13 @@ export const DESFECHOS_EXTRAJUDICIAL: Desfecho[] = [
 ]
 export const desfechosDa = (natureza: string) => (natureza === 'judicial' ? DESFECHOS_JUDICIAL : DESFECHOS_EXTRAJUDICIAL)
 
-// ─── Partes e interessados: papéis próprios de cada natureza ───────────────────────────────────
-export const PAPEIS_JUDICIAL = ['Autor / Requerente', 'Réu / Requerido', 'Inventariante', 'Herdeiro', 'Meeiro / cônjuge sobrevivente', 'Terceiro interessado', 'Advogado da parte contrária', 'Ministério Público', 'Testemunha']
-export const PAPEIS_EXTRAJUDICIAL = ['Outorgante / interessado', 'Cônjuge / companheiro(a)', 'Inventariante', 'Herdeiro', 'Meeiro / cônjuge sobrevivente', 'Procurador', 'Testemunha', 'Escrevente / contato no cartório']
+// ─── Partes e interessados: papéis (sugestões; o papel é texto livre, então "outro" é sempre possível) ─────
+export const PAPEIS_BASE = ['Cônjuge / companheiro(a)', 'Herdeiro', 'Parte contrária', 'Interessado', 'Representante legal', 'Procurador', 'Inventariante', 'Meeiro / cônjuge sobrevivente', 'Testemunha']
+export const PAPEIS_JUDICIAL = [...PAPEIS_BASE, 'Autor / Requerente', 'Réu / Requerido', 'Terceiro interessado', 'Advogado da parte contrária', 'Ministério Público']
+export const PAPEIS_EXTRAJUDICIAL = [...PAPEIS_BASE, 'Outorgante / interessado', 'Escrevente / contato no cartório']
 export const POLOS_PARTE = { ativo: 'Polo ativo', passivo: 'Polo passivo' } as const
+/** Sugestões de papel conforme o que a demanda tem (judicial, extrajudicial, os dois ou nenhum). Sempre dá para digitar outro. */
+export function papeisSugeridos(judicial: boolean, extrajudicial: boolean, usados: string[] = []) {
+  const base = judicial && !extrajudicial ? PAPEIS_JUDICIAL : extrajudicial && !judicial ? PAPEIS_EXTRAJUDICIAL : [...new Set([...PAPEIS_EXTRAJUDICIAL, ...PAPEIS_JUDICIAL])]
+  return [...new Set([...base, ...usados.filter(Boolean)])]
+}

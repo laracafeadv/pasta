@@ -528,13 +528,14 @@ export interface Parte {
   nome: string
   papel: string
   polo?: 'ativo' | 'passivo' | null
+  processo_id?: number | null
   documento: string | null
   telefone: string | null
   email: string | null
   observacao: string | null
   contato?: { id: number; nome: string | null; etapa: string } | null
 }
-export const PARTE_CAMPOS = ['caso_id', 'contato_id', 'nome', 'papel', 'polo', 'documento', 'telefone', 'email', 'observacao'] as const
+export const PARTE_CAMPOS = ['caso_id', 'contato_id', 'nome', 'papel', 'polo', 'processo_id', 'documento', 'telefone', 'email', 'observacao'] as const
 
 // ─── Movimentações (andamentos) de um processo/procedimento ────────────────────────────────
 export const TIPOS_MOVIMENTACAO = ['Andamento', 'Petição / protocolo', 'Decisão / despacho', 'Publicação / intimação', 'Audiência / ato', 'Registro / certidão', 'Conclusão', 'Outro'] as const

@@ -23,6 +23,7 @@ class Q {
   eq(k: string, v: any) { this.filtros.push(r => r[k] === v); return this }
   neq(k: string, v: any) { this.filtros.push(r => r[k] !== v); return this }
   in(k: string, vs: any[]) { this.filtros.push(r => vs.includes(r[k])); return this }
+  ilike(k: string, pat: string) { const q = pat.replace(/%/g, '').toLowerCase(); this.filtros.push(r => String(r[k] ?? '').toLowerCase().includes(q)); return this }
   is(k: string, v: any) { this.filtros.push(r => (r[k] ?? null) === v); return this }
   limit(n: number) { this.lim = n; return this }
   order(c: string) { this.ordens.push(c); return this }
