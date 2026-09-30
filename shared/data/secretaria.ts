@@ -15,3 +15,10 @@ export interface SuspensaoExpediente { id: number; de: string; ate: string; trib
 /** Um item da agenda PRÓPRIA da Secretária (não depende das telas de Agenda/Prazos/Tarefas do CRM). */
 export interface ItemAgenda { id: number; tipo: 'prazo' | 'audiencia' | 'consulta' | 'compromisso' | 'tarefa'; titulo: string; dia: string; hora: string | null; local: string | null; cliente: string | null; obs: string | null; meu: boolean }
 export interface InicioSecretaria { hoje: string; config: ConfigSecretaria; lembretes: LembreteRapido[]; suspensoes: SuspensaoExpediente[]; eventos: ItemAgenda[] }
+
+/** Conexão com a conta Google (Gmail e Agenda) e o que vem dela. */
+export interface GoogleStatus { configurado: boolean; conectado: boolean; email: string | null; redirectUri?: string }
+export interface AvisoItem { id: string; tribunal: string; chave: 'tjba' | 'trt5' | 'jf' | 'nac'; cnj: string; movimentacao: string; dataMov: string; dataEmail: string; intimacao: boolean; quando: string; link: string; naoLida: boolean }
+export interface AvisoLancado { prazo: string; evento_link: string | null }
+export interface MailItem { id: string; de: string; assunto: string; previa: string; quando: string; naoLida: boolean; link: string }
+export type CaixaSub = 'principal' | 'naolidos' | 'tudo'

@@ -5,7 +5,8 @@ import { ATALHOS_PADRAO, type AtalhoSecretaria, type InicioSecretaria, type Item
 import { NAO_CONFIRMADO, TRIBUNAIS, addDays, contarPrazo, dow, feriadosDe, type ContextoPrazo } from '~~/shared/utils/calendarioForense'
 import { interpretarTexto, type PropostaSecretaria } from '~~/shared/utils/secretariaTexto'
 
-const emit = defineEmits<{ urgentes: [number] }>()
+const props = defineProps<{ semPrazo?: { id: string; cnj: string; tribunal: string; movimentacao: string }[]; googleConectado?: boolean }>()
+const emit = defineEmits<{ urgentes: [number]; aba: [string] }>()
 
 // Início da Secretária: Hoje, campo "O que você precisa?", atalhos, agenda de 14 dias, lembretes e contagem de prazo.
 // Tem agenda PRÓPRIA (tabela secretaria_itens): não lê nem grava nas telas de Agenda, Prazos e Tarefas do CRM.
@@ -168,6 +169,11 @@ const fdsVenc = computed(() => res.value ? dow(res.value.vencimento) : 1)
         <button type="button" class="tile" :class="{ alerta: atrasados.length }" data-testid="tile-atrasados" @click="irPara('sLembretes')">
           <span class="t">Lembretes atrasados</span><span class="n">{{ atrasados.length }}</span>
           <ul v-if="atrasados.length"><li v-for="l in atrasados.slice(0, 3)" :key="l.id">{{ l.texto }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
+        </button>
+        <button type="button" class="tile" :class="{ alerta: (props.semPrazo?.length ?? 0) > 0 }" data-testid="tile-intim" @click="emit('aba', 'intimacoes')">
+          <span class="t">Intimações sem prazo lançado</span><span class="n">{{ props.semPrazo?.length ?? 0 }}</span>
+          <ul v-if="props.semPrazo?.length"><li v-for="i in props.semPrazo.slice(0, 3)" :key="i.id">{{ i.cnj || i.tribunal }} · {{ i.movimentacao }}</li></ul>
+          <span v-else class="vazio">{{ props.googleConectado ? 'Nada por aqui.' : 'Conecte o Google na aba Intimações.' }}</span>
         </button>
         <button type="button" class="tile" data-testid="tile-hoje" @click="irPara('sAgenda')">
           <span class="t">Compromissos de hoje</span><span class="n">{{ compromissosHoje.length }}</span>

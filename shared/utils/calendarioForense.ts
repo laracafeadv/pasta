@@ -83,8 +83,21 @@ export function motivoNaoUtil(iso: string, ctx: ContextoPrazo): string | null {
   for (const s of ctx.susp || []) if (iso >= s.de && iso <= s.ate && (s.trib === 'todos' || s.trib === ctx.trib)) return 'Suspensão anotada: ' + (s.motivo || 'sem motivo')
   return null
 }
-export function contarPrazo(inicio: string, dias: number, ctx: ContextoPrazo): { vencimento: string; pulados: { d: string; motivo: string }[] } {
+export function contarPrazo(inicio: string, dias: number, ctx: ContextoPrazo, modo: 'uteis' | 'corridos' = 'uteis'): { vencimento: string; pulados: { d: string; motivo: string }[] } {
   let cur = inicio, n = 0; const pulados: { d: string; motivo: string }[] = []
+  if (modo === 'corridos') {
+    // Dias corridos: fins de semana e feriados contam; só o recesso (20/12 a 20/01) suspende o prazo (CPC, art. 220).
+    // Se o último dia cair em dia sem expediente, prorroga para o primeiro dia útil seguinte (art. 224, §1º).
+    while (n < dias) {
+      cur = addDays(cur, 1)
+      const md = cur.slice(5)
+      if (md >= '12-20' || md <= '01-20') { pulados.push({ d: cur, motivo: 'Recesso forense (20/12 a 20/01)' }); continue }
+      n++
+    }
+    let m: string | null
+    while ((m = motivoNaoUtil(cur, ctx))) { pulados.push({ d: cur, motivo: 'Prorrogado: ' + m }); cur = addDays(cur, 1) }
+    return { vencimento: cur, pulados }
+  }
   while (n < dias) {
     cur = addDays(cur, 1)
     const m = motivoNaoUtil(cur, ctx)

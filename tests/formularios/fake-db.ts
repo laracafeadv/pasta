@@ -9,7 +9,8 @@ const CASCATA: Record<string, [string, string][]> = { formularios: [['formulario
 class Q {
   private filtros: ((r: any) => boolean)[] = []
   private ordens: string[] = []
-  private op: 'select' | 'insert' | 'update' | 'delete' = 'select'
+  private op: 'select' | 'insert' | 'update' | 'delete' | 'upsert' = 'select'
+  private conflito: string[] = []
   private payload: any
   private one: 'single' | 'maybe' | null = null
   private cols = '*'
@@ -19,6 +20,7 @@ class Q {
   select(c = '*') { this.cols = c; this.ret = true; return this }
   insert(p: any) { this.op = 'insert'; this.payload = p; return this }
   update(p: any) { this.op = 'update'; this.payload = p; return this }
+  upsert(p: any, o?: { onConflict?: string }) { this.op = 'upsert'; this.payload = p; this.conflito = String(o?.onConflict ?? 'id').split(',').map(x => x.trim()); return this }
   delete() { this.op = 'delete'; return this }
   eq(k: string, v: any) { this.filtros.push(r => r[k] === v); return this }
   neq(k: string, v: any) { this.filtros.push(r => r[k] !== v); return this }
@@ -45,7 +47,13 @@ class Q {
   private run() {
     const tab = db[this.t] ?? (db[this.t] = [])
     let rows: any[]
-    if (this.op === 'insert') {
+    if (this.op === 'upsert') {
+      rows = []
+      for (const p of (Array.isArray(this.payload) ? this.payload : [this.payload])) {
+        const ex = tab.find(r => this.conflito.every(c => r[c] === p[c]))
+        if (ex) { Object.assign(ex, p); rows.push(ex) } else { const n = { id: seq++, created_at: new Date().toISOString(), ...p }; tab.push(n); rows.push(n) }
+      }
+    } else if (this.op === 'insert') {
       const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(p => ({ id: seq++, created_at: new Date().toISOString(), ...(this.t === 'formulario_perguntas' ? { versao: 1, arquivada: false } : {}), ...(this.t === 'formularios' ? { ativo: true } : {}), ...(this.t === 'intimacoes' ? { status: 'a_tratar' } : {}), ...(this.t === 'compromissos' ? { status: 'pendente' } : {}), ...(this.t === 'tarefas_internas' ? { concluida: false } : {}), ...p }))
       tab.push(...novos); rows = novos
     } else if (this.op === 'delete') {

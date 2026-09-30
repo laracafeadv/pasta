@@ -130,6 +130,10 @@ export default defineNuxtConfig({
     whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? '',
     whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? '',
     whatsappAppSecret: process.env.WHATSAPP_APP_SECRET ?? '',
+    // Google (Gmail e Agenda da usuária, via login OAuth): Google Cloud Console → Credenciais → ID do cliente OAuth (aplicativo da Web)
+    googleClientId: process.env.GOOGLE_CLIENT_ID ?? '',
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? '',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
       originalSiteUrl: process.env.NUXT_PUBLIC_ORIGINAL_SITE_URL ?? '',

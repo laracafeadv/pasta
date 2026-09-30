@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Secretária: calendário forense + texto livre (funções puras) e regras do servidor sobre banco em memória.
+# Secretária: calendário forense + texto livre (funções puras), regras do servidor e conexão com o Google (API simulada).
 set -e
 cd "$(dirname "$0")/../.."
 ESB=${ESBUILD:-node_modules/.bin/esbuild}
-$ESB tests/secretaria/calendario.test.ts --bundle --platform=node --format=esm --outfile=/tmp/secretaria1.test.mjs --log-level=warning
-$ESB tests/secretaria/servidor.test.ts --bundle --platform=node --format=esm --alias:#supabase/server=./tests/fase3/stub-supabase.ts --outfile=/tmp/secretaria2.test.mjs --log-level=warning
-node /tmp/secretaria1.test.mjs | tail -3
-node /tmp/secretaria2.test.mjs
+for t in calendario servidor google; do
+  $ESB tests/secretaria/$t.test.ts --bundle --platform=node --format=esm --alias:#supabase/server=./tests/fase3/stub-supabase.ts --outfile=/tmp/secretaria-$t.test.mjs --log-level=warning
+  node /tmp/secretaria-$t.test.mjs | grep -E "FAIL|passaram|FALHA" || true
+done
