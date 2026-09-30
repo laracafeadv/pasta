@@ -175,3 +175,15 @@ O CRM não usa os conectores do Claude (só existem no artefato): fala **direto 
 - **Hoje e selo:** as intimações sem prazo lançado entram como cartão na faixa Hoje e no número da aba Intimações.
 - **Limites:** não foi testado contra o Google real (sem credenciais na montagem); o eproc e as nomeações seguem o formato do assunto/prévia quando o corpo não traz a tabela de movimentos do PJe Push. O Google pode exigir verificação do app para uso fora do modo "Teste" (usuária de teste é suficiente para uso próprio).
 - **Testes:** `tests/secretaria/google.test.ts` (cifra, state, renovação de token, leitura e cache, lançar prazo, chamadas à API do Google), `tests/secretaria/ui-google.mjs` (navegador), `supabase/tests/secretaria_google.sql`.
+
+### Secretária — etapa 3: aba Leads (contatos novos)
+
+Quadro próprio da Secretária (tabela `secretaria_leads`), **independente** das telas de Clientes/Leads do CRM.
+
+- **Etapas:** Novo contato → Ag. consulta → Proposta enviada → Fechou → Não fechou (cards arrastáveis; em telas de toque há "Mover para…"). "Sumiu" **não é etapa**: é a situação da conversa (aguardando o cliente há mais de 3 dias). "Não fechou" exige motivo (também no banco).
+- **Regras (`shared/utils/leadsSecretaria.ts`, puras e testadas):** semana começa na segunda (horário de Brasília); conversão = fechados ÷ leads do período (pela data do contato); o número da aba conta leads em etapas ativas aguardando a resposta da Dra. Lara.
+- **Rotas:** `GET|POST /api/secretaria/leads`, `PUT|DELETE /leads/[id]`, `POST /leads/[id]/mover|conversa|consulta`, `GET /leads/consultas`, `POST /leads/importar`.
+- **Consulta na agenda:** na coluna "Ag. consulta" procura no Google Agenda um evento com o nome do lead (verde = marcada, amarelo = já passou, vermelho = não tem). "Marcar na agenda" cria o evento (lembretes 1 dia e 1 hora antes; Meet se on-line). Exige a conexão Google da etapa 2; sem ela a aba funciona, sem as cores.
+- **Importar conversa:** .txt ou .zip exportado do WhatsApp (o .zip é lido no navegador com `jszip`). Com `ANTHROPIC_API_KEY` (e opcional `ANTHROPIC_MODEL`) a IA preenche a ficha; sem ela, o servidor extrai só o que o arquivo mostra (nome, telefone, datas) e avisa. Nada é salvo antes de a usuária conferir.
+- **Limites:** não testado contra o Google nem a API da Anthropic reais, nem com exportações reais do WhatsApp em .zip; só com APIs simuladas.
+- **Testes:** `tests/secretaria/leads*.test.ts`, `tests/secretaria/ui-leads.mjs` (Playwright, APIs simuladas), `supabase/tests/secretaria_leads.sql`.

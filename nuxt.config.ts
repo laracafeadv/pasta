@@ -134,6 +134,9 @@ export default defineNuxtConfig({
     googleClientId: process.env.GOOGLE_CLIENT_ID ?? '',
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
     googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? '',
+    // Claude (Anthropic): leitura da conversa exportada do WhatsApp na aba Leads da Secretária
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
+    anthropicModel: process.env.ANTHROPIC_MODEL ?? '',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
       originalSiteUrl: process.env.NUXT_PUBLIC_ORIGINAL_SITE_URL ?? '',

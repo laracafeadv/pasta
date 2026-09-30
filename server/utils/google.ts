@@ -113,7 +113,12 @@ export interface Api {
   threadMeta(id: string): Promise<(MensagemSimples & { id?: string })[]>
   threadCompleto(id: string): Promise<(MensagemSimples & { plaintextBody: string })[]>
   criarEvento(e: { titulo: string; dia: string; descricao: string; avisos: number[] }): Promise<{ id: string; link: string }>
+  /** Eventos da agenda principal com o texto `q` (nome do lead) entre duas datas (AAAA-MM-DD). */
+  buscarEventos(q: string, de: string, ate: string): Promise<EventoAgenda[]>
+  /** Consulta com dia e hora (horário da Bahia), lembretes e, se on-line, link do Google Meet. */
+  criarConsulta(e: { titulo: string; dia: string; hora: string; duracaoMin: number; online: boolean; local: string; descricao: string; avisos: number[] }): Promise<{ id: string; link: string; meet: string }>
 }
+export interface EventoAgenda { dia: string; hora: string; link: string; titulo: string; descricao: string }
 const decodifica = (d?: string) => d ? Buffer.from(d.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8') : ''
 const cabecalho = (m: any, n: string): string => (m?.payload?.headers ?? []).find((h: any) => String(h.name).toLowerCase() === n)?.value ?? ''
 export const emailDe = (from: string) => (from.match(/<([^>]+)>/)?.[1] ?? from).trim().toLowerCase()
@@ -157,6 +162,26 @@ export function criarApiGoogle(token: string, conta: string | null): Api {
     async threadCompleto(id) {
       const j = await api(token, `${g}/${encodeURIComponent(id)}?format=full`)
       return (j.messages ?? []).map((m: any) => mensagemSimples(m, id, conta, true) as any)
+    },
+    async buscarEventos(q, de, ate) {
+      const u = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events')
+      u.searchParams.set('q', q); u.searchParams.set('timeMin', `${de}T00:00:00-03:00`); u.searchParams.set('timeMax', `${ate}T00:00:00-03:00`)
+      u.searchParams.set('singleEvents', 'true'); u.searchParams.set('orderBy', 'startTime'); u.searchParams.set('maxResults', '20')
+      const j = await api(token, u.toString())
+      const dia = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Bahia' }).format(new Date(iso))
+      const hora = (iso: string) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
+      return ((j.items ?? []) as any[]).filter(e => e.status !== 'cancelled').map(e => {
+        const st = e.start ?? {}
+        return { dia: st.date ?? (st.dateTime ? dia(st.dateTime) : ''), hora: st.dateTime ? hora(st.dateTime) : '', link: e.htmlLink ?? '', titulo: e.summary ?? '', descricao: e.description ?? '' }
+      }).filter(e => e.dia)
+    },
+    async criarConsulta({ titulo, dia, hora, duracaoMin, online, local, descricao, avisos }) {
+      const ini = `${dia}T${hora}:00-03:00`
+      const fim = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Bahia', dateStyle: 'short', timeStyle: 'medium' }).format(new Date(Date.parse(ini) + duracaoMin * 60000)).replace(' ', 'T') + '-03:00'
+      const corpo: Record<string, unknown> = { summary: titulo, description: descricao, location: local, colorId: '5', start: { dateTime: ini, timeZone: 'America/Bahia' }, end: { dateTime: fim, timeZone: 'America/Bahia' }, reminders: { useDefault: false, overrides: avisos.map(minutes => ({ method: 'popup', minutes })) } }
+      if (online) corpo.conferenceData = { createRequest: { requestId: randomBytes(8).toString('hex'), conferenceSolutionKey: { type: 'hangoutsMeet' } } }
+      const j = await api(token, 'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=' + (online ? '1' : '0'), { method: 'POST', body: JSON.stringify(corpo) })
+      return { id: j.id ?? '', link: j.htmlLink ?? '', meet: j.hangoutLink ?? '' }
     },
     async criarEvento({ titulo, dia, descricao, avisos }) {
       const prox = new Date(Date.parse(dia + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10)

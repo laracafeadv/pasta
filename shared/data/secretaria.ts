@@ -22,3 +22,15 @@ export interface AvisoItem { id: string; tribunal: string; chave: 'tjba' | 'trt5
 export interface AvisoLancado { prazo: string; evento_link: string | null }
 export interface MailItem { id: string; de: string; assunto: string; previa: string; quando: string; naoLida: boolean; link: string }
 export type CaixaSub = 'principal' | 'naolidos' | 'tudo'
+
+/** Lead da aba Leads da Secretária (tabela secretaria_leads). */
+export type EtapaLead = 'novo' | 'consulta' | 'proposta' | 'fechou' | 'nao_fechou'
+export type OrigemLead = 'Instagram' | 'Indicação' | 'Google' | 'WhatsApp' | 'Outro'
+export interface LeadSecretaria {
+  id: number; created_at: string; updated_at: string; nome: string; whatsapp: string | null; origem: OrigemLead; origem_detalhe: string | null
+  area: string | null; cidade: string | null; data_contato: string; etapa: EtapaLead; conversa: 'minha' | 'cliente'; conversa_desde: string
+  caso: string | null; consulta_data: string | null; consulta_hora: string | null; consulta_link: string | null
+  honorarios_prop: number | null; valor_fechado: number | null; exito: number | null; motivo_nao_fechou: string | null; proximo_passo: string | null; obs: string | null
+}
+export type LeadEntrada = Partial<Omit<LeadSecretaria, 'id' | 'created_at' | 'updated_at'>>
+export interface ConsultaNaAgenda { st: 'verde' | 'amarelo' | 'vermelho' | 'erro'; dia?: string; hora?: string; link?: string; msg?: string }

@@ -62,7 +62,7 @@ let cCompleto = 0, cLista: string[] = []
 const fake = (over: Partial<Api> = {}): Api => ({
   async listarThreads(q) { cLista.push(q); if (/from:jus\.br/.test(q) && /is:unread/.test(q)) return [T('a', 'h1'), T('b', 'h1')]; if (/from:jus\.br/.test(q)) return [T('a', 'h1'), T('b', 'h1'), T('c', 'h1')]; return [] },
   async threadMeta() { return [] }, async threadCompleto(id) { cCompleto++; return corpos[id]! },
-  async criarEvento() { return { id: 'ev1', link: 'https://cal/ev1' } }, ...over,
+  async criarEvento() { return { id: 'ev1', link: 'https://cal/ev1' } }, async buscarEventos() { return [] }, async criarConsulta() { return { id: 'c', link: 'l', meet: '' } }, ...over,
 })
 zerar(); db.google_avisos_cache = []
 let av = await intimacoesDoGmail(fake(), banco, U)
@@ -131,6 +131,16 @@ ok(reqs[0].url.startsWith('https://gmail.googleapis.com/gmail/v1/users/me/thread
 const ev = await real.criarEvento({ titulo: 'PRAZO FATAL — x', dia: '2026-10-22', descricao: 'd', avisos: [4320, 1440] })
 const corpoEv = JSON.parse(reqs[1].init.body)
 ok(reqs[1].url === 'https://www.googleapis.com/calendar/v3/calendars/primary/events' && reqs[1].init.method === 'POST' && corpoEv.start.date === '2026-10-22' && corpoEv.end.date === '2026-10-23' && corpoEv.colorId === '11' && corpoEv.reminders.useDefault === false && JSON.stringify(corpoEv.reminders.overrides) === '[{"method":"popup","minutes":4320},{"method":"popup","minutes":1440}]' && ev.link === 'https://cal/e1', 'evento do Google Agenda: dia todo, vermelho, lembretes 3 dias e 1 dia antes')
+// agenda: buscar eventos e criar consulta
+;(globalThis as any).fetch = async (url: string, init: any) => { reqs.push({ url: String(url), init }); return { ok: true, status: 200, json: async () => ({ id: 'c1', htmlLink: 'https://cal/c1', hangoutLink: 'https://meet/x', items: [{ status: 'confirmed', summary: 'CONSULTA — Maria', description: 'd', htmlLink: 'https://cal/m', start: { dateTime: '2026-10-05T13:00:00Z' } }, { status: 'cancelled', summary: 'x', start: { date: '2026-10-06' } }, { status: 'confirmed', summary: 'Dia todo', start: { date: '2026-10-07' } }] }) } }
+const evs = await real.buscarEventos('Maria', '2026-09-30', '2027-01-28')
+const uEv = new URL(reqs.at(-1).url)
+ok(uEv.pathname === '/calendar/v3/calendars/primary/events' && uEv.searchParams.get('q') === 'Maria' && uEv.searchParams.get('timeMin') === '2026-09-30T00:00:00-03:00' && uEv.searchParams.get('singleEvents') === 'true' && evs.length === 2 && evs[0]!.dia === '2026-10-05' && evs[0]!.hora === '10:00' && evs[1]!.dia === '2026-10-07' && evs[1]!.hora === '', 'buscar eventos: consulta pelo nome, horário da Bahia, cancelados fora, dia inteiro sem hora')
+const cn = await real.criarConsulta({ titulo: 'CONSULTA — Maria', dia: '2026-10-05', hora: '14:30', duracaoMin: 90, online: true, local: 'On-line', descricao: 'd', avisos: [1440, 60] })
+const cb = JSON.parse(reqs.at(-1).init.body)
+ok(reqs.at(-1).url.includes('conferenceDataVersion=1') && cb.start.dateTime === '2026-10-05T14:30:00-03:00' && cb.end.dateTime === '2026-10-05T16:00:00-03:00' && cb.colorId === '5' && JSON.stringify(cb.reminders.overrides.map((r: any) => r.minutes)) === '[1440,60]' && cb.conferenceData.createRequest.conferenceSolutionKey.type === 'hangoutsMeet' && cn.meet === 'https://meet/x', 'criar consulta: horário da Bahia, 90 min, lembretes 1 dia e 1 hora antes, Google Meet quando on-line')
+await real.criarConsulta({ titulo: 't', dia: '2026-10-05', hora: '09:00', duracaoMin: 60, online: false, local: 'Presencial', descricao: 'd', avisos: [1440, 60] })
+ok(reqs.at(-1).url.includes('conferenceDataVersion=0') && !('conferenceData' in JSON.parse(reqs.at(-1).init.body)), 'consulta presencial não pede Meet')
 ;(globalThis as any).fetch = async () => ({ ok: false, status: 403, json: async () => ({ error: { message: 'Request had insufficient authentication scopes.' } }) })
 ok(!!(await lanca(() => real.listarThreads('x', 5), 'Faltou uma permissão')), 'permissão faltando no Google vira mensagem clara')
 ;(globalThis as any).fetch = fetchReal
