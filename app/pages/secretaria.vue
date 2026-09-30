@@ -9,8 +9,8 @@ import { useAvatar } from '~/composables/useAvatar'
 definePageMeta({ middleware: ['auth', 'staff'] })
 useHead({ title: 'Secretária' })
 
-// Painel pessoal para organizar o dia. Só o Início está pronto; as outras abas mostram "em breve"
-// (Intimações e Leads apontam para as telas que o CRM já tem).
+// Painel pessoal para organizar o dia, independente das demais telas do CRM (agenda e prazos próprios).
+// Só o Início está pronto; as outras abas mostram "em breve".
 const profileStore = useProfileStore()
 const { profile } = storeToRefs(profileStore)
 const { uploadAvatar, isUploading, error: avatarError } = useAvatar()
@@ -19,12 +19,12 @@ onMounted(() => { if (!profile.value) profileStore.fetchMe() })
 
 const aba = ref<string>('inicio')
 const urgentes = ref(0)
-const novos = ref({ intimacoes: 0, leads: 0 })
 const ABAS = [
   { id: 'inicio', nome: 'Início' }, { id: 'intimacoes', nome: 'Intimações' }, { id: 'email', nome: 'E-mail' },
   { id: 'leads', nome: 'Leads' }, { id: 'iniciais', nome: 'Iniciais' }, { id: 'noticias', nome: 'Notícias' }, { id: 'conteudo', nome: 'Conteúdo' },
 ]
-const selo = (id: string) => id === 'inicio' ? urgentes.value : id === 'intimacoes' ? novos.value.intimacoes : id === 'leads' ? novos.value.leads : 0
+// Cada aba ganha o seu número quando for montada; por ora só o Início tem o que contar.
+const selo = (id: string) => id === 'inicio' ? urgentes.value : 0
 
 const tratamento = computed(() => profile.value?.role === 'admin' ? 'Dra. Lara' : (profile.value?.name || '').split(' ')[0] || 'Olá')
 const hora = Number(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', hour12: false }).format(new Date()))
@@ -34,9 +34,6 @@ async function trocarFoto(ev: Event) {
   const f = (ev.target as HTMLInputElement).files?.[0]
   if (f) await uploadAvatar(f)
   if (fotoIn.value) fotoIn.value.value = ''
-}
-const EM_BREVE: Record<string, { link?: string; texto?: string }> = {
-  intimacoes: { link: '/intimacoes', texto: 'Abrir as intimações do CRM' }, leads: { link: '/leads', texto: 'Abrir os leads do CRM' },
 }
 </script>
 
@@ -64,11 +61,10 @@ const EM_BREVE: Record<string, { link?: string; texto?: string }> = {
       </button>
     </nav>
 
-    <SecretariaInicio v-show="aba === 'inicio'" @urgentes="urgentes = $event" @novos="novos = $event" />
+    <SecretariaInicio v-show="aba === 'inicio'" @urgentes="urgentes = $event" />
     <section v-if="aba !== 'inicio'" class="cartao text-center py-12">
       <h2 class="text-lg font-semibold">{{ ABAS.find(a => a.id === aba)?.nome }}</h2>
       <p class="text-sm text-gray-500 mt-2">Em breve. Esta aba será montada na próxima etapa.</p>
-      <NuxtLink v-if="EM_BREVE[aba]?.link" :to="EM_BREVE[aba]!.link" class="inline-block mt-4 text-sm font-semibold underline text-secondary-dark">{{ EM_BREVE[aba]!.texto }}</NuxtLink>
     </section>
     <p class="text-[11px] text-gray-400 text-center max-w-3xl mx-auto pt-2">Comunicação e conteúdo do escritório seguem o Provimento 205/2021 da OAB: sem captação de clientela, sem promessa de resultado e sem expor dados de clientes. Prazos calculados aqui são apoio: confirme sempre no sistema do tribunal.</p>
   </div>

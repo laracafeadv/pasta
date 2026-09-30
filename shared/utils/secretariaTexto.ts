@@ -2,11 +2,11 @@ import { addDays, dow } from './calendarioForense'
 
 /**
  * Interpreta, sem IA e sem rede, o que a advogada escreve no campo "O que você precisa?".
- * Entende: tipo (prazo, audiência, consulta, reunião, tarefa, lembrete), datas relativas (hoje, amanhã, depois de amanhã,
+ * Entende: tipo (prazo, audiência, consulta, reunião/compromisso, tarefa, lembrete), datas relativas (hoje, amanhã, depois de amanhã,
  * dia da semana, "dia 15", 15/10, daqui a N dias), hora (10h, 10h30, 14:00, às 9) e dias de prazo (15 dias úteis).
  * O resultado é sempre uma PROPOSTA: a tela mostra o que foi entendido e a pessoa confirma ou corrige antes de criar.
  */
-export type TipoSecretaria = 'lembrete' | 'prazo' | 'audiencia' | 'consulta' | 'reuniao' | 'tarefa'
+export type TipoSecretaria = 'lembrete' | 'prazo' | 'audiencia' | 'consulta' | 'compromisso' | 'tarefa'
 export interface PropostaSecretaria { tipo: TipoSecretaria; titulo: string; data: string; hora: string; dias: number | null; inicio: string; entendeu: string[] }
 
 const SEMANA: Record<string, number> = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 }
@@ -59,7 +59,7 @@ export function interpretarTexto(texto: string, hoje: string): PropostaSecretari
   if (/\bprazo\b/.test(t)) tipo = 'prazo'
   else if (/\baudiencia\b/.test(t)) tipo = 'audiencia'
   else if (/\bconsulta\b/.test(t)) tipo = 'consulta'
-  else if (/\breuniao\b/.test(t)) tipo = 'reuniao'
+  else if (/\b(reuniao|compromisso)\b/.test(t)) tipo = 'compromisso'
   else if (/\btarefa\b/.test(t) && !/lembr/.test(t)) tipo = 'tarefa'
 
   let restante = original
@@ -93,7 +93,7 @@ export function interpretarTexto(texto: string, hoje: string): PropostaSecretari
     .replace(/\s+/g, ' ').replace(/^[\s,.;:-]+|[\s,.;:-]+$/g, '')
     .replace(/^(de|para|que|sobre|com|na|no|em|a|o)\s+/i, '')
     .replace(/\s*,\s*$/, '')
-  if (!titulo) titulo = tipo === 'prazo' ? 'Prazo' : tipo === 'audiencia' ? 'Audiência' : tipo === 'consulta' ? 'Consulta' : tipo === 'reuniao' ? 'Reunião' : original
+  if (!titulo) titulo = tipo === 'prazo' ? 'Prazo' : tipo === 'audiencia' ? 'Audiência' : tipo === 'consulta' ? 'Consulta' : tipo === 'compromisso' ? 'Compromisso' : original
   titulo = titulo.charAt(0).toUpperCase() + titulo.slice(1)
   if (data) entendeu.push('data ' + data.split('-').reverse().join('/'))
   if (hora) entendeu.push('às ' + hora)

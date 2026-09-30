@@ -5,9 +5,10 @@ import { ATALHOS_PADRAO, type AtalhoSecretaria, type InicioSecretaria, type Item
 import { NAO_CONFIRMADO, TRIBUNAIS, addDays, contarPrazo, dow, feriadosDe, type ContextoPrazo } from '~~/shared/utils/calendarioForense'
 import { interpretarTexto, type PropostaSecretaria } from '~~/shared/utils/secretariaTexto'
 
-const emit = defineEmits<{ urgentes: [number]; novos: [{ intimacoes: number; leads: number }] }>()
+const emit = defineEmits<{ urgentes: [number] }>()
 
 // Início da Secretária: Hoje, campo "O que você precisa?", atalhos, agenda de 14 dias, lembretes e contagem de prazo.
+// Tem agenda PRÓPRIA (tabela secretaria_itens): não lê nem grava nas telas de Agenda, Prazos e Tarefas do CRM.
 const dados = ref<InicioSecretaria | null>(null)
 const carregando = ref(true)
 const erro = ref<string | null>(null)
@@ -21,7 +22,7 @@ async function carregar() {
   try {
     dados.value = await $fetch<InicioSecretaria>('/api/secretaria/inicio')
     erro.value = null
-    emit('urgentes', urgentes.value); emit('novos', dados.value.novos)
+    emit('urgentes', urgentes.value)
   } catch (e: any) { erro.value = msg(e, 'Não foi possível carregar a Secretária.') } finally { carregando.value = false }
 }
 onMounted(carregar)
@@ -38,6 +39,7 @@ const TIPOS: Record<string, { nome: string; cor: string }> = {
 
 // ── Hoje ──
 const eventos = computed(() => dados.value?.eventos ?? [])
+const prazosVencidos = computed(() => eventos.value.filter(e => e.tipo === 'prazo' && e.dia < hoje.value))
 const prazosHoje = computed(() => eventos.value.filter(e => e.tipo === 'prazo' && e.dia === hoje.value))
 const prazosAmanha = computed(() => eventos.value.filter(e => e.tipo === 'prazo' && e.dia === addDays(hoje.value, 1)))
 const lembretes = computed(() => dados.value?.lembretes ?? [])
@@ -45,31 +47,31 @@ const atrasados = computed(() => {
   const agora = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', minute: '2-digit' }).format(new Date())
   return lembretes.value.filter(l => !l.feito && l.data && (l.data < hoje.value || (l.data === hoje.value && l.hora && l.hora < agora)))
 })
-const compromissosHoje = computed(() => eventos.value.filter(e => e.dia === hoje.value && e.hora && e.origem === 'compromisso'))
-const urgentes = computed(() => prazosHoje.value.length + prazosAmanha.value.length + atrasados.value.length)
+const compromissosHoje = computed(() => eventos.value.filter(e => e.dia === hoje.value && e.hora && e.tipo !== 'prazo'))
+const urgentes = computed(() => prazosVencidos.value.length + prazosHoje.value.length + prazosAmanha.value.length + atrasados.value.length)
 watch(urgentes, n => emit('urgentes', n))
 function irPara(id: string) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
 
 // ── campo em linguagem natural ──
 const texto = ref('')
-const prop = ref<PropostaSecretaria & { duracao: number; local: string } | null>(null)
+const prop = ref<PropostaSecretaria & { duracao: number; local: string; cliente: string } | null>(null)
 const nlErro = ref<string | null>(null)
 const criando = ref(false)
 function interpretar() {
   nlErro.value = null; aviso.value = null
   if (!texto.value.trim()) return
   const p = interpretarTexto(texto.value, hoje.value)
-  prop.value = { ...p, dias: p.tipo === 'prazo' ? (p.dias ?? 15) : p.dias, duracao: 60, local: '' }
+  prop.value = { ...p, dias: p.tipo === 'prazo' ? (p.dias ?? 15) : p.dias, duracao: 60, local: '', cliente: '' }
 }
 const ctx = computed<ContextoPrazo>(() => ({ trib: config.value.tribunal, ssa: /salvador/i.test(config.value.cidade), fac: config.value.pontos_facultativos, susp: (dados.value?.suspensoes ?? []).map(s => ({ de: s.de, ate: s.ate, trib: s.tribunal, motivo: s.motivo })) }))
 const previa = computed(() => prop.value?.tipo === 'prazo' && prop.value.dias && /^\d{4}-\d{2}-\d{2}$/.test(prop.value.inicio) ? contarPrazo(prop.value.inicio, prop.value.dias, ctx.value) : null)
-const ROTULO_TIPO: Record<string, string> = { lembrete: 'Lembrete', prazo: 'Prazo', audiencia: 'Audiência', consulta: 'Consulta jurídica', reuniao: 'Compromisso / reunião', tarefa: 'Tarefa' }
+const ROTULO_TIPO: Record<string, string> = { lembrete: 'Lembrete', prazo: 'Prazo', audiencia: 'Audiência', consulta: 'Consulta jurídica', compromisso: 'Compromisso', tarefa: 'Tarefa' }
 async function confirmar() {
   const p = prop.value; if (!p) return
   criando.value = true; nlErro.value = null
   try {
-    const r = await $fetch<{ vencimento?: string }>('/api/secretaria/criar', { method: 'POST', body: { tipo: p.tipo, titulo: p.titulo, data: p.data || null, hora: p.hora || null, dias: p.dias, inicio: p.inicio, local: p.local || null } })
-    aviso.value = p.tipo === 'prazo' && r.vencimento ? `Prazo criado na agenda: vence em ${fmt(r.vencimento)} (${semana(r.vencimento)}). Confirme no sistema do tribunal.` : 'Criado.'
+    const r = await $fetch<{ vencimento?: string }>('/api/secretaria/criar', { method: 'POST', body: { tipo: p.tipo, titulo: p.titulo, data: p.data || null, hora: p.hora || null, dias: p.dias, inicio: p.inicio, local: p.local || null, cliente: p.cliente || null } })
+    aviso.value = p.tipo === 'prazo' && r.vencimento ? `Prazo criado na agenda da Secretária: vence em ${fmt(r.vencimento)} (${semana(r.vencimento)}). Confirme no sistema do tribunal.` : 'Criado.'
     prop.value = null; texto.value = ''; await carregar()
   } catch (e: any) { nlErro.value = msg(e, 'Não foi possível criar.') } finally { criando.value = false }
 }
@@ -80,6 +82,7 @@ function resumoDoDia() {
   const L: string[] = []
   const tit = (l: ItemAgenda[]) => l.map(e => e.titulo).join('; ')
   L.push(`Resumo de ${fmt(hoje.value, { weekday: 'long', day: '2-digit', month: 'long' })}:`)
+  if (prazosVencidos.value.length) L.push(`• PRAZOS VENCIDOS SEM BAIXA (${prazosVencidos.value.length}): ${tit(prazosVencidos.value)}.`)
   L.push(prazosHoje.value.length ? `• PRAZOS QUE VENCEM HOJE (${prazosHoje.value.length}): ${tit(prazosHoje.value)}.` : '• Nenhum prazo vence hoje.')
   L.push(prazosAmanha.value.length ? `• Prazos de amanhã (${prazosAmanha.value.length}): ${tit(prazosAmanha.value)}.` : '• Nenhum prazo vence amanhã.')
   if (atrasados.value.length) L.push(`• Lembretes atrasados (${atrasados.value.length}): ${atrasados.value.map(l => l.texto).join('; ')}.`)
@@ -109,7 +112,8 @@ const agenda = computed(() => eventos.value.filter(e => filtros.value.includes(e
 const agendaVisivel = computed(() => agenda.value.slice(0, verMais.value))
 const dias = computed(() => { const m = new Map<string, ItemAgenda[]>(); for (const e of agendaVisivel.value) (m.get(e.dia) ?? m.set(e.dia, []).get(e.dia)!).push(e); return [...m.entries()] })
 const alternar = (t: string) => { filtros.value = filtros.value.includes(t) ? filtros.value.filter(x => x !== t) : [...filtros.value, t]; verMais.value = 12 }
-const destino = (e: ItemAgenda) => e.origem === 'tarefa' ? '/tarefas' : e.tipo === 'prazo' ? '/prazos' : '/agenda'
+async function concluirItem(e: ItemAgenda) { try { await $fetch(`/api/secretaria/itens/${e.id}`, { method: 'PATCH', body: { feito: true } }); await carregar() } catch (x: any) { erro.value = msg(x, 'Não foi possível concluir.') } }
+async function excluirItem(e: ItemAgenda) { try { await $fetch(`/api/secretaria/itens/${e.id}`, { method: 'DELETE' }); await carregar() } catch (x: any) { erro.value = msg(x, 'Não foi possível excluir.') } }
 
 // ── lembretes ──
 const novoLembrete = reactive({ texto: '', data: '', hora: '' })
@@ -152,22 +156,23 @@ const fdsVenc = computed(() => res.value ? dow(res.value.vencimento) : 1)
     <section class="cartao" id="sHoje">
       <h2>Hoje</h2>
       <div class="hoje">
-        <NuxtLink to="/prazos" class="tile" :class="{ alerta: prazosHoje.length }" data-testid="tile-prazos-hoje">
+        <button type="button" class="tile" :class="{ alerta: prazosHoje.length || prazosVencidos.length }" data-testid="tile-prazos-hoje" @click="irPara('sAgenda')">
           <span class="t">Prazos vencem hoje</span><span class="n">{{ prazosHoje.length }}</span>
-          <ul v-if="prazosHoje.length"><li v-for="e in prazosHoje.slice(0, 3)" :key="e.k">{{ e.titulo }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
-        </NuxtLink>
-        <NuxtLink to="/prazos" class="tile" data-testid="tile-prazos-amanha">
+          <ul v-if="prazosHoje.length"><li v-for="e in prazosHoje.slice(0, 3)" :key="e.id">{{ e.titulo }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
+          <span v-if="prazosVencidos.length" class="vencido" data-testid="vencidos">{{ prazosVencidos.length }} prazo(s) vencido(s) sem baixa</span>
+        </button>
+        <button type="button" class="tile" data-testid="tile-prazos-amanha" @click="irPara('sAgenda')">
           <span class="t">Prazos vencem amanhã</span><span class="n">{{ prazosAmanha.length }}</span>
-          <ul v-if="prazosAmanha.length"><li v-for="e in prazosAmanha.slice(0, 3)" :key="e.k">{{ e.titulo }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
-        </NuxtLink>
+          <ul v-if="prazosAmanha.length"><li v-for="e in prazosAmanha.slice(0, 3)" :key="e.id">{{ e.titulo }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
+        </button>
         <button type="button" class="tile" :class="{ alerta: atrasados.length }" data-testid="tile-atrasados" @click="irPara('sLembretes')">
           <span class="t">Lembretes atrasados</span><span class="n">{{ atrasados.length }}</span>
           <ul v-if="atrasados.length"><li v-for="l in atrasados.slice(0, 3)" :key="l.id">{{ l.texto }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
         </button>
-        <NuxtLink to="/agenda" class="tile" data-testid="tile-hoje">
+        <button type="button" class="tile" data-testid="tile-hoje" @click="irPara('sAgenda')">
           <span class="t">Compromissos de hoje</span><span class="n">{{ compromissosHoje.length }}</span>
-          <ul v-if="compromissosHoje.length"><li v-for="e in compromissosHoje.slice(0, 3)" :key="e.k">{{ e.hora }} {{ e.titulo }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
-        </NuxtLink>
+          <ul v-if="compromissosHoje.length"><li v-for="e in compromissosHoje.slice(0, 3)" :key="e.id">{{ e.hora }} {{ e.titulo }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
+        </button>
       </div>
     </section>
 
@@ -194,8 +199,9 @@ const fdsVenc = computed(() => res.value ? dow(res.value.vencimento) : 1)
         <div v-else class="flex gap-2 flex-wrap items-end">
           <label class="rot">Data<input v-model="prop.data" type="date" class="campo" /></label>
           <label class="rot">Hora<input v-model="prop.hora" type="time" class="campo" /></label>
-          <label v-if="['audiencia', 'consulta', 'reuniao'].includes(prop.tipo)" class="rot grow min-w-[160px]">Local<input v-model="prop.local" class="campo" /></label>
+          <label v-if="['audiencia', 'consulta', 'compromisso'].includes(prop.tipo)" class="rot grow min-w-[160px]">Local<input v-model="prop.local" class="campo" /></label>
         </div>
+        <label v-if="prop.tipo !== 'lembrete'" class="rot">Cliente ou assunto (opcional)<input v-model="prop.cliente" class="campo" placeholder="Ex.: Maria Souza — divórcio" /></label>
         <p v-if="previa">Vence em <strong>{{ fmt(previa.vencimento) }} ({{ semana(previa.vencimento) }})</strong>. Confirme no sistema do tribunal.
           <span v-if="previa.pulados.length" class="block text-xs text-gray-500">Dias úteis que ficaram de fora: {{ previa.pulados.map(x => fmt(x.d, { day: '2-digit', month: '2-digit' })).join(', ') }}</span></p>
         <p v-if="prop.tipo !== 'prazo' && prop.tipo !== 'lembrete' && prop.tipo !== 'tarefa' && !prop.data" class="text-xs text-danger">Falta a data.</p>
@@ -235,13 +241,14 @@ const fdsVenc = computed(() => res.value ? dow(res.value.vencimento) : 1)
         <button v-for="t in FILTROS" :key="t" type="button" class="chip" :aria-pressed="filtros.includes(t)" @click="alternar(t)"><span class="pt" :style="{ background: TIPOS[t]!.cor }" />{{ TIPOS[t]!.nome }}</button>
       </div>
       <p v-if="carregando && !dados" class="text-sm text-gray-500 py-2">Carregando a agenda…</p>
-      <p v-else-if="!agenda.length" class="text-sm text-gray-500 py-2">{{ eventos.length ? 'Nada com esses filtros.' : 'Nada na agenda nos próximos 14 dias.' }}</p>
+      <p v-else-if="!agenda.length" class="text-sm text-gray-500 py-2">{{ eventos.length ? 'Nada com esses filtros.' : 'Agenda vazia. Escreva em "O que você precisa?" para criar o primeiro prazo, audiência ou compromisso.' }}</p>
       <div v-for="[dia, itens] in dias" :key="dia">
-        <div class="dia">{{ dia === hoje ? 'Hoje · ' : dia === addDays(hoje, 1) ? 'Amanhã · ' : '' }}{{ fmt(dia, { weekday: 'long', day: '2-digit', month: 'long' }) }}</div>
-        <NuxtLink v-for="e in itens" :key="e.k" :to="destino(e)" class="ev" :class="e.tipo" :style="{ '--cor': TIPOS[e.tipo]!.cor }">
+        <div class="dia" :class="{ vencido: dia < hoje }">{{ dia < hoje ? 'Vencido · ' : dia === hoje ? 'Hoje · ' : dia === addDays(hoje, 1) ? 'Amanhã · ' : '' }}{{ fmt(dia, { weekday: 'long', day: '2-digit', month: 'long' }) }}</div>
+        <div v-for="e in itens" :key="e.id" class="ev" :class="[e.tipo, { vencido: e.dia < hoje }]" :style="{ '--cor': TIPOS[e.tipo]!.cor }" :data-testid="`item-${e.id}`">
           <span class="h">{{ e.hora ?? 'dia todo' }}</span>
-          <span class="min-w-0"><span class="tt">{{ e.titulo }}</span><span class="tg"><b :style="{ color: TIPOS[e.tipo]!.cor }">{{ TIPOS[e.tipo]!.nome }}</b><template v-if="e.contato"> · {{ e.contato }}</template><template v-if="e.local"> · {{ e.local }}</template></span></span>
-        </NuxtLink>
+          <span class="min-w-0"><span class="tt">{{ e.titulo }}</span><span class="tg"><b :style="{ color: TIPOS[e.tipo]!.cor }">{{ e.dia < hoje ? 'VENCIDO · ' : '' }}{{ TIPOS[e.tipo]!.nome }}</b><template v-if="e.cliente"> · {{ e.cliente }}</template><template v-if="e.local"> · {{ e.local }}</template></span></span>
+          <span class="acoes"><button type="button" class="link" data-testid="concluir-item" @click="concluirItem(e)">concluir</button><button type="button" class="link" @click="excluirItem(e)">excluir</button></span>
+        </div>
       </div>
       <button v-if="agenda.length > verMais" type="button" class="btn sec sm mt-2" @click="verMais += 12">Ver mais ({{ agenda.length - verMais }})</button>
     </section>
@@ -258,8 +265,8 @@ const fdsVenc = computed(() => res.value ? dow(res.value.vencimento) : 1)
       <div v-for="l in pendentes" :key="l.id" class="lem" :data-testid="`lembrete-${l.id}`">
         <input type="checkbox" :checked="l.feito" aria-label="Concluir" @change="marcar(l, ($event.target as HTMLInputElement).checked)" />
         <div class="grow min-w-0"><div class="break-words">{{ l.texto }}</div>
-          <div class="q" :class="{ late: l.data && l.data < hoje }">{{ l.data ? (l.data < hoje ? 'Atrasado · ' : '') + fmt(l.data) + (l.hora ? ' às ' + l.hora : '') : 'Sem data' }}{{ l.compromisso_id ? ' · na agenda' : '' }}</div></div>
-        <template v-if="!l.compromisso_id">
+          <div class="q" :class="{ late: l.data && l.data < hoje }">{{ l.data ? (l.data < hoje ? 'Atrasado · ' : '') + fmt(l.data) + (l.hora ? ' às ' + l.hora : '') : 'Sem data' }}{{ l.item_id ? ' · na agenda' : '' }}</div></div>
+        <template v-if="!l.item_id">
           <button v-if="l.data" type="button" class="btn sec sm" @click="naAgenda(l)">Pôr na agenda</button>
           <input v-else type="date" class="campo" aria-label="Escolha a data para pôr na agenda" title="Escolha uma data para pôr na agenda" @change="($event.target as HTMLInputElement).value && naAgenda(l, ($event.target as HTMLInputElement).value)" />
         </template>
@@ -345,8 +352,12 @@ h2 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: u
 :global(.dark) .chip { border-color: rgb(255 255 255 / .18); }
 .pt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
 .dia { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #857866; margin: 14px 0 6px; }
-.ev { display: grid; grid-template-columns: 62px 1fr; gap: 10px; padding: 9px 10px; border-left: 4px solid var(--cor); border-radius: 6px; background: rgb(0 0 0 / .03); margin-bottom: 6px; min-width: 0; }
+.ev { display: grid; grid-template-columns: 62px 1fr auto; align-items: start; gap: 10px; padding: 9px 10px; border-left: 4px solid var(--cor); border-radius: 6px; background: rgb(0 0 0 / .03); margin-bottom: 6px; min-width: 0; }
 :global(.dark) .ev { background: rgb(255 255 255 / .05); }
+.ev .acoes { display: flex; gap: 10px; }
+.ev.vencido { background: #fdecea; } :global(.dark) .ev.vencido { background: #3a1c1a; }
+.dia.vencido, .tile .vencido { color: #b3261e; font-weight: 700; }
+.tile .vencido { font-size: 12px; }
 .ev .h { font-size: 12px; color: #857866; font-weight: 600; }
 .ev .tt { display: block; font-weight: 600; overflow-wrap: anywhere; }
 .ev .tg { display: block; font-size: 11px; color: #857866; }

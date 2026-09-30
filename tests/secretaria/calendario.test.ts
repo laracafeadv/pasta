@@ -35,7 +35,7 @@ eq('consulta sexta', [p.tipo, p.data, p.hora], ['consulta', '2026-10-02', '09:00
 p = interpretarTexto('me lembra quarta de protocolar a inicial', H)
 eq('mesma quarta → próxima semana', [p.tipo, p.data, p.titulo], ['lembrete', '2026-10-07', 'Protocolar a inicial'])
 p = interpretarTexto('reunião 05/11 às 16:00', H)
-eq('reunião com data', [p.tipo, p.data, p.hora], ['reuniao', '2026-11-05', '16:00'])
+eq('reunião com data', [p.tipo, p.data, p.hora], ['compromisso', '2026-11-05', '16:00'])
 p = interpretarTexto('tarefa revisar contrato depois de amanhã', H)
 eq('tarefa depois de amanhã', [p.tipo, p.data, p.titulo], ['tarefa', '2026-10-02', 'Revisar contrato'])
 p = interpretarTexto('comprar café', H)

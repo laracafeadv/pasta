@@ -13,11 +13,23 @@ begin
   insert into lembretes_rapidos(user_id, texto, data, hora) values (u, 'Ligar ao cartório', current_date, '10:00') returning id into l;
   r := r || case when (select feito from lembretes_rapidos where id = l) = false then 'PASS' else 'FAIL' end || ' 3 lembrete nasce pendente' || E'\n';
 
-  -- lembrete vinculado a compromisso: apagar o compromisso não apaga o lembrete
-  insert into compromissos(tipo, titulo, data_limite) values ('reuniao', 'ZZ teste', current_date + 1) returning id into c;
-  update lembretes_rapidos set compromisso_id = c where id = l;
-  delete from compromissos where id = c;
-  r := r || case when (select count(*) from lembretes_rapidos where id = l and compromisso_id is null) = 1 then 'PASS' else 'FAIL' end || ' 4 apagar o compromisso preserva o lembrete' || E'\n';
+  -- itens da agenda própria
+  ok := false; begin insert into secretaria_itens(user_id, tipo, titulo, dia) values (u, 'reuniao', 'x', current_date); exception when check_violation then ok := true; end;
+  r := r || case when ok then 'PASS' else 'FAIL' end || ' 4a tipo de item inválido recusado' || E'\n';
+  ok := false; begin insert into secretaria_itens(user_id, tipo, titulo, dia) values (u, 'prazo', '  ', current_date); exception when check_violation then ok := true; end;
+  r := r || case when ok then 'PASS' else 'FAIL' end || ' 4b título vazio recusado' || E'\n';
+  ok := false; begin insert into secretaria_itens(user_id, tipo, titulo, dia, dias_prazo) values (u, 'prazo', 'x', current_date, 400); exception when check_violation then ok := true; end;
+  r := r || case when ok then 'PASS' else 'FAIL' end || ' 4c prazo acima de 365 dias recusado' || E'\n';
+  ok := false; begin insert into secretaria_itens(user_id, tipo, titulo, dia, tribunal) values (u, 'prazo', 'x', current_date, 'stj'); exception when check_violation then ok := true; end;
+  r := r || case when ok then 'PASS' else 'FAIL' end || ' 4d tribunal inválido recusado' || E'\n';
+  insert into secretaria_itens(user_id, tipo, titulo, dia, hora, dias_prazo, data_intimacao, tribunal) values (u, 'prazo', 'ZZ Réplica', current_date + 3, null, 15, current_date, 'tjba') returning id into c;
+  r := r || case when (select feito from secretaria_itens where id = c) = false then 'PASS' else 'FAIL' end || ' 4e item nasce em aberto' || E'\n';
+  -- lembrete ligado ao item: apagar o item não apaga o lembrete
+  update lembretes_rapidos set item_id = c where id = l;
+  delete from secretaria_itens where id = c;
+  r := r || case when (select count(*) from lembretes_rapidos where id = l and item_id is null) = 1 then 'PASS' else 'FAIL' end || ' 4f apagar o item preserva o lembrete' || E'\n';
+  select count(*) into n from information_schema.columns where table_name = 'lembretes_rapidos' and column_name = 'compromisso_id';
+  r := r || case when n = 0 then 'PASS' else 'FAIL' end || ' 4g lembrete não aponta mais para o CRM' || E'\n';
 
   -- suspensões
   ok := false; begin insert into suspensoes_expediente(de, ate, tribunal) values ('2026-10-10', '2026-10-09', 'todos'); exception when check_violation then ok := true; end;
@@ -38,7 +50,7 @@ begin
   r := r || case when ok then 'PASS' else 'FAIL' end || ' 11 tribunal padrão inválido recusado' || E'\n';
 
   -- RLS ligada nas três tabelas
-  select count(*) into n from pg_tables where schemaname = 'public' and tablename in ('lembretes_rapidos','suspensoes_expediente','secretaria_config') and rowsecurity;
-  r := r || case when n = 3 then 'PASS' else 'FAIL' end || ' 12 RLS ligada nas três tabelas' || E'\n';
+  select count(*) into n from pg_tables where schemaname = 'public' and tablename in ('lembretes_rapidos','suspensoes_expediente','secretaria_config','secretaria_itens') and rowsecurity;
+  r := r || case when n = 4 then 'PASS' else 'FAIL' end || ' 12 RLS ligada nas quatro tabelas' || E'\n';
   raise exception E'RESULTADO SECRETARIA\n%', r;
 end $$;

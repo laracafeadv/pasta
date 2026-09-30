@@ -10,8 +10,8 @@ export const ATALHOS_PADRAO: AtalhoSecretaria[] = [
 ]
 export interface ConfigSecretaria { tribunal: 'tjba' | 'trt5' | 'jf' | 'nac'; pontos_facultativos: boolean; cidade: string; atalhos: AtalhoSecretaria[] }
 export const CONFIG_PADRAO: ConfigSecretaria = { tribunal: 'tjba', pontos_facultativos: false, cidade: 'Salvador', atalhos: ATALHOS_PADRAO }
-export interface LembreteRapido { id: number; texto: string; data: string | null; hora: string | null; feito: boolean; feito_em: string | null; compromisso_id: number | null }
+export interface LembreteRapido { id: number; texto: string; data: string | null; hora: string | null; feito: boolean; feito_em: string | null; item_id: number | null }
 export interface SuspensaoExpediente { id: number; de: string; ate: string; tribunal: 'todos' | 'tjba' | 'trt5' | 'jf'; motivo: string | null }
-/** Um item da agenda da Secretária: compromisso (prazo, audiência, consulta, reunião) ou tarefa. */
-export interface ItemAgenda { k: string; origem: 'compromisso' | 'tarefa'; id: number; tipo: 'prazo' | 'audiencia' | 'consulta' | 'compromisso' | 'tarefa'; titulo: string; dia: string; hora: string | null; contato: string | null; local: string | null; meu: boolean }
-export interface InicioSecretaria { hoje: string; config: ConfigSecretaria; lembretes: LembreteRapido[]; suspensoes: SuspensaoExpediente[]; eventos: ItemAgenda[]; novos: { intimacoes: number; leads: number } }
+/** Um item da agenda PRÓPRIA da Secretária (não depende das telas de Agenda/Prazos/Tarefas do CRM). */
+export interface ItemAgenda { id: number; tipo: 'prazo' | 'audiencia' | 'consulta' | 'compromisso' | 'tarefa'; titulo: string; dia: string; hora: string | null; local: string | null; cliente: string | null; obs: string | null; meu: boolean }
+export interface InicioSecretaria { hoje: string; config: ConfigSecretaria; lembretes: LembreteRapido[]; suspensoes: SuspensaoExpediente[]; eventos: ItemAgenda[] }
