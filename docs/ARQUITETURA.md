@@ -151,3 +151,14 @@ Tela **Intimações** (`/intimacoes`, menu Trabalho): o escritório registra cad
 - **Edição/remoção:** `PUT /api/partes/:id` (papel, polo, processo, observação); `DELETE` só desvincula — a pessoa continua cadastrada.
 - **Histórico:** ações gravam em `atividades` na demanda do cliente e na ficha da própria pessoa; a ficha mostra "Também aparece como parte em…" (`participacoes`).
 - Testes: `tests/fase5/rodar.sh` (regras) e `supabase/tests/fase5_partes_pessoas.sql` (banco).
+
+## Secretária (painel pessoal, tela `/secretaria`)
+
+Página própria do CRM para organizar o dia. Só o **Início** está pronto; as demais abas (Intimações, E-mail, Leads, Iniciais, Notícias, Conteúdo) mostram "em breve" (Intimações e Leads apontam para as telas que já existem).
+
+- **Dados:** não cria agenda paralela. Usa `compromissos` (prazo, audiência, consulta, reunião), `tarefas_internas`, `intimacoes` e `contatos` já existentes, mais três tabelas novas (`supabase/migrations/20260930100000_secretaria.sql`): `lembretes_rapidos` (por usuária), `suspensoes_expediente` (da equipe) e `secretaria_config` (por usuária: tribunal, pontos facultativos, cidade, atalhos).
+- **API:** `GET /api/secretaria/inicio` (tudo do Início), `POST /api/secretaria/criar` (prazo, audiência, consulta, reunião, tarefa, lembrete), `…/lembretes` (criar, concluir, excluir, pôr na agenda), `…/suspensoes`, `PUT …/config`. Lógica em `server/utils/secretaria.ts`.
+- **Prazo em dias úteis:** `shared/utils/calendarioForense.ts` (feriados nacionais, Sexta-feira Santa, recesso 20/12–20/01, dias sem expediente do TJBA, TRT5 e Justiça Federal, feriados de Salvador e suspensões anotadas). O vencimento é sempre calculado no servidor. Pontos facultativos **não** são descontados por padrão; a tela mostra a data alternativa. Cada data traz a fonte (lei, regra geral, resumo oficial a conferir). Os decretos dos tribunais não puderam ser abertos na montagem: ver `NAO_CONFIRMADO` no mesmo arquivo. O cálculo antigo (`calcularPrazo`, só nacional) continua valendo nas demais telas.
+- **Campo "O que você precisa?":** `shared/utils/secretariaTexto.ts` entende português (prazo de N dias, hoje/amanhã/dia da semana/dd/mm, 10h30, audiência, consulta, reunião, tarefa, lembrete) **sem IA e sem rede**. É sempre uma proposta que a pessoa confere antes de criar. "Resumo do dia" é montado com os dados da tela.
+- **Não feito:** sincronização com o Google Agenda (exige credenciais OAuth que o CRM não tem) e interpretação por IA (exige chave de API no servidor).
+- **Testes:** `tests/secretaria/rodar.sh` (calendário, texto livre, regras do servidor), `tests/secretaria/ui.mjs` (navegador, APIs simuladas), `supabase/tests/secretaria.sql` (restrições das tabelas).

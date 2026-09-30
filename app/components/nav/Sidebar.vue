@@ -51,6 +51,7 @@ const grupos = computed(() => {
       titulo: 'Trabalho',
       itens: [
         { label: 'Dashboard', path: '/', icone: 'ph:squares-four-bold' },
+        { label: 'Secretária', path: '/secretaria', icone: 'ph:notebook-bold' },
         { label: 'Hoje', path: '/crm', icone: 'ph:sun-bold', badge: crm.pendencias || undefined },
         { label: 'Tarefas', path: '/tarefas', icone: 'ph:check-square-bold' },
         { label: 'Prazos', path: '/prazos', icone: 'ph:hourglass-high-bold' },

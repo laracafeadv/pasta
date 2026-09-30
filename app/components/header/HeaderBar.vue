@@ -77,6 +77,7 @@ const navItems = computed(() => {
 
   const items: { label: string; path: string; badge?: number }[] = [
     { label: 'Dashboard', path: '/' },
+    { label: 'Secretária', path: '/secretaria' },
     { label: 'Hoje', path: '/crm', badge: crm.pendencias || undefined },
     { label: 'Tarefas', path: '/tarefas' },
     { label: 'Prazos', path: '/prazos' },
