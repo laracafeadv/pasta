@@ -9,6 +9,28 @@
 | E-mail → CRM | **Sim, real**, por pull: o CRM lê o Gmail pelo conector quando está aberto (ou ao clicar). |
 | Totalmente automático com o CRM fechado | **Não dentro do Artifact.** Só com algo externo rodando agendado (ex.: uma rotina do Claude na sua conta, que precisa da sua autorização, ou um servidor no Brasil). |
 
+
+## Secretária (etapa 2): onde está e o que faz
+
+Menu **Secretária** → abas **Intimações** e **E-mail**. Tudo é lido do seu Gmail pelo conector (`search_threads` e `get_thread`), só com o CRM aberto.
+
+### Intimações
+- Busca avisos de remetentes `@jus.br` dos últimos **14 dias** (ajustável em "Ajustes"), sem enviados/rascunhos. Alertas de login/senha/novo acesso (ex.: sso@cnj.jus.br) são **ignorados**.
+- Cada item mostra: tribunal, nº CNJ, movimentação (a mais recente da tabela "Data - Movimento" do PJe Push), data, ponto de **não lida** e botão para abrir o e-mail no Gmail.
+- Filtros: **Intimações e prazos** (padrão) e **Tudo**; "Ver mais" para o restante.
+- **Lançar prazo**: dias, úteis/corridos, data da ciência e calendário do tribunal; o vencimento aparece **antes** de confirmar. Ao confirmar, cria o compromisso na Agenda e um evento de dia inteiro no Google Agenda com alertas **3 dias e 1 dia antes** (pop-up às 9h desses dias). O item passa a mostrar "Prazo lançado · vence dd/mm". Se o Google Agenda falhar, o prazo fica no CRM e o aviso diz que o evento não foi criado (dá para tentar de novo).
+- Intimações **sem prazo lançado** entram na faixa **Hoje** e no número da aba.
+- Link para o DJEN (comunica.pje.jus.br) com o aviso de que o painel **não substitui** a consulta oficial.
+- O CRM nunca cria prazo sozinho; a data sugerida é só ponto de partida.
+
+### E-mail
+Abas **Principal** (7 dias, categoria Principal), **Não lidos** (14 dias) e **Tudo** (3 dias): remetente, assunto, prévia, hora, destaque de não lido e "Abrir" no Gmail. Atualiza sozinho a cada **5 minutos** enquanto essa aba está aberta (e a página visível). O CRM não marca como lido, não responde e não apaga.
+
+### Limites
+Sem push: o Artifact não recebe nada com o CRM fechado. O alerta do Google Agenda, esse sim, toca mesmo com o CRM fechado. A API do DJEN não é acessível daqui.
+
+## Histórico do desenho anterior (Agenda › Intimações)
+
 ## O que foi implementado (Agenda › Intimações)
 - **Busca no e-mail**: lê e-mails de intimação/publicação, reconhece o **número CNJ (validado pelo dígito verificador)**, e cria uma intimação por processo
   (um resumo com vários processos vira várias). Só entra e-mail com CNJ válido ou de remetente que você marcou como confiável (domínios `.jus.br` já valem).

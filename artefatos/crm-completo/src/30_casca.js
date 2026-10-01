@@ -3,18 +3,20 @@
 const VIEWS = {}            // rota -> (params) => elemento
 /* ---------- navegação: grupos → módulos → abas (submenu) ----------
    Cada módulo é uma tela completa com abas; a barra mostra os módulos e, no módulo aberto (ou nos que você expandir), as abas como atalhos diretos. */
-const abaDe = { agenda: () => UI.ag.aba, pessoas: () => UI.pes.aba, comunicacao: () => UI.comAbas.aba, demandas: () => UI.dm.aba, financeiro: () => UI.fin.aba, relatorios: () => UI.rel.aba, formularios: () => UI.form.aba, manual: () => UI.man.aba, config: () => UI.cfg.aba }
+const abaDe = { secretaria: () => UI.sec.aba, atendimento: () => UI.atend.aba, agenda: () => UI.ag.aba, pessoas: () => UI.pes.aba, comunicacao: () => UI.comAbas.aba, demandas: () => UI.dm.aba, financeiro: () => UI.fin.aba, relatorios: () => UI.rel.aba, formularios: () => UI.form.aba, manual: () => UI.man.aba, config: () => UI.cfg.aba }
 function contadores() {
   const h0 = hojeISO()
-  return { tarefasAtrasadas: DB.tarefas.filter(t => !t.concluida && t.prazo < h0).length, prazos7: DB.compromissos.filter(p => p.status === 'pendente' && p.tipo === 'prazo' && diaDe(dataDoCompromisso(p)) <= hojeISO(7)).length, intimacoes: DB.intimacoes.filter(i => i.status === 'a_tratar').length, leadsNovos: DB.contatos.filter(c => c.etapa === 'novo').length, remarketing: remarketingElegiveis().filter(x => x.pronto).length, naoLidas: DB.comunicacoes.filter(m => m.direcao === 'entrada' && !m.lida).length, docsPend: DB.demandas.filter(x => x.status === 'ativo' && x.tipo !== 'consultivo' && docsResumo(x.contato_id, x.id).pend).length, iniciais: CRM.INI.seloIniciais(DB.iniciais, h0), contasVencidas: DB.lancamentos.filter(l => !l.pago_em && l.vencimento < h0).length }
+  return { tarefasAtrasadas: DB.tarefas.filter(t => !t.concluida && t.prazo < h0).length, prazos7: DB.compromissos.filter(p => p.status === 'pendente' && p.tipo === 'prazo' && diaDe(dataDoCompromisso(p)) <= hojeISO(7)).length, intimacoes: DB.intimacoes.filter(semPrazoLancado).length, emailNaoLidos: emailNaoLidos(), leadsNovos: DB.contatos.filter(c => c.etapa === 'novo').length, remarketing: remarketingElegiveis().filter(x => x.pronto).length, naoLidas: DB.comunicacoes.filter(m => m.direcao === 'entrada' && !m.lida).length, docsPend: DB.demandas.filter(x => x.status === 'ativo' && x.tipo !== 'consultivo' && docsResumo(x.contato_id, x.id).pend).length, iniciais: CRM.INI.seloIniciais(DB.iniciais, h0), contasVencidas: DB.lancamentos.filter(l => !l.pago_em && l.vencimento < h0).length }
 }
 const MODULOS = () => {
   const n = contadores(); const adm = CONFIG.perfil.papel === 'admin'
   return [
     { grupo: 'Trabalho', itens: [
       { id: 'inicio', rotulo: 'Início', icone: 'ph:sun-bold', badge: pendenciasHoje() },
-      { id: 'agenda', rotulo: 'Agenda', icone: 'ph:calendar-bold', subs: [['calendario', 'Calendário', 'ph:calendar-blank-bold'], ['tarefas', 'Tarefas', 'ph:check-square-bold', n.tarefasAtrasadas], ['prazos', 'Prazos', 'ph:hourglass-high-bold', n.prazos7], ['intimacoes', 'Intimações', 'ph:megaphone-bold', n.intimacoes]] }] },
+      { id: 'agenda', rotulo: 'Agenda', icone: 'ph:calendar-bold', subs: [['calendario', 'Calendário', 'ph:calendar-blank-bold'], ['tarefas', 'Tarefas', 'ph:check-square-bold', n.tarefasAtrasadas], ['prazos', 'Prazos', 'ph:hourglass-high-bold', n.prazos7]] },
+      { id: 'secretaria', rotulo: 'Secretária', icone: 'ph:headset-bold', badge: 0, subs: [['intimacoes', 'Intimações', 'ph:megaphone-bold', n.intimacoes], ['email', 'E-mail', 'ph:envelope-simple-bold', n.emailNaoLidos]] }] },
     { grupo: 'Pessoas', itens: [
+      { id: 'atendimento', rotulo: 'Atendimento (IA)', icone: 'ph:brain-bold', subs: [['painel', 'Painel comercial', 'ph:kanban-bold'], ['identidade', 'Identidade e modelos', 'ph:palette-bold']] },
       { id: 'pessoas', rotulo: 'Pessoas', icone: 'ph:users-bold', subs: [['funil', 'Funil de leads', 'ph:kanban-bold', n.leadsNovos], ['clientes', 'Clientes', 'ph:user-check-bold'], ['remarketing', 'Remarketing', 'ph:arrow-counter-clockwise-bold', n.remarketing]] },
       { id: 'comunicacao', rotulo: 'Comunicação', icone: 'ph:chats-circle-bold', subs: [['caixa', 'Caixa de entrada', 'ph:tray-bold', n.naoLidas], ['modelos', 'Modelos de mensagem', 'ph:chat-circle-text-bold']] }] },
     { grupo: 'Serviços jurídicos', itens: [
@@ -33,13 +35,13 @@ const salvarNav = () => lsSet('nav', NAVST)
 const expandido = (m, ativo) => (NAVST[m.id] !== undefined ? NAVST[m.id] : ativo)
 const somaBadges = m => (m.subs || []).reduce((s, x) => s + (x[3] || 0), 0)
 /** Rotas antigas continuam valendo: apontam para a aba certa do módulo que as absorveu. */
-const ALIAS = { dashboard: ['inicio', {}], hoje: ['inicio', {}], secretaria: ['inicio', {}], tarefas: ['agenda', { aba: 'tarefas' }], prazos: ['agenda', { aba: 'prazos' }], intimacoes: ['agenda', { aba: 'intimacoes' }], leads: ['pessoas', { aba: 'funil' }], clientes: ['pessoas', { aba: 'clientes' }], remarketing: ['pessoas', { aba: 'remarketing' }], mensagens: ['comunicacao', { aba: 'modelos' }], processos: ['demandas', { aba: 'processos' }], documentos: ['demandas', { aba: 'documentos' }], mapa: ['manual', { aba: 'fluxo' }], auditoria: ['config', { aba: 'auditoria' }] }
-const ROTAS_ROTULO = { perfil: 'Meu perfil' }
+const ALIAS = { identidade: ['atendimento', { aba: 'identidade' }], dashboard: ['inicio', {}], hoje: ['inicio', {}], intimacoes: ['secretaria', { aba: 'intimacoes' }], email: ['secretaria', { aba: 'email' }], tarefas: ['agenda', { aba: 'tarefas' }], prazos: ['agenda', { aba: 'prazos' }], leads: ['pessoas', { aba: 'funil' }], clientes: ['pessoas', { aba: 'clientes' }], remarketing: ['pessoas', { aba: 'remarketing' }], mensagens: ['comunicacao', { aba: 'modelos' }], processos: ['demandas', { aba: 'processos' }], documentos: ['demandas', { aba: 'documentos' }], mapa: ['manual', { aba: 'fluxo' }], auditoria: ['config', { aba: 'auditoria' }] }
+const ROTAS_ROTULO = { perfil: 'Meu perfil', caso: 'Atendimento' }
 const R = { rota: 'inicio', p: {} }
 let menuMovel = false
 
 let CONSTR = null
-const abaSet = { agenda: v => { UI.ag.aba = v }, pessoas: v => { UI.pes.aba = v }, comunicacao: v => { UI.comAbas.aba = v }, demandas: v => { UI.dm.aba = v }, financeiro: v => { UI.fin.aba = v }, relatorios: v => { UI.rel.aba = v }, formularios: v => { UI.form.aba = v }, manual: v => { UI.man.aba = v }, config: v => { UI.cfg.aba = v } }
+const abaSet = { secretaria: v => { UI.sec.aba = v }, atendimento: v => { UI.atend.aba = v }, agenda: v => { UI.ag.aba = v }, pessoas: v => { UI.pes.aba = v }, comunicacao: v => { UI.comAbas.aba = v }, demandas: v => { UI.dm.aba = v }, financeiro: v => { UI.fin.aba = v }, relatorios: v => { UI.rel.aba = v }, formularios: v => { UI.form.aba = v }, manual: v => { UI.man.aba = v }, config: v => { UI.cfg.aba = v } }
 function ir(rota, p = {}) { if (ALIAS[rota]) { const [r2, p2] = ALIAS[rota]; rota = r2; p = { ...p2, ...p } } if (p.aba && abaSet[rota]) abaSet[rota](p.aba); fecharTodas(); REDES.clear(); if (!(rota === 'formularios' && p.editar)) CONSTR = null; R.rota = rota; R.p = p; menuMovel = false; try { history.replaceState(null, '', '#' + rota) } catch (e) { /* sem histórico */ } render(); window.scrollTo(0, 0) }
 function lerHash() { const r = (location.hash || '').replace('#', ''); return VIEWS[r] ? r : ALIAS[r] ? ALIAS[r][0] : null }
 

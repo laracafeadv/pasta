@@ -5,18 +5,19 @@ const b = await chromium.launch({ executablePath: process.env.CHROME, args: ['--
 const p = await ctx.newPage(); const erros = []; p.on('pageerror', e => erros.push(e.message)); p.on('console', m => { if (m.type() === 'error') erros.push(m.text()) })
 await p.goto('file:///home/user/pasta/artefatos/crm-completo/dist/crm.html'); await p.waitForSelector('[data-testid=sidebar]')
 const t = id => p.locator(`[data-testid="${id}"]`); const esp = () => p.waitForTimeout(120)
-const mods = ['inicio', 'agenda', 'pessoas', 'comunicacao', 'demandas', 'financeiro', 'relatorios', 'formularios', 'manual', 'config']
-ok((await p.locator('[data-testid=sidebar] [data-testid^="nav-"]:not([data-testid^="nav-seta"]):not([data-testid="nav-buscar"]):not([data-testid="nav-mais"])').evaluateAll(e => e.map(x => x.dataset.testid.replace('nav-', ''))).then(l => l.filter(x => !x.includes('-')))).join() === mods.join(), 'barra: 10 módulos nos 5 grupos')
+const mods = ['inicio', 'agenda', 'secretaria', 'atendimento', 'pessoas', 'comunicacao', 'demandas', 'financeiro', 'relatorios', 'formularios', 'manual', 'config']
+ok((await p.locator('[data-testid=sidebar] [data-testid^="nav-"]:not([data-testid^="nav-seta"]):not([data-testid="nav-buscar"]):not([data-testid="nav-mais"])').evaluateAll(e => e.map(x => x.dataset.testid.replace('nav-', ''))).then(l => l.filter(x => !x.includes('-')))).join() === mods.join(), 'barra: 12 módulos nos grupos')
 ok(await p.locator('[data-testid=sidebar] nav p').allInnerTexts().then(l => l.join('|').toLowerCase()) === 'trabalho|pessoas|serviços jurídicos|dinheiro|escritório', 'grupos: Trabalho, Pessoas, Serviços jurídicos, Dinheiro, Escritório')
 ok(await t('subs-inicio').count() === 0 && await t('subs-agenda').count() === 0, 'só o módulo aberto expande (Início não tem abas; Agenda recolhida)')
-await t('nav-agenda').click(); await esp(); ok(await t('subs-agenda').locator('button').count() === 4, 'Agenda abre com 4 abas: calendário, tarefas, prazos, intimações')
+await t('nav-agenda').click(); await esp(); ok(await t('subs-agenda').locator('button').count() === 3, 'Agenda abre com 3 abas: calendário, tarefas, prazos')
 await t('nav-agenda-prazos').click(); await esp(); ok(await t('nav-agenda-prazos').getAttribute('aria-current') === 'page' && /Calculadora de prazos/.test(await p.locator('main').innerText()), 'submenu leva direto à aba (Prazos) e a destaca')
 await t('nav-pessoas-remarketing').click().catch(() => {}); ok(await t('subs-pessoas').count() === 0, 'módulos fechados não mostram abas')
 await t('nav-seta-pessoas').click(); await esp(); ok(await t('subs-pessoas').count() === 1 && await t('subs-agenda').count() === 1, 'seta expande outro módulo sem fechar o aberto')
 await t('nav-pessoas-clientes').click(); await esp(); ok(/Pessoas/.test(await t('titulo-pagina').innerText()) && await t('nav-pessoas-clientes').getAttribute('aria-current') === 'page', 'Pessoas › Clientes')
 /* badges */
 await p.evaluate(() => { DB.intimacoes.push({ id: 1, status: 'a_tratar', lida: false, tipo: 'Despacho', texto: 'teste', data_publicacao: hojeISO(), contato_id: null }); render() }); await esp(300)
-ok(await t('nav-agenda-intimacoes').locator('span').last().innerText() === '1', 'badge de intimações a tratar (só aparece quando há intimação real)')
+await t('nav-secretaria').click(); await esp(300)
+ok(await t('nav-secretaria-intimacoes').locator('span').last().innerText() === '1', 'badge de intimações a tratar (só aparece quando há intimação real)')
 ok(await t('nav-inicio').innerText().then(x => /\d/.test(x)), 'badge do Início (itens de hoje)')
 /* persistência do estado da barra */
 await p.reload(); await p.waitForSelector('[data-testid=sidebar]'); ok(await t('subs-pessoas').count() === 1, 'a barra lembra os módulos expandidos')

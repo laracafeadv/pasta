@@ -10,3 +10,6 @@ export { numeroCnjValido, formatarCnj, cpfValido, mascararDocumento } from '../.
 export * as INI from '../../shared/utils/iniciaisSecretaria'
 import { renderSVG } from 'uqr'
 export const qrSvg = (texto: string) => renderSVG(texto, { border: 1, ecc: 'M' })
+export { Document, Packer, Paragraph, TextRun, Header, Footer, ImageRun, AlignmentType, PageNumber, BorderStyle, Table, TableRow, TableCell, WidthType } from 'docx'
+export { default as JSZip } from 'jszip'
+export { PDFDocument, StandardFonts, rgb } from 'pdf-lib'

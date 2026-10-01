@@ -32,7 +32,9 @@ logos = {'monoDark': 'mono-dark.png', 'monoLight': 'mono-light.png', 'wordmarkLi
 modelos_js = 'const MODELOS_REAIS=' + open(D + '/dados/modelos_mensagem.json', encoding='utf8').read() + ';'
 logos_js = 'const LOGOS=' + json.dumps({k: 'data:image/png;base64,' + b64(R + '/public/' + v) for k, v in logos.items()}) + ';'
 base_css = ":root{color-scheme:light}:root.dark,:root[data-theme=dark]{color-scheme:dark}@media (prefers-color-scheme:dark){:root:not([data-theme=light]) body{background:#17110e;color:#edeae2}}body{font-size:16px;line-height:1.5}"
+pdfjs_src = open(R + '/node_modules/pdfjs-dist/legacy/build/pdf.min.js', encoding='utf8').read().replace('</script', '<\\/script')
+pdf_worker_js = 'const PDF_WORKER_SRC=' + json.dumps(open(R + '/node_modules/pdfjs-dist/legacy/build/pdf.worker.min.js', encoding='utf8').read()).replace('</', '<\\/') + ';'
 html = ('<title>CRM Lara Café Completo</title>\n<style>' + fontes_css + base_css + css + '</style>\n' + corpo +
-        '\n<script>\n' + regras + '\n' + logos_js + '\n' + modelos_js + '\nconst ICONES=' + json.dumps(icones, ensure_ascii=False) + ';\n' + codigo + '\n</script>\n')
+        '\n<script>\n' + pdfjs_src + '\n</script>\n<script>\n' + regras + '\n' + pdf_worker_js + '\n' + logos_js + '\n' + modelos_js + '\nconst ICONES=' + json.dumps(icones, ensure_ascii=False) + ';\n' + codigo + '\n</script>\n')
 open(OUT + '/crm.html', 'w', encoding='utf8').write(html)
 print('ok', len(html), 'bytes;', len(icones), 'ícones;', len(css), 'bytes de CSS')

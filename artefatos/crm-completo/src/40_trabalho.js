@@ -61,7 +61,7 @@ VIEWS.hoje = () => {
     if (i.tipo === 'tarefa') acoes.push(btn('Concluir', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => { concluirTarefa(por('tarefas', i.tarefa_id)); render() } }))
     if (i.tipo === 'prazo') acoes.push(btn('Cumprido', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => { const q = por('compromissos', i.compromisso_id); q.status = 'concluido'; q.concluido_em = agora(); salvar('compromissos'); render() } }))
     if (i.tipo === 'formulario') acoes.push(btn(i.envio_acao === 'revisar' ? 'Revisar' : 'Lembrar', { mini: true, icone: i.envio_acao === 'revisar' ? 'ph:eye-bold' : 'ph:bell-ringing-bold', tid: 'hoje-form', onclick: () => { const e = por('envios', i.envio_id); i.envio_acao === 'revisar' ? verEnvio(e) : painelEnvio(e, true) } }))
-    if (i.tipo === 'intimacao') acoes.push(btn('Tratar', { mini: true, tipo: 'sec', onclick: () => ir('intimacoes') }))
+    if (i.tipo === 'intimacao') acoes.push(btn('Lançar prazo', { mini: true, tipo: 'sec', icone: 'ph:hourglass-high-bold', tid: 'hoje-lancar-prazo', onclick: () => { const x = por('intimacoes', i.intimacao_id); x ? lancarPrazo(x) : ir('intimacoes') } }), btn('Ver intimações', { mini: true, tipo: 'fantasma', onclick: () => ir('intimacoes') }))
     if (i.tipo === 'mensagem') acoes.push(btn('Marcar lida', { mini: true, tipo: 'fantasma', onclick: () => { DB.comunicacoes.filter(m => m.contato_id === i.contato_id).forEach(m => { m.lida = true }); salvar('comunicacoes'); render() } }))
     return h('div', { class: 'flex flex-wrap items-center gap-3 rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 px-4 py-3', 'data-testid': 'hoje-item' }, ic(TIPO_HOJE[i.tipo][1], 'text-xl text-primary dark:text-cafe-creme shrink-0'), h('div', { class: 'min-w-0 flex-1 basis-48' }, h('p', { class: 'text-sm font-semibold' }, i.titulo), c ? h('button', { type: 'button', class: 'text-xs text-gray-500 hover:underline', onclick: () => abrirFicha(c.id) }, c.nome) : null), i.atraso ? badge('Atrasado', 'vermelho') : null, badge(diaRelativo(i.quando), i.atraso ? 'vermelho' : 'ambar'), h('div', { class: 'flex flex-wrap gap-1.5' }, acoes))
   }
@@ -170,9 +170,9 @@ function graficoReceita() {
 UI.ag = { aba: 'calendario' }
 VIEWS.agenda = (p) => {
   if (p && p.aba) { UI.ag.aba = p.aba; R.p = {} }
-  const A = UI.ag.aba; const sub = { calendario: 'Consultas, audiências, reuniões e prazos num só calendário.', tarefas: 'Algo que exige execução ou acompanhamento. Sempre com data.', prazos: 'Data-limite relevante, processual ou combinada. Contagem em dias úteis, com feriados e recesso forense.', intimacoes: 'Publicações a tratar. Ao tratar, transforme em prazo.' }[A]
-  const pendIn = DB.intimacoes.filter(i => i.status === 'a_tratar').length; const atrasT = DB.tarefas.filter(t => !t.concluida && t.prazo < hojeISO()).length
-  return modulo({ titulo: 'Agenda', sub, abasDef: [{ id: 'calendario', nome: 'Calendário', icone: 'ph:calendar-bold' }, { id: 'tarefas', nome: 'Tarefas', icone: 'ph:check-square-bold', n: atrasT || null }, { id: 'prazos', nome: 'Prazos', icone: 'ph:hourglass-high-bold' }, { id: 'intimacoes', nome: 'Intimações', icone: 'ph:megaphone-bold', n: pendIn || null }], ativa: A, aoMudar: id => { UI.ag.aba = id; render() }, conteudo: a => VIEWS[a]() })
+  const A = UI.ag.aba; const sub = { calendario: 'Consultas, audiências, reuniões e prazos num só calendário.', tarefas: 'Algo que exige execução ou acompanhamento. Sempre com data.', prazos: 'Data-limite relevante, processual ou combinada. Contagem em dias úteis, com feriados e recesso forense.' }[A]
+  const atrasT = DB.tarefas.filter(t => !t.concluida && t.prazo < hojeISO()).length
+  return modulo({ titulo: 'Agenda', sub, abasDef: [{ id: 'calendario', nome: 'Calendário', icone: 'ph:calendar-bold' }, { id: 'tarefas', nome: 'Tarefas', icone: 'ph:check-square-bold', n: atrasT || null }, { id: 'prazos', nome: 'Prazos', icone: 'ph:hourglass-high-bold' }], ativa: A, aoMudar: id => { UI.ag.aba = id; render() }, conteudo: a => VIEWS[a]() })
 }
 /* ---- levar compromisso para fora do CRM (REAL: link do Google Agenda e arquivo .ics) ---- */
 function janelaCompromisso(p) {

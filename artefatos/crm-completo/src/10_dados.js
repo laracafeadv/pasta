@@ -3,13 +3,13 @@
    - Estruturas = as do CRM real (shared/types/crm.ts). Os dados dos clientes são FICTÍCIOS (exemplo).
    - Os 66 modelos de mensagem e o formulário "Dados da consulta" são os reais.
    - Persistência: banco do Artifact (data/users/<id>/crm_<coleção>) quando disponível; senão localStorage. */
-const COLECOES = ['contatos', 'demandas', 'processos', 'partes', 'movimentacoes', 'etapas', 'pendencias', 'compromissos', 'tarefas', 'documentos', 'honorarios', 'lancamentos', 'atividades', 'comunicacoes', 'intimacoes', 'formularios', 'envios', 'modelos', 'notas', 'auditoria', 'iniciais']
+const COLECOES = ['contatos', 'demandas', 'processos', 'partes', 'movimentacoes', 'etapas', 'pendencias', 'compromissos', 'tarefas', 'documentos', 'honorarios', 'lancamentos', 'atividades', 'comunicacoes', 'intimacoes', 'formularios', 'envios', 'modelos', 'notas', 'auditoria', 'iniciais', 'materiais', 'consultas', 'pareceres', 'analises', 'ctx_itens', 'chat_ia', 'modelos_doc']
 const DB = {}
 const AUTO_PADRAO = { cadencia: true, semNovidadeDias: 7, antecedenciaPrazo: 2, remarketingDias: 45, checklistAoAbrir: true, aniversarios: true, preparacaoPrazo: false }
 const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {}, ia: { ativa: false }, email_sync: null, auto: { ...AUTO_PADRAO }, integr: { supabase: '', drive_raiz: '', wa_sync: null, site_url: '', form_sync: null }, form: { validade: 30, lembreteDias: 3 } }
 /** Regras automáticas com os valores do escritório (padrão = o que o CRM sempre fez). */
 const AUTO = () => ({ ...AUTO_PADRAO, ...(CONFIG.auto || {}) })
-const ARM = { modo: 'memoria', uid: null, colecao: null, pendente: new Set(), timer: null, estado: 'iniciando' }
+const ARM = { modo: 'memoria', uid: null, colecao: null, pendente: new Set(), timer: null, estado: 'iniciando', partes: {} }
 
 const d = n => hojeISO(n)
 const agora = (minDesloc = 0) => new Date(Date.now() + minDesloc * 6e4).toISOString()
@@ -124,10 +124,46 @@ const GESTAO_EXEMPLO = { horas_produtivas_mes: 120, margem_desejada: 30, saldo_c
 /* ---------- persistência ---------- */
 function carregarSemente() { const s = montarSemente(); for (const c of COLECOES) DB[c] = s[c] || []; CONFIG.escritorio = clonar(ESCRITORIO_EXEMPLO); CONFIG.gestao = clonar(GESTAO_EXEMPLO); CONFIG.perfil = { nome: 'Lara Café', papel: 'admin', email: 'contato@exemplo.com.br' }; CONFIG.revisoes = []; CONFIG.checklist_manual = {}; CONFIG.seq = {}; CONFIG.ia = { ativa: false }; CONFIG.email_sync = null; CONFIG.auto = { ...AUTO_PADRAO }; CONFIG.integr = { supabase: '', drive_raiz: '', wa_sync: null } }
 function salvar(col) { ARM.pendente.add(col || '*'); clearTimeout(ARM.timer); ARM.timer = setTimeout(descarregar, 500); renderBarraArmazenamento() }
+/* O banco do Artifact aceita até 256 KiB por documento: cada coleção é gravada em partes (crm_<col>__0, __1…) e textos longos de materiais em documentos próprios. */
+const PARTE_BYTES = 200000, TEXTO_PARTE = 60000, TEXTO_INLINE = 40000
+const bytesDe = s => new TextEncoder().encode(s).length
+function fatiarColecao(arr) {
+  const partes = []; let atual = []; let tam = 2
+  for (const it of arr) { const sj = JSON.stringify(it); const b = bytesDe(sj) + 1; if (atual.length && tam + b > PARTE_BYTES) { partes.push(atual); atual = []; tam = 2 } atual.push(it); tam += b }
+  partes.push(atual); return partes
+}
+const MAT_TXT = new Map() // id -> comprimento do texto já gravado (evita regravar textos longos sem mudança)
+async function gravarColecaoEmPartes(c) {
+  let arr = DB[c]; const extras = []
+  if (c === 'materiais') arr = arr.map(m => { if (m.texto && m.texto.length > TEXTO_INLINE) { const n = Math.ceil(m.texto.length / TEXTO_PARTE); const chave = m.id + ':' + m.texto.length; if (MAT_TXT.get(m.id) !== chave) extras.push([m.id, m.texto, n, chave]); return { ...m, texto: null, texto_partes: n } } return m })
+  for (const [id, texto, n, chave] of extras) { for (let k = 0; k < n; k++) await ARM.colecao.doc('crm_mt_' + id + '_' + k).set({ v: texto.slice(k * TEXTO_PARTE, (k + 1) * TEXTO_PARTE) }); MAT_TXT.set(id, chave) }
+  const partes = fatiarColecao(arr)
+  for (let k = 0; k < partes.length; k++) await ARM.colecao.doc('crm_' + c + '__' + k).set({ v: JSON.stringify(partes[k]) })
+  await ARM.colecao.doc('crm_' + c).set({ p: partes.length })
+  const antes = ARM.partes[c] || 0; for (let k = partes.length; k < antes; k++) { try { await ARM.colecao.doc('crm_' + c + '__' + k).delete() } catch (e) { /* parte antiga */ } }
+  ARM.partes[c] = partes.length
+}
+async function lerColecaoEmPartes(c) {
+  const idx = await ARM.colecao.doc('crm_' + c).get(); if (!idx.exists) return null
+  const d = idx.data(); if (d.p == null) { ARM.partes[c] = 0; return JSON.parse(d.v) } // formato antigo (um documento só)
+  let arr = []; for (let k = 0; k < d.p; k++) { const x = await ARM.colecao.doc('crm_' + c + '__' + k).get(); if (x.exists) arr = arr.concat(JSON.parse(x.data().v)) } ARM.partes[c] = d.p
+  if (c === 'materiais') for (const m of arr) if (m.texto_partes) { let t = ''; for (let k = 0; k < m.texto_partes; k++) { const x = await ARM.colecao.doc('crm_mt_' + m.id + '_' + k).get(); if (x.exists) t += x.data().v } m.texto = t; delete m.texto_partes; MAT_TXT.set(m.id, m.id + ':' + t.length) }
+  return arr
+}
+const IMGS_ID = ['logo', 'assinatura_img', 'cabecalho_img']
+async function gravarConfig() {
+  const idc = CONFIG.identidade || {}; const imgs = {}; for (const k of IMGS_ID) if (idc[k]) imgs[k] = idc[k]
+  const cfg = JSON.parse(JSON.stringify(CONFIG)); if (cfg.identidade) for (const k of IMGS_ID) delete cfg.identidade[k]
+  await ARM.colecao.doc('crm_config').set({ v: JSON.stringify(cfg) }); await ARM.colecao.doc('crm_img').set({ v: JSON.stringify(imgs) })
+}
+async function lerConfig() {
+  const cf = await ARM.colecao.doc('crm_config').get(); if (cf.exists) Object.assign(CONFIG, JSON.parse(cf.data().v))
+  const im = await ARM.colecao.doc('crm_img').get(); if (im.exists) { CONFIG.identidade = { ...(CONFIG.identidade || {}), ...JSON.parse(im.data().v) } }
+}
 async function descarregar() {
   const cols = ARM.pendente.has('*') ? [...COLECOES, 'config'] : [...ARM.pendente]; ARM.pendente.clear()
   try {
-    if (ARM.modo === 'db' && ARM.colecao) { for (const c of cols) await ARM.colecao.doc('crm_' + c).set(c === 'config' ? { v: JSON.stringify(CONFIG) } : { v: JSON.stringify(DB[c]) }); ARM.estado = 'salvo' }
+    if (ARM.modo === 'db' && ARM.colecao) { for (const c of cols) { if (c === 'config') await gravarConfig(); else await gravarColecaoEmPartes(c) } ARM.estado = 'salvo' }
     else { lsSet('db', { DB, CONFIG }); ARM.estado = 'salvo (neste navegador)' }
   } catch (e) { ARM.estado = 'erro ao salvar'; aviso('Não foi possível salvar: ' + (e.message || e.code || 'erro'), 'erro') }
   renderBarraArmazenamento()
@@ -144,9 +180,9 @@ async function iniciarArmazenamento(aoCarregar) {
       ARM.modo = 'db'; ARM.uid = uid; ARM.colecao = db.collection('data/users/' + uid)
       const meta = await ARM.colecao.doc('crm_meta').get()
       if (meta.exists) {
-        for (const c of COLECOES) { const s = await ARM.colecao.doc('crm_' + c).get(); if (s.exists) DB[c] = JSON.parse(s.data().v) }
+        for (const c of COLECOES) { const arr = await lerColecaoEmPartes(c); if (arr) DB[c] = arr }
         { const m = await ARM.colecao.doc('crm_mensagens').get(); if (m.exists && !DB.comunicacoes.some(x => x.origem === 'migrado') && JSON.parse(m.data().v).length && DB.comunicacoes.length === 0) migrarMensagens(JSON.parse(m.data().v)) }
-        const cf = await ARM.colecao.doc('crm_config').get(); if (cf.exists) Object.assign(CONFIG, JSON.parse(cf.data().v))
+        await lerConfig()
         ARM.estado = 'carregado do banco'
       } else { await ARM.colecao.doc('crm_meta').set({ semeado: true, em: agora(), versao: 1 }); ARM.pendente.add('*'); await descarregar(); ARM.estado = 'dados de exemplo gravados' }
     } else {
@@ -188,9 +224,9 @@ function hojeItens() {
     const uc = ultimoContato(c); if (AUTO().semNovidadeDias > 0 && c.etapa === 'ativo' && uc && diasEntre(diaDe(uc), h) >= AUTO().semNovidadeDias) it.push({ tipo: 'relatorio', contato_id: c.id, titulo: 'Cliente ativa há ' + diasEntre(diaDe(uc), h) + ' dias sem comunicação', quando: h, modelo: '/relatorio-semanal' })
   }
   for (const t of DB.tarefas) if (!t.concluida && t.prazo <= h) it.push({ tipo: 'tarefa', contato_id: t.contato_id, tarefa_id: t.id, titulo: t.titulo, quando: t.prazo, atraso: t.prazo < h })
-  for (const p of DB.compromissos) if (p.status === 'pendente' && (p.tipo === 'prazo') && diaDe(dataDoCompromisso(p)) <= hojeISO(AUTO().antecedenciaPrazo)) it.push({ tipo: 'prazo', contato_id: p.contato_id, compromisso_id: p.id, titulo: p.titulo, quando: diaDe(dataDoCompromisso(p)), atraso: diaDe(dataDoCompromisso(p)) < h })
+  for (const p of DB.compromissos) if (p.status === 'pendente' && (p.tipo === 'prazo') && diaDe(dataDoCompromisso(p)) <= hojeISO(Math.max(AUTO().antecedenciaPrazo, ...(p.avisos_dias || [0])))) it.push({ tipo: 'prazo', contato_id: p.contato_id, compromisso_id: p.id, titulo: p.titulo, quando: diaDe(dataDoCompromisso(p)), atraso: diaDe(dataDoCompromisso(p)) < h })
   for (const x of itensFormularioHoje()) it.push(x)
-  for (const m of DB.intimacoes) if (m.status === 'a_tratar') { const pz = dataPrazoIntim(m); const aviso_ = !m.lida ? 'Intimação NOVA' : (!m.processo_id && !m.contato_id) ? 'Intimação não vinculada' : pz && pz.d < h ? 'Prazo vencido (' + (pz.tipo === 'sugerido' ? 'sugerido' : 'criado') + ')' : pz && pz.d <= somarDias(h, 7) ? 'Prazo próximo' : m.prazo && m.prazo.estado === 'revisar' && !m.compromisso_id ? 'Prazo a revisar' : 'Intimação a tratar'; it.push({ tipo: 'intimacao', contato_id: m.contato_id, intimacao_id: m.id, titulo: aviso_ + ': ' + m.tipo + (m.numero_cnj ? ' — ' + m.numero_cnj : ''), quando: m.data_publicacao, atraso: !!(pz && pz.d < h) }) }
+  for (const m of DB.intimacoes) if (semPrazoLancado(m)) it.push({ tipo: 'intimacao', contato_id: m.contato_id, intimacao_id: m.id, titulo: 'Intimação sem prazo lançado: ' + (m.movimento || m.tipo) + (m.numero_cnj ? ' — ' + m.numero_cnj : ''), quando: m.movimento_data || m.data_publicacao })
   for (const m of DB.comunicacoes) if (m.direcao === 'entrada' && !m.lida) it.push({ tipo: 'mensagem', contato_id: m.contato_id, titulo: (m.canal === 'email' ? 'E-mail recebido: ' : 'Mensagem sem resposta: ') + '“' + (m.assunto || m.texto).slice(0, 46) + '…”', quando: diaDe(m.created_at) })
   return it.sort((a, b) => (a.quando < b.quando ? -1 : 1))
 }
