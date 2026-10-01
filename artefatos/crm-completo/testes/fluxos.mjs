@@ -35,7 +35,7 @@ await t('modo-editar').click(); await esp()
 
 /* ---- 2. Enviar → responder como cliente → ficha ---- */
 await ir('formularios'); await p.evaluate(() => abrirFicha(4)); await esp(); await p.locator('[data-testid=ficha] >> text=Cliente').first().click().catch(() => {})
-await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption({ label: 'Pré-consulta (exemplo) — Consulta' }); await t('gerar-link').click(); await esp(250)
+await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption({ label: 'Pré-consulta (exemplo) — Consulta' }); await p.locator('summary:has-text("Só para testar")').click(); await t('modo-teste').click(); await t('gerar-link').click(); await esp(250)
 ok(await t('painel-envio').count() === 1 && await t('msg-previa').count() === 1, 'enviar formulário gera link (teste) e painel de envio')
 await t('abrir-como-cliente').click(); await esp(200)
 ok(await t('publico-titulo').count() === 1, 'página pública abre sem login')

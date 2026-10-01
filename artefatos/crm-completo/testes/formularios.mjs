@@ -9,7 +9,7 @@ await p.addInitScript(() => {
   window.__calls = []; window.__siteRows = []; window.__siteResp = []
   const mcp = { callTool: async (srv, tool, inp) => { window.__calls.push({ srv, tool, inp })
     if (srv === 'Supabase') { const q = inp.query; const dev = r => ({ payload: '<untrusted-data-x>\n' + JSON.stringify(r) + '\n</untrusted-data-x>' })
-      if (/from public\.contatos where telefone/.test(q)) return dev([{ id: 77 }]); if (/from public\.formularios f where/.test(q)) return dev([{ id: 5, perguntas: 4 }]); if (/^insert into public\.formulario_envios/.test(q)) return dev([{ id: 900 }]); if (/^update public\.formulario_envios/.test(q)) return dev([])
+      if (/from public\.contatos where telefone/.test(q)) return dev([{ id: 77 }]); if (/from public\.casos where/.test(q)) return dev([{ id: 12 }]); if (/from public\.formularios f where/.test(q)) return dev([{ id: 5, versao: 3, situacao: 'publicado', perguntas: 4 }]); if (/^insert into public\.formulario_envios/.test(q)) return dev([{ id: 900 }]); if (/^update public\.formulario_envios/.test(q)) return dev([])
       if (/from public\.formulario_envios e join/.test(q)) return dev(window.__siteRows); if (/from public\.formulario_envio_respostas/.test(q)) return dev(window.__siteResp); return dev([]) }
     if (srv === 'Google Drive' && tool === 'create_file') return { payload: { id: 'ARQ' + String(window.__calls.length).padStart(9, '0'), title: inp.title, viewUrl: 'https://drive.google.com/file/d/X/view' } }
     if (srv === 'Gmail' && tool === 'send_message') return { payload: { id: 'SENT1' } }
@@ -41,7 +41,9 @@ await t('sit-filtro-publicado').click(); await esp(); await t('arquivar-' + fid)
 await t('sit-filtro-arquivado').click(); await esp(); await t('publicar-' + fid).click(); await esp(); ok(await E(i => situacaoForm(formularioDe(i)) === 'publicado', fid), 'republicar pela lista')
 
 /* 3. Envio — link de teste (sem site): honesto, não envia */
-await E(() => abrirFicha(6)); await esp(); await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption(String(fid)); await t('env-caso').selectOption('1'); await t('env-prazo').fill('2020-01-01'); ok(await t('modo-site').isDisabled(), 'sem endereço do site, link real fica indisponível'); await t('gerar-link').click(); await esp(300)
+await E(() => abrirFicha(6)); await esp(); await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption(String(fid)); await t('env-caso').selectOption('1'); await t('env-prazo').fill('2020-01-01'); ok(await t('modo-site').isDisabled() && await t('falta-site').count() === 1, 'sem endereço do site: o link público é o padrão, mas avisa o que falta (não cai em teste sozinho)')
+await t('gerar-link').click(); await esp(200); ok(await t('painel-envio').count() === 0, 'sem site configurado não gera link público')
+await p.locator('summary:has-text("Só para testar")').click(); await t('modo-teste').click(); await t('gerar-link').click(); await esp(300)
 
 const e1 = await E(() => DB.envios.at(-1)); ok(e1.modo === 'teste' && e1.status === 'gerado' && e1.caso_id === 1 && e1.token.length === 32 && /^[A-Za-z0-9_-]+$/.test(e1.token) && !e1.enviado_em, 'envio de teste: token 192 bits, vinculado à demanda, não marcado como enviado')
 ok(await t('env-whatsapp').isDisabled() && await t('env-email').isDisabled() && await t('copiar-link').isDisabled(), 'link de teste: WhatsApp/e-mail/copiar desabilitados (nada falso)')
@@ -95,17 +97,17 @@ await E(() => abrirFicha(6)); await esp(); ok((await p.locator('[data-testid=fic
 
 /* 6. Link real (site): criação com confirmação, SQL restrito, WhatsApp/e-mail, QR, lembrete, cancelamento */
 await E(() => { CONFIG.integr.site_url = 'https://crm.exemplo.com.br/'.replace(/\/$/, ''); CONFIG.integr.supabase = 'cuaeuazmgwdhfozrqkin' })
-await E(() => fecharTodas()); await E(() => abrirFicha(6)); await esp(); await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption('2'); ok(await t('modo-site').isEnabled(), 'com endereço do site, link real fica disponível'); await t('modo-site').click(); await t('gerar-link').click(); await esp(); 
+await E(() => fecharTodas()); await E(() => abrirFicha(6)); await esp(); await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption('2'); ok(await t('modo-site').isEnabled() && await t('modo-site').isChecked(), 'com endereço do site, o link público é o padrão'); await t('env-caso').selectOption('1'); await t('env-prazo').fill('2031-02-15'); await t('gerar-link').click(); await esp(); 
 ok((await p.locator('body').innerText()).includes('Criar o envio no CRM do site?'), 'link real pede confirmação antes de gravar no site')
 const antesW = (await calls()).filter(x => /^insert/.test(x.inp.query || '')).length; ok(antesW === 0, 'nada gravado antes da confirmação'); await p.getByRole('button', { name: /Criar link real/i }).click(); await esp(400)
-const ws = (await calls()).filter(x => x.srv === 'Supabase' && /^(insert|update)/.test(x.inp.query)); ok(ws.length === 1 && /^insert into public\.formulario_envios \(formulario_id, contato_id, token, expira_em, status\) values \(5, 77, '[A-Za-z0-9_-]{32}', '[^']+', 'enviado'\) returning id$/.test(ws[0].inp.query), 'única escrita: INSERT parametrizado em formulario_envios')
+const ws = (await calls()).filter(x => x.srv === 'Supabase' && /^(insert|update)/.test(x.inp.query)); ok(ws.length === 1 && /^insert into public\.formulario_envios \(formulario_id, contato_id, caso_id, token, expira_em, prazo_resposta, versao_formulario, status\) values \(5, 77, 12, '[A-Za-z0-9_-]{32}', '[^']+', '2031-02-15', 3, 'gerado'\) returning id$/.test(ws[0].inp.query), 'única escrita: INSERT parametrizado (pessoa, demanda do site, prazo, versão, status gerado)')
 const e3 = await E(() => DB.envios.at(-1)); ok(e3.modo === 'site' && e3.site_id === 900 && (await t('link-form').inputValue()) === 'https://crm.exemplo.com.br/pc/' + e3.token, 'link individual: endereço do site + /pc/ + código do cliente')
-ok(await t('env-whatsapp').isEnabled() && await t('env-email').isEnabled() && await t('copiar-link').isEnabled(), 'link real habilita WhatsApp, e-mail e copiar')
+ok(await t('env-whatsapp').isEnabled() && await t('env-email').isEnabled() && await t('copiar-link').isEnabled() && await t('ver-formulario').count() === 1 && await t('ver-respostas-envio').count() === 1 && (await p.locator('body').innerText()).includes('Link criado com sucesso'), 'após gerar: "Link criado com sucesso", copiar, WhatsApp, e-mail, ver formulário e ver respostas')
 await t('env-qr').click(); await esp(); ok(await t('qr-svg').locator('svg').count() === 1, 'QR Code do link gerado'); await E(() => { fecharTodas(); painelEnvio(DB.envios.at(-1)) }); await esp()
 await t('env-whatsapp').click(); await esp(); const txtWa = await t('comp-texto').inputValue(); ok(txtWa.includes('/pc/' + e3.token) && txtWa.includes('LGPD'), 'WhatsApp: mensagem pronta com o link individual')
 const [pop] = await Promise.all([p.context().waitForEvent('page', { timeout: 3000 }).catch(() => null), t('wa-abrir').click()]); await esp(300)
 ok(pop && /wa\.me\/55\d+\?text=/.test(pop.url()), 'abre o WhatsApp com a mensagem (envio manual pela usuária)')
-const e3b = await E(() => DB.envios.at(-1)); ok(e3b.status === 'enviado' && e3b.enviado_em && e3b.canal_envio === 'whatsapp', 'envio marcado como "enviado" só depois de abrir o WhatsApp')
+const e3b = await E(() => DB.envios.at(-1)); ok(e3b.status === 'enviado' && e3b.enviado_em && e3b.canal_envio === 'whatsapp', 'envio marcado como "enviado" só depois de abrir o WhatsApp'); await esp(300); ok((await calls()).some(x => /^update public\.formulario_envios set enviado_em = coalesce\(enviado_em, now\(\)\), canal_envio = 'whatsapp'/.test(x.inp.query || '')), 'o status "enviado" também é gravado no CRM do site')
 ok(await E(() => DB.comunicacoes.at(-1).canal === 'whatsapp' && DB.comunicacoes.at(-1).texto.includes('/pc/')), 'envio registrado na comunicação do cliente')
 await E(() => fecharTodas()); await E(() => { const e = DB.envios.at(-1); e.enviado_em = agora(-60 * 24 * 4); render() }); await esp()
 ok((await E(() => itensFormularioHoje().map(x => x.titulo))).some(x => /sem resposta há 4 dias/.test(x)), 'lembrete aparece no Hoje após 3+ dias sem resposta')
