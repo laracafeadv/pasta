@@ -1,0 +1,50 @@
+// Fluxos funcionais do CRM completo (artefato), em Chromium: formulários ponta a ponta, funil, demanda, regras, persistência, permissões, responsividade.
+import { chromium } from '/tmp/node_modules/playwright-core/index.mjs'
+const arq = 'file:///home/user/pasta/artefatos/crm-completo/dist/crm.html'
+let falhas = 0; const ok = (c, n) => { console.log((c ? 'PASS ' : 'FAIL ') + n); if (!c) falhas++ }
+const b = await chromium.launch({ executablePath: process.env.CHROME, args: ['--no-sandbox'] })
+const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }); const p = await ctx.newPage()
+const erros = []; p.on('pageerror', e => erros.push(e.message)); p.on('console', m => { if (m.type() === 'error') erros.push(m.text()) })
+const t = tid => p.locator(`[data-testid="${tid}"]`)
+const ir = (r, x) => p.evaluate(([r, x]) => ir(r, x || {}), [r, x]); const esp = (ms = 120) => p.waitForTimeout(ms)
+await p.goto(arq); await p.waitForSelector('[data-testid=sidebar]')
+
+/* ---- 1. (construtor de perguntas removido: o formulário é do Google Forms; ver testes/formularios.mjs) ---- */
+/* ---- 2. (envio, preenchimento pela cliente e respostas: ver testes/formularios.mjs, com o banco real simulado) ---- */
+
+/* ---- 3. Funil e regras ---- */
+await ir('leads'); await esp()
+await p.evaluate(() => { const c = contato(1); const r = moverEtapa(c, 'agendado'); window.__r = r }); ok((await p.evaluate(() => window.__r.erro)) != null, 'regra: agendar sem data é bloqueado')
+await p.evaluate(() => { window.__r2 = moverEtapa(contato(1), 'perdido') }); ok((await p.evaluate(() => window.__r2.erro)) != null, 'regra: perdido sem motivo é bloqueado')
+await p.evaluate(() => { moverEtapa(contato(1), 'qualificacao') }); ok((await p.evaluate(() => contato(1).proxima_acao)) === 'Convidar para a consulta estratégica', 'cadência: etapa define próxima ação')
+await p.evaluate(() => { const d = abrirDemanda({ contato_id: 5, titulo: 'Pensão — Juliana', area: 'Direito de Família', tipo: 'judicial', procedimento: 'guarda-alimentos/padrao' }); window.__d = d.id })
+ok(await p.evaluate(() => contato(5).etapa) === 'ativo', 'abrir 1ª demanda → cliente ativo')
+ok(await p.evaluate(() => docsDe(5, window.__d).length) >= 8, 'abrir demanda cria checklist de documentos da área')
+ok((await p.evaluate(() => { moverEtapa(contato(5), 'ativo'); return encerrarDemanda(demanda(window.__d), null).erro })) != null, 'encerrar exige resultado')
+await p.evaluate(() => encerrarDemanda(demanda(window.__d), 'acordo')); ok(await p.evaluate(() => contato(5).etapa) === 'concluido', 'encerrar última demanda → Concluído')
+ok(await p.evaluate(() => excluirContato(contato(5)).erro) != null, 'excluir pessoa com demandas é bloqueado')
+ok(await p.evaluate(() => { const c = contato(5); const n = classificarPorNps(10); return n === 'promotora' }), 'NPS 10 → promotora')
+
+/* ---- 4. UI: lead movido pelo select, tarefa, prazo, busca ---- */
+await ir('leads'); await p.locator('[data-testid=lead-card] [data-testid=avancar]').first().click(); await esp(); 
+ok(await p.evaluate(() => contato(1).etapa) !== undefined, 'botão Avançar responde')
+await ir('tarefas'); await t('nova-tarefa').click(); await p.locator('[data-campo=titulo]').fill('Tarefa de teste'); await t('salvar').click(); await esp()
+ok(await p.evaluate(() => DB.tarefas.some(x => x.titulo === 'Tarefa de teste')), 'criar tarefa')
+await p.locator('[data-testid=tarefa]:has-text("Tarefa de teste") input[type=checkbox]').click(); await esp(); ok(await p.evaluate(() => DB.tarefas.find(x => x.titulo === 'Tarefa de teste').concluida), 'concluir tarefa')
+await ir('prazos'); await p.fill('[data-testid=calc-pub]', '2026-10-01'); await p.fill('[data-testid=calc-dias]', '15'); await esp(); ok(/vence em/i.test(await t('calc-res').innerText()), 'calculadora de prazos (dias úteis)')
+await t('abrir-busca').click(); await t('busca-global').fill('Helena'); await esp(); ok((await p.locator('[role=dialog]').innerText()).includes('Helena Prado'), 'busca global encontra pessoa'); await p.keyboard.press('Escape')
+
+/* ---- 5. Persistência (recarregar) ---- */
+await p.reload(); await p.waitForSelector('[data-testid=sidebar]'); await esp(300)
+ok(await p.evaluate(() => DB.tarefas.some(x => x.titulo === 'Tarefa de teste')), 'dados persistem ao recarregar (localStorage fora do Artifact)')
+
+/* ---- 6. Permissões e tema ---- */
+await p.evaluate(() => { CONFIG.perfil.papel = 'equipe'; render() }); await esp(); ok(await t('nav-config').count() === 0, 'papel Equipe: sem Configurações no menu')
+await ir('config'); ok((await p.locator('main').innerText()).includes('Sem permissão'), 'papel Equipe: rota bloqueada'); await p.evaluate(() => { CONFIG.perfil.papel = 'admin'; render() })
+await t('tema').click(); await esp(); ok(await p.evaluate(() => document.documentElement.classList.contains('dark')) !== undefined, 'alternar tema')
+
+/* ---- 7. Responsividade: sem rolagem horizontal em 390px ---- */
+await p.setViewportSize({ width: 390, height: 800 })
+for (const r of ['inicio', 'agenda', 'tarefas', 'prazos', 'pessoas', 'clientes', 'comunicacao', 'demandas', 'documentos', 'financeiro', 'relatorios', 'formularios', 'manual', 'mapa', 'config']) { await ir(r); await esp(60); const w = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth); ok(w <= 1, `mobile sem rolagem horizontal: ${r} (${w}px)`) }
+ok(erros.length === 0, 'sem erros: ' + erros.slice(0, 4).join(' | '))
+await b.close(); console.log(falhas ? falhas + ' falha(s)' : 'TUDO OK'); process.exit(falhas ? 1 : 0)

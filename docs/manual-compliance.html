@@ -1,0 +1,526 @@
+<title>Manual de Compliance Lara Café</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --fundo: #f3efe8;
+    --papel: #fbf9f5;
+    --tinta: #2a1d18;
+    --tinta-2: #5c4a40;
+    --cafe: #3c2923;
+    --caramelo: #8b6f47;
+    --linha: #e2d9cc;
+    --suave: #ece5da;
+    --alerta: #9a3b2a;
+    --alerta-fundo: #f6e4de;
+    --ok: #3f6b45;
+    --ok-fundo: #e3eee2;
+    --aviso-fundo: #f4ead6;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fundo: #171210; --papel: #201916; --tinta: #efe7dd; --tinta-2: #bfb0a3; --cafe: #e6d3bf;
+      --caramelo: #c9a878; --linha: #3a2e28; --suave: #2a211d; --alerta: #f0a08e; --alerta-fundo: #3a211b;
+      --ok: #9fcfa4; --ok-fundo: #1f2e21; --aviso-fundo: #33291a; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --fundo: #171210; --papel: #201916; --tinta: #efe7dd; --tinta-2: #bfb0a3; --cafe: #e6d3bf;
+    --caramelo: #c9a878; --linha: #3a2e28; --suave: #2a211d; --alerta: #f0a08e; --alerta-fundo: #3a211b;
+    --ok: #9fcfa4; --ok-fundo: #1f2e21; --aviso-fundo: #33291a; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--fundo); color: var(--tinta);
+    font: 400 15.5px/1.65 "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding-inline: 16px;
+  }
+  .pagina { max-width: 1180px; margin: 0 auto; padding-block: 40px 80px; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; }
+  @media (max-width: 900px) { .pagina { grid-template-columns: 1fr; gap: 24px; padding-block: 24px 56px; } }
+
+  nav.indice { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 13.5px; }
+  @media (max-width: 900px) { nav.indice { position: static; } }
+  nav.indice p { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--caramelo); font-weight: 700; margin: 0 0 10px; }
+  nav.indice ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: s; }
+  nav.indice a { display: block; padding: 6px 10px; border-radius: 8px; color: var(--tinta-2); text-decoration: none; }
+  nav.indice a:hover, nav.indice a:focus-visible { background: var(--suave); color: var(--tinta); outline: none; }
+
+  main { min-width: 0; }
+  header.capa { border-bottom: 1px solid var(--linha); padding-bottom: 28px; margin-bottom: 8px; }
+  .sobre { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--caramelo); font-weight: 700; margin: 0; }
+  h1, h2, h3 { font-family: "Marcellus", Georgia, serif; font-weight: 400; color: var(--cafe); text-wrap: balance; }
+  h1 { font-size: clamp(34px, 5vw, 52px); line-height: 1.08; margin: 10px 0 14px; }
+  h2 { font-size: clamp(26px, 3.2vw, 34px); line-height: 1.15; margin: 0 0 6px; }
+  h3 { font-size: 21px; margin: 32px 0 8px; }
+  p, li { max-width: 72ch; }
+  .lead { font-size: 17px; color: var(--tinta-2); margin: 0; }
+  .ficha { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 18px; font-size: 13px; color: var(--tinta-2); }
+  .ficha b { color: var(--tinta); font-weight: 600; }
+
+  section { padding-top: 48px; scroll-margin-top: 16px; }
+  .num { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: var(--caramelo); letter-spacing: .06em; }
+  .intro { color: var(--tinta-2); margin-top: 4px; }
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .86em; }
+  code { background: var(--suave); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+
+  .regras { list-style: none; counter-reset: r; padding: 0; margin: 22px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; }
+  @media (max-width: 700px) { .regras { grid-template-columns: 1fr; } }
+  .regras li { counter-increment: r; position: relative; padding-left: 38px; font-size: 14.5px; }
+  .regras li::before { content: counter(r, decimal-leading-zero); position: absolute; left: 0; top: 3px; font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--caramelo); }
+
+  .tabela { overflow-x: auto; margin: 16px 0; border: 1px solid var(--linha); border-radius: 12px; background: var(--papel); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+  th { text-align: left; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); font-weight: 700; padding: 10px 14px; border-bottom: 1px solid var(--linha); background: var(--suave); }
+  td { padding: 10px 14px; border-top: 1px solid var(--linha); vertical-align: top; }
+  tr:first-child td { border-top: 0; }
+
+  .arvore { background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 18px 20px; overflow-x: auto; font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.85; white-space: pre; color: var(--tinta); }
+  .arvore .c { color: var(--tinta-2); }
+
+  .nota { border-radius: 12px; padding: 14px 18px; margin: 16px 0; font-size: 14.5px; background: var(--aviso-fundo); }
+  .nota.proibido { background: var(--alerta-fundo); }
+  .nota.sistema { background: var(--ok-fundo); }
+  .nota b.rotulo { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
+  .nota.proibido b.rotulo { color: var(--alerta); }
+  .nota.sistema b.rotulo { color: var(--ok); }
+  .nota p { margin: 0; }
+
+  .selo { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .selo.interno { background: var(--suave); color: var(--tinta-2); }
+  .selo.confidencial { background: var(--aviso-fundo); color: var(--caramelo); }
+  .selo.sigiloso { background: var(--alerta-fundo); color: var(--alerta); }
+
+  .passos { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px; counter-reset: p; }
+  .passos li { counter-increment: p; display: grid; grid-template-columns: 34px 1fr; gap: 12px; }
+  .passos li::before { content: counter(p); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--cafe); color: var(--papel); font-size: 12px; font-weight: 700; margin-top: 1px; }
+
+  details { background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--cafe); }
+  details[open] summary { margin-bottom: 8px; }
+  .modelo { white-space: pre-wrap; font-size: 14px; line-height: 1.7; }
+  .copiar { margin-top: 10px; font: 600 12px/1 "Plus Jakarta Sans", sans-serif; letter-spacing: .08em; text-transform: uppercase; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--cafe); background: transparent; color: var(--cafe); cursor: pointer; }
+  .copiar:focus-visible { outline: 2px solid var(--caramelo); outline-offset: 2px; }
+
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--linha); font-size: 13px; color: var(--tinta-2); }
+  a { color: var(--cafe); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="pagina">
+  <nav class="indice" aria-label="Índice">
+    <p>Neste manual</p>
+    <ol>
+      <li><a href="#regras">As 12 regras</a></li>
+      <li><a href="#base">1. Base e responsabilidades</a></li>
+      <li><a href="#armazenamento">2. Armazenamento e indexação</a></li>
+      <li><a href="#rotulos">3. Rótulos de sigilo</a></li>
+      <li><a href="#ciclo">4. Ciclo de vida do documento</a></li>
+      <li><a href="#conhecimento">5. Conhecimento do escritório</a></li>
+      <li><a href="#seguranca">6. Segurança da informação</a></li>
+      <li><a href="#lgpd">7. LGPD na prática</a></li>
+      <li><a href="#incidentes">8. Incidentes e vazamentos</a></li>
+      <li><a href="#sigilo">9. Sigilo profissional</a></li>
+      <li><a href="#sancoes">10. Condutas e sanções</a></li>
+      <li><a href="#rotinas">11. Rotinas de controle</a></li>
+      <li><a href="#anexos">Anexos</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="capa">
+      <p class="sobre">Lara Café Advocacia &amp; Consultoria · Uso interno</p>
+      <h1>Manual de Gestão de Conhecimento e Compliance</h1>
+      <p class="lead">Onde cada documento mora, quem pode ver, como se nomeia, quanto tempo se guarda e o que fazer quando algo dá errado. Vale para advogadas, estagiárias, secretaria e qualquer pessoa que preste serviço ao escritório.</p>
+      <div class="ficha">
+        <span><b>Versão</b> 1.0</span>
+        <span><b>Vigência</b> 25 de setembro de 2026</span>
+        <span><b>Responsável</b> Dra. Lara Café (encarregada de dados)</span>
+        <span><b>Revisão</b> anual, ou quando uma ferramenta mudar</span>
+      </div>
+    </header>
+
+    <section id="regras">
+      <h2>As 12 regras que ninguém pode esquecer</h2>
+      <p class="intro">Se você só ler uma parte deste manual, leia esta. O resto explica o porquê e o passo a passo.</p>
+      <ol class="regras">
+        <li>Documento de cliente mora em dois lugares só: o <b>CRM</b> (dados e conversas) e o <b>Drive compartilhado</b> do escritório (arquivos). Nunca no computador, no celular pessoal ou no e-mail.</li>
+        <li>Todo arquivo segue o nome padrão <code>AAAA-MM-DD_CLI-0000_TIPO_descricao_v01</code>. Sem nome de pessoa e sem CPF no nome do arquivo.</li>
+        <li>Tudo o que é de cliente é, no mínimo, <span class="selo confidencial">Confidencial</span>. Família e sucessões são <span class="selo sigiloso">Sigiloso</span> por padrão (segredo de justiça).</li>
+        <li>Nenhum link "qualquer pessoa com o link". Para enviar ao cliente, compartilhe com o e-mail dele e com prazo de expiração.</li>
+        <li>Verificação em duas etapas ligada em tudo: Google, CRM, WhatsApp Business, e-mail.</li>
+        <li>Conta é pessoal e intransferível. Ninguém usa o login de outra pessoa, nem "só um minutinho".</li>
+        <li>Dado de cliente não entra em IA pública (ChatGPT pessoal, Gemini, etc.). A única IA autorizada é a Ana, dentro do CRM.</li>
+        <li>Recebeu documento pelo WhatsApp do celular? Suba para a pasta do cliente no mesmo dia e apague do aparelho.</li>
+        <li>Não se fala de caso em público, em redes sociais ou em grupos, nem "sem dizer o nome".</li>
+        <li>Suspeitou de vazamento, perda de celular ou acesso estranho? Avise a Dra. Lara <b>na hora</b>. O prazo legal começa a correr quando o escritório sabe.</li>
+        <li>Antes de aceitar um caso, o CRM confere conflito de interesses. Alerta de conflito para tudo até a advogada decidir.</li>
+        <li>Saída de colaborador: todos os acessos são revogados no mesmo dia, antes do último expediente terminar.</li>
+      </ol>
+    </section>
+
+    <section id="base">
+      <p class="num">1</p>
+      <h2>Base normativa e responsabilidades</h2>
+      <p class="intro">O sigilo não é cortesia com o cliente: é dever legal da advogada e de toda a equipe que tem acesso ao que ela sabe.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Norma</th><th>O que exige de nós</th></tr></thead>
+        <tbody>
+          <tr><td>Estatuto da Advocacia (Lei 8.906/94), art. 7º, II, e art. 34, VII</td><td>Inviolabilidade do escritório, dos arquivos e das comunicações; violar sigilo sem justa causa é infração disciplinar.</td></tr>
+          <tr><td>Código de Ética e Disciplina da OAB, arts. 35 a 38</td><td>O sigilo é de ordem pública, não depende de pedido do cliente e continua depois do fim do caso. As exceções (art. 37) são decididas só pela advogada.</td></tr>
+          <tr><td>Código Penal, art. 154</td><td>Revelar segredo conhecido em razão da profissão é crime, para qualquer pessoa da equipe.</td></tr>
+          <tr><td>CPC, art. 189, II</td><td>Processos de casamento, divórcio, união estável, filiação, alimentos e guarda correm em segredo de justiça.</td></tr>
+          <tr><td>LGPD (Lei 13.709/18), arts. 6º, 11, 37, 46 e 48</td><td>Coletar só o necessário, proteger dados sensíveis, manter registro das operações, adotar medidas de segurança e comunicar incidentes relevantes.</td></tr>
+          <tr><td>Resoluções CD/ANPD 2/2022 e 15/2024</td><td>Regras para agentes de pequeno porte e prazo de 3 dias úteis para comunicar incidente relevante à ANPD e aos titulares.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Quem responde por quê</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Papel</th><th>Quem</th><th>Responsabilidades</th></tr></thead>
+        <tbody>
+          <tr><td>Controladora dos dados</td><td>O escritório</td><td>Decide o que se coleta, para quê e por quanto tempo.</td></tr>
+          <tr><td>Encarregada de dados</td><td>Dra. Lara Café</td><td>Atende titulares e ANPD, aprova exceções, conduz incidentes, revisa este manual.</td></tr>
+          <tr><td>Administração do CRM e do Drive</td><td>Dra. Lara Café</td><td>Cria e revoga acessos, define níveis, gera procurações e contratos (CPF completo).</td></tr>
+          <tr><td>Equipe</td><td>Advogadas associadas, estagiárias, secretaria</td><td>Cumprem o manual, assinam o termo de confidencialidade, avisam incidentes na hora.</td></tr>
+          <tr><td>Operadores (fornecedores)</td><td>Google (Drive), Supabase (banco do CRM), Meta (WhatsApp), OpenAI (IA da Ana), hospedagem, contador</td><td>Tratam dados em nome do escritório; precisam de termos de proteção de dados aceitos e revisados.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="armazenamento">
+      <p class="num">2</p>
+      <h2>Estrutura de armazenamento e indexação</h2>
+      <p class="intro">Um repositório único, com uma pasta por cliente sempre igual. Qualquer pessoa da equipe acha qualquer documento em menos de um minuto, sem perguntar.</p>
+
+      <h3>Onde cada coisa mora</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Tipo de informação</th><th>Lugar oficial</th><th>Nunca em</th></tr></thead>
+        <tbody>
+          <tr><td>Ficha, andamento, próxima ação, prazos e audiências</td><td>CRM</td><td>Agenda pessoal, papel, planilha solta</td></tr>
+          <tr><td>Conversa de WhatsApp com cliente (texto, áudio, foto)</td><td>CRM (guarda automaticamente, em armazenamento privado)</td><td>Celular pessoal, backup do WhatsApp no Google pessoal</td></tr>
+          <tr><td>CPF, RG, endereço (qualificação)</td><td>CRM, aba Caso → Qualificação (a equipe vê mascarado)</td><td>Nome de arquivo, e-mail, anotação livre</td></tr>
+          <tr><td>Arquivos: documentos, peças, provas, contratos</td><td>Drive compartilhado "Lara Café — Clientes"</td><td>Área de trabalho, Downloads, pen drive, "Meu Drive"</td></tr>
+          <tr><td>Modelos, teses, pesquisas, checklists</td><td>Drive compartilhado "Lara Café — Escritório" → Conhecimento; modelos também no CRM</td><td>Pastas pessoais de cada pessoa</td></tr>
+          <tr><td>Financeiro do escritório</td><td>CRM → Financeiro (só administração) e Drive → Escritório → Financeiro</td><td>Conta pessoal da advogada</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="nota">
+        <b class="rotulo">Pré-requisito</b>
+        <p>Drive compartilhado só existe no <b>Google Workspace</b>. Uma conta Gmail comum não tem essa função, e os arquivos ficariam presos à conta de uma pessoa. Contrate o Workspace com o domínio do escritório antes de migrar.</p>
+      </div>
+
+      <h3>A árvore de pastas</h3>
+      <div class="arvore">Drive compartilhado: <b>Lara Café — Clientes</b>   <span class="c">(membros: só quem atende casos)</span>
+└── Clientes
+    ├── CLI-0005 — Juliana Prado      <span class="c">← criada pelo CRM</span>
+    │   ├── 01 Documentos pessoais
+    │   ├── 02 Contrato, procuração e honorários
+    │   ├── 03 Peças e petições
+    │   ├── 04 Provas e documentos do caso
+    │   ├── 05 Comunicações e atas
+    │   ├── 06 Financeiro
+    │   └── 99 Arquivo (versões antigas)
+    └── CLI-0010 — Helena Martins
+        └── …
+
+Drive compartilhado: <b>Lara Café — Escritório</b>
+├── Administrativo      <span class="c">(contratos com fornecedores, termos de confidencialidade)</span>
+├── Financeiro          <span class="c">(só administração)</span>
+├── Compliance          <span class="c">(este manual, registro de incidentes, pedidos de titulares)</span>
+└── Conhecimento
+    ├── Modelos aprovados
+    ├── Teses e pareceres
+    ├── Jurisprudência selecionada
+    └── Checklists e roteiros</div>
+
+      <div class="nota sistema">
+        <b class="rotulo">O que o sistema faz sozinho</b>
+        <p>Na ficha da cliente, aba <b>Caso</b>, o botão <b>Criar pasta no Drive</b> monta a pasta <code>CLI-0005 — Nome</code> com as sete subpastas. Procuração, contrato de honorários e peças podem ser gravados direto na subpasta certa, já com o nome padrão e o rótulo de sigilo. Ninguém cria pasta de cliente à mão.</p>
+      </div>
+
+      <h3>Nome de arquivo</h3>
+      <p><code>AAAA-MM-DD_CLI-0005_TIPO_descricao_v01.ext</code>. A data vem primeiro para a pasta se ordenar sozinha. O código do cliente liga o arquivo à ficha do CRM. O tipo vem da lista abaixo, a descrição usa até 5 palavras e a versão sobe a cada alteração relevante.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Exemplo</th><th>Leitura</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">2026-09-25_CLI-0005_PROCURACAO_guarda-e-convivencia_v01.docx</td><td>Procuração gerada pelo CRM</td></tr>
+          <tr><td class="mono">2026-10-02_CLI-0005_PETICAO-INICIAL_guarda-compartilhada_v03.docx</td><td>Terceira versão da inicial</td></tr>
+          <tr><td class="mono">2026-10-05_CLI-0005_PETICAO-INICIAL_guarda-compartilhada_PROTOCOLADA.pdf</td><td>O que foi efetivamente protocolado</td></tr>
+          <tr><td class="mono">2026-09-20_CLI-0005_DOC-PESSOAL_certidao-casamento.pdf</td><td>Documento recebido da cliente</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>Tipos:</b> <code>DOC-PESSOAL</code> <code>PROCURACAO</code> <code>CONTRATO</code> <code>PETICAO-INICIAL</code> <code>CONTESTACAO</code> <code>REPLICA</code> <code>MANIFESTACAO</code> <code>RECURSO</code> <code>ACORDO</code> <code>PARECER</code> <code>PROVA</code> <code>DECISAO</code> <code>ATA</code> <code>EMAIL</code> <code>COMPROVANTE</code> <code>ESCRITURA</code>.</p>
+      <div class="nota proibido">
+        <b class="rotulo">Proibido no nome do arquivo</b>
+        <p>Nome de pessoas (cliente, parte contrária, filhos), CPF, número de RG, palavras como "final", "final2" ou "agora-vai", acentos e espaços. O nome da cliente aparece só no nome da pasta, que está num espaço restrito.</p>
+      </div>
+
+      <h3>Como se indexa e se encontra</h3>
+      <ul>
+        <li><b>Código do cliente</b> (<code>CLI-0005</code>): é a chave entre CRM e Drive. Buscar <code>CLI-0005</code> no Drive traz tudo da cliente.</li>
+        <li><b>Número do processo (CNJ)</b>: fica no CRM, em Casos. É validado pelo dígito verificador, então não se digita errado.</li>
+        <li><b>Propriedades do arquivo</b>: o que o CRM grava leva cliente, tipo e sigilo nas propriedades (visíveis em "Detalhes" no Drive).</li>
+        <li><b>Checklist de documentos</b> no CRM (aba Caso → Documentos): marca o que foi recebido. O arquivo vai para <code>01</code> ou <code>04</code> no Drive.</li>
+      </ul>
+    </section>
+
+    <section id="rotulos">
+      <p class="num">3</p>
+      <h2>Rótulos de sigilo</h2>
+      <p class="intro">Três níveis bastam. Um nível a mais do que a equipe consegue lembrar é um nível que ninguém aplica.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Rótulo</th><th>O que é</th><th>Quem acessa</th><th>Como compartilhar</th></tr></thead>
+        <tbody>
+          <tr><td><span class="selo interno">Interno</span></td><td>Modelos sem dados, rotinas, pesquisas genéricas, este manual</td><td>Toda a equipe</td><td>Dentro do Drive do escritório</td></tr>
+          <tr><td><span class="selo confidencial">Confidencial</span></td><td>Tudo que identifica um cliente: documentos, contratos, peças, conversas, financeiro por cliente</td><td>Quem atende o caso</td><td>Só com o e-mail do cliente, com expiração; nunca por link aberto</td></tr>
+          <tr><td><span class="selo sigiloso">Sigiloso</span></td><td>Segredo de justiça (família e sucessões), dados de saúde, violência doméstica, crianças, laudos</td><td>Advogada responsável e quem ela autorizar</td><td>Só pela advogada; PDF com senha enviada por outro canal</td></tr>
+        </tbody>
+      </table></div>
+      <p>Na dúvida, suba um nível. Rotular um documento como mais sigiloso do que precisa custa pouco; o erro contrário custa o cliente e a inscrição.</p>
+    </section>
+
+    <section id="ciclo">
+      <p class="num">4</p>
+      <h2>Ciclo de vida do documento</h2>
+      <ol class="passos">
+        <li><div><b>Entrada.</b> Chegou pelo WhatsApp do escritório: o CRM já guardou. Chegou por outro canal (e-mail, celular, papel): renomeie no padrão e suba para a subpasta certa no mesmo dia. Depois apague do aparelho ou da caixa de entrada.</div></li>
+        <li><div><b>Produção.</b> Rascunhos ficam em <code>03 Peças e petições</code>, editados no próprio Drive (o histórico de versões registra quem alterou o quê). Cada revisão relevante vira <code>v02</code>, <code>v03</code>…</div></li>
+        <li><div><b>Revisão.</b> Peça que vai para o processo é lida por uma segunda pessoa antes do protocolo. Esse item é conferido na revisão interna por amostragem do CRM.</div></li>
+        <li><div><b>Protocolo.</b> O PDF protocolado recebe o sufixo <code>_PROTOCOLADA</code>. As versões de trabalho vão para <code>99 Arquivo</code>.</div></li>
+        <li><div><b>Encerramento.</b> Ao encerrar o caso no CRM (com o resultado), confira se a pasta está completa, devolva originais físicos à cliente mediante recibo e registre a "lição do caso" (seção 5).</div></li>
+        <li><div><b>Guarda e descarte.</b> Mantenha a pasta por <b>5 anos após o encerramento</b>. Esse é o prazo de prescrição para cobrança de honorários (EAOAB, art. 25) e de exigências fiscais. Depois disso, elimine ou anonimize, salvo processo em curso ou pedido formal da cliente. Confirme prazos específicos com o contador.</div></li>
+      </ol>
+    </section>
+
+    <section id="conhecimento">
+      <p class="num">5</p>
+      <h2>Gestão do conhecimento do escritório</h2>
+      <p class="intro">O conhecimento que só está na cabeça de uma pessoa vai embora com ela. Estes quatro hábitos transformam cada caso em ativo do escritório.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Hábito</th><th>Onde</th><th>Quando</th></tr></thead>
+        <tbody>
+          <tr><td><b>Modelos aprovados.</b> Petições e declarações recorrentes, com campos automáticos. Só a administração altera.</td><td>CRM → Mensagens → Peças (Word)</td><td>Sempre que uma peça for reaproveitada pela segunda vez</td></tr>
+          <tr><td><b>Mensagens prontas.</b> Scripts de atendimento aprovados.</td><td>CRM → Mensagens</td><td>Ao perceber que a mesma resposta foi escrita três vezes</td></tr>
+          <tr><td><b>Lição do caso.</b> Uma página: o problema, a tese, o que funcionou, o que não funcionou e o tempo gasto. Sem dados que identifiquem a cliente.</td><td>Drive → Conhecimento → Teses e pareceres</td><td>No encerramento de cada caso judicial</td></tr>
+          <tr><td><b>Jurisprudência selecionada.</b> Decisões úteis, com link oficial e resumo de 3 linhas.</td><td>Drive → Conhecimento → Jurisprudência</td><td>Ao usar uma decisão em peça</td></tr>
+        </tbody>
+      </table></div>
+      <div class="nota">
+        <b class="rotulo">Sobre pesquisa jurisprudencial com IA</b>
+        <p>Toda decisão citada em peça é conferida no site oficial do tribunal antes do protocolo. Ferramentas de IA podem inventar julgados com número e ementa plausíveis.</p>
+      </div>
+    </section>
+
+    <section id="seguranca">
+      <p class="num">6</p>
+      <h2>Segurança da informação</h2>
+      <h3>Acesso</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Nível no CRM</th><th>Vê</th><th>Não vê / não faz</th></tr></thead>
+        <tbody>
+          <tr><td>Administração</td><td>Tudo, inclusive CPF e RG completos, financeiro, dados do escritório, auditoria</td><td>Não altera nem apaga a auditoria (nem ela)</td></tr>
+          <tr><td>Equipe</td><td>Contatos, conversas, casos, prazos, documentos, CPF/RG mascarados (<span class="mono">***.456.789-**</span>)</td><td>Não gera procuração nem contrato, não vê financeiro, custo da hora e saldo, não altera as instruções da Ana</td></tr>
+          <tr><td>Sem acesso</td><td>Nada</td><td>Cadastro sem aprovação não entra no sistema</td></tr>
+        </tbody>
+      </table></div>
+      <p>No Drive, o acesso vem da participação no Drive compartilhado. Para casos <span class="selo sigiloso">Sigiloso</span> com necessidade de restrição maior (por exemplo, violência doméstica), a advogada move a pasta para um Drive compartilhado separado, só com as pessoas do caso.</p>
+
+      <h3>Contas e dispositivos</h3>
+      <ul>
+        <li>Verificação em duas etapas obrigatória: Google Workspace, CRM, WhatsApp Business (PIN de confirmação) e e-mail.</li>
+        <li>Senhas únicas, guardadas num gerenciador de senhas. Nunca em papel, planilha ou bloco de notas.</li>
+        <li>Computador e celular com bloqueio de tela automático em até 5 minutos, disco criptografado e sistema atualizado.</li>
+        <li>O WhatsApp do escritório roda no aparelho do escritório. Não se instala o WhatsApp Web do escritório em computador pessoal.</li>
+        <li>Nada de pen drive ou HD externo com dados de cliente. Rede Wi-Fi pública só com a VPN ou o roteador do próprio celular.</li>
+        <li>Perdeu o aparelho: avise na hora. A administração encerra as sessões pelo Google e pelo CRM.</li>
+      </ul>
+
+      <h3>Rastro e cópias de segurança</h3>
+      <ul>
+        <li>O CRM registra em auditoria imutável quem fez o quê e quando: edições, geração de procuração, exportações, mudanças de acesso. O registro guarda só os nomes dos campos, nunca o conteúdo.</li>
+        <li>Banco do CRM com backup diário do provedor. Drive com histórico de versões e lixeira de 25 dias. Uma vez por mês, a administração exporta uma cópia do CRM e guarda num local separado, com acesso restrito.</li>
+      </ul>
+    </section>
+
+    <section id="lgpd">
+      <p class="num">7</p>
+      <h2>LGPD na prática</h2>
+      <h3>Por que podemos tratar cada dado</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Situação</th><th>Base legal</th><th>Cuidado</th></tr></thead>
+        <tbody>
+          <tr><td>Triagem e agendamento da consulta</td><td>Procedimentos preliminares a contrato (art. 7º, V)</td><td>A Ana não pede CPF, RG nem documentos; o aviso de privacidade vai na primeira mensagem</td></tr>
+          <tr><td>Execução do contrato de honorários</td><td>Execução de contrato (art. 7º, V)</td><td>Qualificação completa só depois de contratar</td></tr>
+          <tr><td>Atuação no processo, inclusive dados sensíveis</td><td>Exercício regular de direitos (arts. 7º, VI, e 11, II, "d")</td><td>Só o necessário para a tese; laudos e dados de saúde como <span class="selo sigiloso">Sigiloso</span></td></tr>
+          <tr><td>Guarda depois do fim do caso</td><td>Cumprimento de obrigação legal e exercício de direitos (arts. 7º, II e VI, e 16)</td><td>Prazo da seção 4; depois, eliminar ou anonimizar</td></tr>
+          <tr><td>Relacionamento (aniversário, conteúdo, NPS)</td><td>Legítimo interesse (art. 7º, IX), com opção de sair</td><td>Quem pedir para não receber sai da lista no mesmo dia; nada de oferta comercial agressiva</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Pedidos dos titulares (art. 18)</h3>
+      <ol class="passos">
+        <li><div>O pedido chega por qualquer canal. Quem recebe registra em Drive → Escritório → Compliance → Pedidos de titulares e avisa a Dra. Lara no mesmo dia.</div></li>
+        <li><div>Confirme a identidade antes de mostrar qualquer dado (pergunta que só a pessoa sabe responder, ou documento).</div></li>
+        <li><div>Responda em até <b>15 dias</b> (art. 19, II). Pedido de eliminação: avalie se há obrigação legal ou processo que exige guardar e explique isso por escrito.</div></li>
+      </ol>
+
+      <h3>Fornecedores que tratam dados por nós</h3>
+      <p>Google (Drive), Supabase (banco), Meta (WhatsApp Business), OpenAI (IA da Ana, via API), hospedagem do CRM e contador. Mantenha em Compliance: o termo de proteção de dados aceito, a região dos servidores e a data da última revisão. Revisão anual, ou quando um fornecedor mudar os termos.</p>
+    </section>
+
+    <section id="incidentes">
+      <p class="num">8</p>
+      <h2>Incidentes e vazamentos</h2>
+      <p class="intro">Incidente é qualquer acesso, perda, alteração ou divulgação indevida: e-mail enviado ao destinatário errado, celular perdido, link aberto, conta invadida, pasta compartilhada por engano.</p>
+      <ol class="passos">
+        <li><div><b>Conter (minutos).</b> Revogue o link, troque a senha, encerre sessões, peça ao destinatário errado que apague e confirme por escrito.</div></li>
+        <li><div><b>Avisar (na hora).</b> Comunique a Dra. Lara por telefone, não por mensagem que pode se perder.</div></li>
+        <li><div><b>Avaliar (até 24h).</b> Que dados, de quantas pessoas, se havia dado sensível ou de criança, e se pode causar dano relevante.</div></li>
+        <li><div><b>Comunicar (até 3 dias úteis).</b> Se o risco for relevante, a encarregada comunica a ANPD e as pessoas afetadas (Resolução CD/ANPD 15/2024). Se envolver segredo de justiça, avalie também comunicar ao juízo.</div></li>
+        <li><div><b>Registrar e corrigir.</b> Todo incidente, relevante ou não, vai para o Registro de Incidentes (anexo B), guardado por no mínimo 5 anos. A causa vira ação corretiva com responsável e data.</div></li>
+      </ol>
+      <div class="nota proibido">
+        <b class="rotulo">Nunca</b>
+        <p>Esconder um incidente, apagar rastros ou "resolver sozinho" sem avisar. Omitir é infração mais grave do que o erro que causou o incidente.</p>
+      </div>
+    </section>
+
+    <section id="sigilo">
+      <p class="num">9</p>
+      <h2>Procedimentos de confidencialidade e sigilo profissional</h2>
+      <h3>Entrada e saída de pessoas</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Entrada (antes do primeiro acesso)</th><th>Saída (no mesmo dia)</th></tr></thead>
+        <tbody>
+          <tr><td>Assinar o termo de confidencialidade (anexo A)</td><td>Remover do Drive compartilhado e do Google Workspace</td></tr>
+          <tr><td>Ler este manual e confirmar a leitura por e-mail</td><td>Mudar o nível no CRM para "Sem acesso"</td></tr>
+          <tr><td>Criar conta nominal no Google e no CRM, com o nível mínimo necessário</td><td>Desconectar o WhatsApp do escritório de aparelhos que a pessoa usou</td></tr>
+          <tr><td>Ativar a verificação em duas etapas junto com a advogada</td><td>Recolher chaves, crachá, documentos físicos; trocar senhas compartilhadas</td></tr>
+          <tr><td>Definir o cargo no CRM (Equipe) e as etapas pelas quais responde</td><td>Registrar a saída no CRM (a auditoria mostra o último acesso)</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>No dia a dia</h3>
+      <ul>
+        <li><b>Conversas.</b> Caso só se discute em ambiente reservado. Em ligações e videochamadas, use fone e confira quem está ouvindo do outro lado.</li>
+        <li><b>Mesa limpa e tela bloqueada.</b> Ao levantar da mesa, a tela é bloqueada. Papel com dado de cliente não fica exposto. Impressão só quando indispensável, e o descarte é na fragmentadora.</li>
+        <li><b>WhatsApp.</b> Só o número do escritório fala com clientes. Não se encaminha documento para grupos nem para o número pessoal. Áudio de cliente é ouvido no CRM, com fone.</li>
+        <li><b>E-mail.</b> Confira o destinatário antes de enviar; é o incidente mais comum. Documento <span class="selo sigiloso">Sigiloso</span> vai como PDF com senha, e a senha vai por outro canal.</li>
+        <li><b>Terceiros.</b> Correspondentes, peritos, tradutores e contador só recebem o necessário, depois de aceitar cláusula de confidencialidade.</li>
+        <li><b>Inteligência artificial.</b> Nenhum dado que identifique cliente é colado em IA pública. Para pesquisa, anonimize ("mulher, 38 anos, dois filhos, imóvel financiado").</li>
+        <li><b>Redes sociais e publicidade.</b> Nenhum caso é contado, nem sem nome, se for possível reconhecer a pessoa. Depoimento de cliente só com autorização escrita e dentro do Provimento 205/2021 da OAB.</li>
+        <li><b>Conflito de interesses.</b> O CRM avisa quando a parte contrária já é cliente, ou o contrário. Com alerta, a conversa para até a advogada decidir.</li>
+        <li><b>Terceiros perguntando sobre o caso.</b> Familiar, ex-cônjuge, empregador ou imprensa não recebem nenhuma informação, nem a confirmação de que a pessoa é cliente, sem autorização expressa da cliente.</li>
+      </ul>
+      <div class="nota">
+        <b class="rotulo">Exceções ao sigilo</b>
+        <p>Só a advogada decide, nos limites do art. 37 do Código de Ética (grave ameaça ao direito à vida ou à honra, ou defesa própria). Diante de risco a criança ou de violência, a orientação à cliente é ligar 190 ou 180, e a decisão sobre qualquer comunicação é da advogada.</p>
+      </div>
+    </section>
+
+    <section id="sancoes">
+      <p class="num">10</p>
+      <h2>Condutas e sanções</h2>
+      <p class="intro">A medida depende da gravidade, da intenção e de ter havido aviso imediato. Quem avisa o próprio erro na hora é tratado de forma diferente de quem esconde.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Gravidade</th><th>Exemplos</th><th>Consequência</th></tr></thead>
+        <tbody>
+          <tr><td>Leve</td><td>Arquivo fora do padrão de nome, tela desbloqueada, documento esquecido no celular por alguns dias</td><td>Orientação registrada e correção no mesmo dia</td></tr>
+          <tr><td>Média</td><td>Repetição de falta leve, link aberto sem dado sensível, uso de IA pública com dado identificável</td><td>Advertência escrita e revisão dos acessos</td></tr>
+          <tr><td>Grave</td><td>Compartilhar dado <span class="selo sigiloso">Sigiloso</span> sem autorização, usar a conta de outra pessoa, esconder incidente</td><td>Suspensão ou desligamento (CLT, art. 482, "g", violação de segredo), rescisão do contrato de prestação de serviço e, para inscritos na OAB, comunicação ao Tribunal de Ética</td></tr>
+          <tr><td>Dolosa</td><td>Vender, divulgar ou usar informação de cliente em benefício próprio ou de terceiro</td><td>Desligamento imediato, medidas civis e comunicação às autoridades (Código Penal, art. 154)</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="rotinas">
+      <p class="num">11</p>
+      <h2>Rotinas de controle</h2>
+      <div class="tabela"><table>
+        <thead><tr><th>Frequência</th><th>O quê</th><th>Quem</th></tr></thead>
+        <tbody>
+          <tr><td>Diária</td><td>Documentos recebidos no dia estão na pasta certa, com o nome padrão; nada ficou no celular</td><td>Secretaria</td></tr>
+          <tr><td>Semanal (sexta)</td><td>Revisão interna de 3 casos sorteados no CRM (Relatórios → Qualidade), incluindo "documentos completos e organizados"</td><td>Advogada</td></tr>
+          <tr><td>Mensal</td><td>Auditoria do CRM (acessos e procurações geradas); links compartilhados abertos no Drive; exportação do backup</td><td>Administração</td></tr>
+          <tr><td>Semestral</td><td>Conferir quem é membro de cada Drive compartilhado e o nível de cada pessoa no CRM</td><td>Administração</td></tr>
+          <tr><td>Anual</td><td>Revisar este manual, os termos dos fornecedores e os prazos de guarda; descartar pastas vencidas; treinamento de 1 hora com a equipe</td><td>Encarregada</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="anexos">
+      <h2>Anexos</h2>
+      <details>
+        <summary>Anexo A · Termo de confidencialidade (modelo)</summary>
+        <div class="modelo" id="termo">TERMO DE CONFIDENCIALIDADE E SIGILO PROFISSIONAL
+
+Eu, [NOME COMPLETO], [CARGO], inscrita(o) no CPF sob o nº [CPF], declaro que:
+
+1. Terei acesso a informações de clientes do escritório Lara Café Advocacia &amp; Consultoria protegidas pelo sigilo profissional (Lei 8.906/94 e Código de Ética e Disciplina da OAB) e pela Lei Geral de Proteção de Dados (Lei 13.709/18).
+
+2. Manterei sigilo absoluto sobre essas informações durante e após o término da minha relação com o escritório, por prazo indeterminado, e só as utilizarei para executar as tarefas que me forem atribuídas.
+
+3. Cumprirei o Manual de Gestão de Conhecimento e Compliance, que declaro ter lido, em especial as regras de armazenamento, compartilhamento e uso de ferramentas.
+
+4. Comunicarei imediatamente à responsável qualquer incidente ou suspeita de acesso indevido, perda ou divulgação de informações.
+
+5. Ao deixar o escritório, devolverei todos os documentos e não manterei cópias em qualquer meio.
+
+6. Estou ciente de que a violação deste termo pode acarretar as medidas previstas no Manual, além de responsabilização civil, penal (Código Penal, art. 154) e, se for o caso, disciplinar perante a OAB.
+
+[CIDADE], [DATA].
+
+_______________________________________
+[NOME COMPLETO]</div>
+        <button type="button" class="copiar" data-alvo="termo">Copiar texto</button>
+      </details>
+      <details>
+        <summary>Anexo B · Registro de incidentes (campos)</summary>
+        <div class="tabela"><table>
+          <thead><tr><th>Campo</th><th>Preenchimento</th></tr></thead>
+          <tbody>
+            <tr><td>Data e hora da ciência</td><td>Quando o escritório soube (o prazo conta daqui)</td></tr>
+            <tr><td>Quem comunicou</td><td>Nome e cargo</td></tr>
+            <tr><td>O que aconteceu</td><td>Descrição objetiva, sem juízo de culpa</td></tr>
+            <tr><td>Dados e titulares afetados</td><td>Tipos de dados, quantidade de pessoas, se há dado sensível ou de criança</td></tr>
+            <tr><td>Contenção</td><td>O que foi feito e quando</td></tr>
+            <tr><td>Avaliação de risco</td><td>Relevante ou não, com a justificativa</td></tr>
+            <tr><td>Comunicações</td><td>ANPD, titulares, juízo: data e protocolo, ou o motivo de não comunicar</td></tr>
+            <tr><td>Causa e ação corretiva</td><td>O que muda, quem é responsável e o prazo</td></tr>
+          </tbody>
+        </table></div>
+      </details>
+      <details>
+        <summary>Anexo C · Cartão de consulta rápida para a mesa</summary>
+        <div class="modelo">ONDE GUARDO?        Dados e conversas → CRM · Arquivos → Drive "Lara Café — Clientes" → CLI-0000 → subpasta
+COMO NOMEIO?        AAAA-MM-DD_CLI-0000_TIPO_descricao_v01 (sem nomes, sem CPF)
+QUAL O SIGILO?      Cliente = Confidencial · Família/saúde/criança = Sigiloso
+COMO ENVIO?         Só com o e-mail do cliente, com expiração · Sigiloso: PDF com senha por outro canal
+DEU ERRADO?         Conter → avisar a Dra. Lara na hora → registrar</div>
+      </details>
+    </section>
+
+    <footer>
+      Lara Café Advocacia &amp; Consultoria · Documento interno <span class="selo interno">Interno</span> · As referências legais valem na data da vigência; revise-as a cada atualização anual.
+    </footer>
+  </main>
+</div>
+
+<script>
+  document.querySelectorAll('.copiar').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var el = document.getElementById(b.dataset.alvo);
+      var texto = el.innerText;
+      var pronto = function () { b.textContent = 'Copiado'; setTimeout(function () { b.textContent = 'Copiar texto'; }, 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(pronto, function () { selecionar(el); });
+      } else { selecionar(el); }
+    });
+  });
+  function selecionar(el) {
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+</script>

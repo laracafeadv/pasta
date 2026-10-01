@@ -1,0 +1,155 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { definePageMeta, useHead, useRoute, useRouter } from '#imports'
+import Button from '~/components/Button.vue'
+import HojePanel from '~/components/crm/HojePanel.vue'
+import RemarketingBoard from '~/components/crm/RemarketingBoard.vue'
+import ContatoFormModal from '~/components/crm/ContatoFormModal.vue'
+import ContatoDetailModal from '~/components/crm/ContatoDetailModal.vue'
+import AndamentoModal from '~/components/crm/AndamentoModal.vue'
+import { useCrmStore, type AndamentoPayload } from '~/stores/crm'
+import type { Contato, ContatoInput } from '~~/shared/types/crm'
+
+definePageMeta({ middleware: ['auth', 'staff'] })
+useHead({ title: 'CRM' })
+
+const crm = useCrmStore()
+const route = useRoute()
+const router = useRouter()
+
+const abas = [
+  { id: 'hoje', label: 'Hoje' },
+  { id: 'remarketing', label: 'Remarketing' },
+] as const
+const aba = computed(() => (abas.some(a => a.id === route.query.aba) ? String(route.query.aba) : 'hoje'))
+const dataHoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+
+
+function carregarAba() {
+  if (aba.value === 'hoje') crm.fetchAgenda()
+}
+onMounted(() => {
+  if (route.query.abrir) abrir({ id: Number(route.query.abrir) } as Contato, String(route.query.ficha || 'demandas'))
+  carregarAba()
+  if (aba.value !== 'hoje') crm.fetchAgenda() // alimenta o contador do menu
+})
+watch(aba, carregarAba)
+// Vindo do sino/busca com a tela já aberta: abre a ficha pedida.
+watch(() => route.query.abrir, (v) => { if (v) abrir({ id: Number(v) } as Contato, String(route.query.ficha || 'demandas')) })
+
+// ─── Ficha (criar / editar) ─────────────────────────────────────────────────
+const formAberto = ref(false)
+const emEdicao = ref<Contato | null>(null)
+const erroForm = ref<string | null>(null)
+function novo() { emEdicao.value = null; formAberto.value = true }
+function editar(c: Contato) { emEdicao.value = c; formAberto.value = true }
+async function salvar(data: ContatoInput) {
+  try {
+    await crm.salvar(emEdicao.value?.id ?? null, data)
+    formAberto.value = false
+    if (detalheAberto.value) detalhe.value?.recarregar()
+  } catch (e: any) {
+    erroForm.value = e?.data?.message || 'Não foi possível salvar.'
+    alert(erroForm.value)
+  }
+}
+
+// ─── Detalhe ────────────────────────────────────────────────────────────────
+const detalhe = ref<InstanceType<typeof ContatoDetailModal> | null>(null)
+const detalheAberto = ref(false)
+const detalheId = ref<number | null>(null)
+const detalheAba = ref('resumo')
+const detalheModelo = ref<string | null>(null)
+const remarketing = ref<InstanceType<typeof RemarketingBoard> | null>(null)
+function abrir(c: Contato, abaDetalhe = 'resumo', modelo: string | null = null) {
+  detalheId.value = c.id
+  detalheAba.value = abaDetalhe
+  detalheModelo.value = modelo
+  detalheAberto.value = true
+}
+
+// ─── Andamento ──────────────────────────────────────────────────────────────
+const andamentoAberto = ref(false)
+const andamentoContato = ref<Contato | null>(null)
+const andamentoDestino = ref<string | null>(null)
+function andamento(c: Contato, destino: string | null = null) {
+  andamentoContato.value = c
+  andamentoDestino.value = destino
+  crm.error = null
+  andamentoAberto.value = true
+}
+async function concluirAndamento(data: AndamentoPayload) {
+  if (!andamentoContato.value) return
+  try {
+    const salvo = await crm.registrarAndamento(andamentoContato.value.id, data)
+    andamentoAberto.value = false
+    // Virou cliente: próximo passo natural é abrir a demanda (dossiê, procuração, prazos).
+    remarketing.value?.recarregar()
+    if (data.etapa === 'ativo' && andamentoContato.value.etapa !== 'ativo') abrir(salvo, 'demandas')
+    else if (detalheAberto.value) detalhe.value?.recarregar()
+  } catch { /* mensagem exibida no modal via crm.error */ }
+}
+
+async function adiar(c: Contato) {
+  await crm.adiar(c)
+}
+</script>
+
+<template>
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow capitalize">{{ aba === 'hoje' ? dataHoje : 'Jornada do cliente' }}</p>
+        <h1 class="text-4xl sm:text-5xl text-primary dark:text-zinc-100 mt-1">
+          {{ aba === 'hoje' ? 'O que precisa de você hoje' : 'Remarketing' }}
+        </h1>
+        <p class="text-sm text-gray-500 mt-2 max-w-2xl">
+          <template v-if="aba === 'hoje'">Contatos com próxima ação, prazos e tarefas que vencem hoje ou já passaram — o que precisa de você agora. O calendário completo está em Agenda.</template>
+          <template v-else>Quem procurou e não fechou, por demanda, para receber conteúdo do interesse dela e, quando fizer sentido, retomar a conversa.</template>
+        </p>
+      </div>
+      <Button icon="ph:plus-bold" @click="novo">Novo contato</Button>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <NuxtLink
+        v-for="a in abas"
+        :key="a.id"
+        :to="{ query: { aba: a.id } }"
+        class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-[0.14em] border transition-colors"
+        :class="aba === a.id ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary'"
+      >
+        {{ a.label }}
+        <span v-if="a.id === 'hoje' && crm.pendencias" class="ml-1.5 opacity-80">{{ crm.pendencias }}</span>
+      </NuxtLink>
+    </div>
+
+    <p v-if="crm.error && !andamentoAberto" class="text-sm text-danger">{{ crm.error }}</p>
+
+    <template v-if="aba === 'hoje'">
+      <HojePanel :agenda="crm.agenda" @abrir="abrir" @andamento="andamento" @adiar="adiar" />
+    </template>
+    <RemarketingBoard v-else ref="remarketing" @abrir="abrir" @mensagem="(c, m) => abrir(c, 'conversa', m)" @reabrir="(c) => andamento(c, 'qualificacao')" />
+
+    <ContatoFormModal :is-open="formAberto" :contato="emEdicao" :loading="crm.saving" @close="formAberto = false" @submit="salvar" />
+    <ContatoDetailModal
+      ref="detalhe"
+      :is-open="detalheAberto"
+      :contato-id="detalheId"
+      :aba-inicial="detalheAba"
+      :modelo-inicial="detalheModelo"
+      @close="detalheAberto = false; remarketing?.recarregar()"
+      @editar="editar"
+      @andamento="andamento"
+    />
+    <AndamentoModal
+      :is-open="andamentoAberto"
+      :contato="andamentoContato"
+      :etapa-destino="andamentoDestino"
+      :loading="crm.saving"
+      :erro="crm.error"
+      @close="andamentoAberto = false"
+      @submit="concluirAndamento"
+    />
+  </div>
+</template>

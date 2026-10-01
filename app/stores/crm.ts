@@ -1,0 +1,146 @@
+import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
+import { dataCompromisso, type Compromisso, type Contato, type ContatoInput, type TarefaInterna } from '../../shared/types/crm'
+
+interface ListaResponse { records: Contato[]; total: number; page: number; pageSize: number }
+
+export interface Agenda {
+  atrasadas: Contato[]
+  hoje: Contato[]
+  semAcao: Contato[]
+  semana: Contato[]
+  sugestoes?: Contato[]
+  compromissos: Compromisso[]
+  tarefas: TarefaInterna[]
+  aniversarios: Pick<Contato, 'id' | 'nome' | 'telefone' | 'data_nascimento' | 'classificacao'>[]
+  semRelatorio?: Contato[]
+}
+
+export interface AndamentoPayload {
+  resultado?: string
+  etapa: string
+  proxima_acao?: string
+  proxima_data?: string
+  motivo_perda?: string
+  consulta_em?: string | null
+  pagamento_confirmado?: boolean
+  honorario?: Record<string, unknown> | null
+  caso_id?: number | null
+}
+
+const erro = (e: any, fallback: string) => e?.data?.message || e?.message || fallback
+
+export const useCrmStore = defineStore('crm', () => {
+  const saving = ref(false)
+  const error = ref<string | null>(null)
+
+  // ─── Funil (todos os abertos, sem paginação) ─────────────────────────────
+  const funil = ref<Contato[]>([])
+  const funilLoading = ref(false)
+
+  // ─── Agenda "Hoje" ───────────────────────────────────────────────────────
+  const agenda = ref<Agenda>({ atrasadas: [], hoje: [], semAcao: [], semana: [], aniversarios: [], compromissos: [], tarefas: [] })
+  const agendaLoading = ref(false)
+  // Contador do menu "Hoje": tudo que já venceu ou vence hoje (contatos, prazos e tarefas) + contatos sem próxima ação.
+  // Quando o Dashboard é a tela aberta, o número vem dele (mesma conta), sem carregar a agenda inteira.
+  const agendaCarregada = ref(false)
+  const pendenciasDoDashboard = ref(0)
+  function definirPendencias(n: number) { pendenciasDoDashboard.value = n }
+  const pendencias = computed(() => {
+    if (!agendaCarregada.value) return pendenciasDoDashboard.value
+    const hoje = hojeISO()
+    return agenda.value.atrasadas.length + agenda.value.hoje.length + agenda.value.semAcao.length
+      + agenda.value.compromissos.filter(c => dataCompromisso(c) <= hoje).length
+      + (agenda.value.tarefas ?? []).filter(t => t.prazo <= hoje).length
+  })
+
+  async function fetchFunil(incluirEncerrados = false) {
+    funilLoading.value = true
+    try {
+      const params: Record<string, string> = { pageSize: '200' }
+      if (!incluirEncerrados) params.abertos = '1'
+      const res = await $fetch<ListaResponse>('/api/crm/contatos', { params })
+      funil.value = res.records
+    } catch (e) {
+      error.value = erro(e, 'Erro ao carregar o funil.')
+    } finally {
+      funilLoading.value = false
+    }
+  }
+
+  async function fetchAgenda() {
+    agendaLoading.value = true
+    try {
+      agenda.value = await $fetch<Agenda>('/api/crm/contatos/hoje')
+      agendaCarregada.value = true
+    } catch (e) {
+      error.value = erro(e, 'Erro ao carregar a agenda.')
+    } finally {
+      agendaLoading.value = false
+    }
+  }
+
+  /** Recarrega tudo o que pode ter mudado após uma alteração. */
+  async function refresh() {
+    await Promise.all([fetchAgenda(), funil.value.length ? fetchFunil() : Promise.resolve()])
+  }
+
+  async function salvar(id: number | null, payload: ContatoInput) {
+    saving.value = true
+    error.value = null
+    try {
+      const saved = id
+        ? await $fetch<Contato>(`/api/crm/contatos/${id}`, { method: 'PUT', body: payload })
+        : await $fetch<Contato>('/api/crm/contatos', { method: 'POST', body: payload })
+      refresh()
+      return saved
+    } catch (e) {
+      error.value = erro(e, 'Erro ao salvar contato.')
+      throw e
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function registrarAndamento(id: number, payload: AndamentoPayload) {
+    saving.value = true
+    error.value = null
+    try {
+      const saved = await $fetch<Contato>(`/api/crm/contatos/${id}/andamento`, { method: 'POST', body: payload })
+      refresh()
+      return saved
+    } catch (e) {
+      error.value = erro(e, 'Erro ao registrar andamento.')
+      throw e
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function adiar(contato: Contato, dias = 1) {
+    const base = contato.proxima_data && contato.proxima_data > hojeISO() ? contato.proxima_data : hojeISO()
+    await salvar(contato.id, { proxima_data: somarDias(base, dias) })
+  }
+
+  async function excluir(id: number) {
+    await $fetch(`/api/crm/contatos/${id}`, { method: 'DELETE' })
+    refresh()
+  }
+
+  return {
+    saving, error,
+    funil, funilLoading, agenda, agendaLoading, pendencias, definirPendencias,
+    fetchFunil, fetchAgenda, refresh, salvar, registrarAndamento, adiar, excluir,
+  }
+})
+
+export function hojeISO(deslocamentoDias = 0) {
+  const d = new Date(Date.now() + deslocamentoDias * 864e5)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export function somarDias(iso: string, dias: number) {
+  const d = new Date(iso + 'T12:00:00')
+  d.setDate(d.getDate() + dias)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}

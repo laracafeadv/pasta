@@ -1,0 +1,68 @@
+import { comNumeroDoProcesso } from '../../../utils/compatCaso'
+import { serverSupabaseClient } from '#supabase/server'
+import { dataCompromisso, type Compromisso, type Contato, type TarefaInterna } from '../../../../shared/types/crm'
+import { requireStaff } from '../../../utils/security'
+import { hojeBR } from '../../../utils/crm'
+import { enviarLembretes } from '../../../utils/lembretes'
+
+// "O que precisa de você hoje": todo caso aberto deve ter uma próxima ação com data.
+export default defineEventHandler(async (event) => {
+  await requireStaff(event, 'crm/hoje')
+  const client = await serverSupabaseClient(event)
+  const hoje = hojeBR()
+  const em7 = hojeBR(7)
+
+  // Consultas independentes em paralelo (antes eram 4 idas ao banco em sequência).
+  const [{ data, error }, { data: nascidos }, { data: agenda }, { data: tarefasAbertas }] = await Promise.all([
+    client.from('contatos').select('*')
+      .not('etapa', 'in', '(concluido,perdido,relacionado)')
+      .order('proxima_data', { ascending: true, nullsFirst: true })
+      .limit(500),
+    client.from('contatos').select('id, nome, telefone, data_nascimento, classificacao').not('data_nascimento', 'is', null).limit(2000),
+    client.from('compromissos')
+      .select('*, contato:contatos(id, nome), caso:casos(id, titulo, processos(numero))')
+      .eq('status', 'pendente').limit(300),
+    // Tarefas em aberto até a próxima semana: as de hoje/atrasadas são o trabalho do dia; o resto só entra na contagem.
+    client.from('tarefas_internas').select('*, contato:contatos(id, nome), caso:casos(id, titulo)')
+      .eq('concluida', false).lte('prazo', em7).order('prazo').limit(300),
+    // Lembretes automáticos de prazos (uma vez por dia, na primeira abertura).
+    enviarLembretes(event).catch(e => console.error('[crm/hoje] Lembretes:', e)),
+  ])
+
+  if (error) {
+    console.error('[crm/hoje] Erro:', error)
+    throw createError({ statusCode: 500, message: 'Erro interno ao montar a agenda.' })
+  }
+
+  const abertos = (data ?? []) as Contato[]
+
+  // Aniversariantes do dia (clientes e contatos), para o gesto de relacionamento do playbook.
+  const mmdd = hoje.slice(5)
+  const aniversarios = (nascidos ?? []).filter(c => String(c.data_nascimento).slice(5) === mmdd)
+  const semAcao = (c: Contato) => !c.proxima_acao || !c.proxima_data
+
+  // Prazos e compromissos: vencidos, de hoje e dos próximos 7 dias (mesma janela do quadro de tarefas).
+  const compromissos = (comNumeroDoProcesso(agenda as any[]) as Compromisso[])
+    .filter(c => { const d = dataCompromisso(c); return d && d <= em7 })
+    .sort((a, b) => dataCompromisso(a).localeCompare(dataCompromisso(b)))
+
+  // Relatório semanal (quadro antigo, "Mensagens de WhatsApp"): cliente ativo sem notícia há 7+ dias.
+  const seteDias = Date.now() - 7 * 864e5
+  const semRelatorio = abertos.filter((c) => {
+    if (c.etapa !== 'ativo' || c.nao_contatar) return false
+    const ultimo = [c.ultimo_contato_em, c.ultima_mensagem_em].filter(Boolean).sort().at(-1)
+    return !ultimo || new Date(ultimo).getTime() < seteDias
+  })
+
+  return {
+    semRelatorio,
+    compromissos,
+    atrasadas: abertos.filter(c => !semAcao(c) && c.proxima_data! < hoje),
+    hoje: abertos.filter(c => !semAcao(c) && c.proxima_data === hoje),
+    semAcao: abertos.filter(semAcao).sort((a, b) => a.updated_at.localeCompare(b.updated_at)),
+    semana: abertos.filter(c => !semAcao(c) && c.proxima_data! > hoje && c.proxima_data! <= em7),
+    sugestoes: abertos.filter(c => c.sugestao_resposta),
+    aniversarios,
+    tarefas: (tarefasAbertas ?? []) as TarefaInterna[],
+  }
+})

@@ -1,0 +1,129 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { definePageMeta, useHead, useRoute } from '#imports'
+import { storeToRefs } from 'pinia'
+import SecretariaInicio from '~/components/secretaria/SecretariaInicio.vue'
+import SecretariaIntimacoes from '~/components/secretaria/SecretariaIntimacoes.vue'
+import SecretariaEmail from '~/components/secretaria/SecretariaEmail.vue'
+import SecretariaLeads from '~/components/secretaria/SecretariaLeads.vue'
+import SecretariaIniciais from '~/components/secretaria/SecretariaIniciais.vue'
+import { useSecretariaIniciais } from '~/composables/useSecretariaIniciais'
+import { useSecretariaLeads } from '~/composables/useSecretariaLeads'
+import { useSecretariaGoogle } from '~/composables/useSecretariaGoogle'
+import { useProfileStore } from '~/stores/profile'
+import { useAvatar } from '~/composables/useAvatar'
+
+definePageMeta({ middleware: ['auth', 'staff'] })
+useHead({ title: 'Secretária' })
+
+// Painel pessoal para organizar o dia, independente das demais telas do CRM (agenda e prazos próprios).
+// Abas prontas: Início, Intimações, E-mail, Leads e Iniciais; as demais mostram "em breve".
+const aba = ref<string>('inicio')
+const profileStore = useProfileStore()
+const { profile } = storeToRefs(profileStore)
+const { uploadAvatar, isUploading, error: avatarError } = useAvatar()
+const fotoIn = ref<HTMLInputElement | null>(null)
+const g = useSecretariaGoogle()
+const leads = useSecretariaLeads()
+const ini = useSecretariaIniciais()
+const rota = useRoute()
+const AVISO_GOOGLE: Record<string, string> = { ok: 'Conta Google conectada.', negado: 'Você não autorizou o acesso ao Google. Para usar Intimações e E-mail, conecte de novo e aceite as permissões.', erro: 'Não foi possível conectar ao Google. Tente de novo.', 'nao-configurado': 'A conexão com o Google ainda não foi configurada no servidor.' }
+const avisoGoogle = computed(() => AVISO_GOOGLE[String(rota.query.google ?? '')] ?? '')
+let timer: ReturnType<typeof setInterval> | undefined
+const velha = (t: number | undefined, ms: number) => Date.now() - (t ?? 0) > ms
+async function atualizar() {
+  if (document.hidden || !g.status.value?.conectado) return
+  await g.carregarIntimacoes()
+  if (aba.value === 'email') await g.carregarCaixa()
+  if (aba.value === 'leads') leads.carregarConsultas(true)
+}
+// as iniciais não dependem do Google: o número da aba e o "Hoje" mudam com a data, então recarrega de tempos em tempos
+function atualizarIniciais() { if (!document.hidden) ini.carregar() }
+onMounted(async () => {
+  if (!profile.value) profileStore.fetchMe()
+  const q = String(rota.query.google ?? '')
+  if (q === 'ok') aba.value = 'intimacoes'
+  leads.carregar()
+  ini.carregar()
+  await g.carregarStatus()
+  if (g.status.value?.conectado) { await g.carregarIntimacoes(); if (aba.value === 'email') g.carregarCaixa() }
+  // atualiza sozinho a cada 5 minutos, com a página visível
+  timer = setInterval(() => { atualizar(); atualizarIniciais() }, 300000)
+  document.addEventListener('visibilitychange', aoVoltar)
+})
+function aoVoltar() { if (!document.hidden && velha(g.intim.em, 300000)) atualizar() }
+onBeforeUnmount(() => { if (timer) clearInterval(timer); document.removeEventListener('visibilitychange', aoVoltar) })
+function irPara(id: string) { aba.value = id; if (id === 'email' && g.status.value?.conectado && (!g.caixa.dados[g.caixa.sub] || velha(g.caixa.em[g.caixa.sub], 120000))) g.carregarCaixa() }
+
+const urgentes = ref(0)
+const ABAS = [
+  { id: 'inicio', nome: 'Início' }, { id: 'intimacoes', nome: 'Intimações' }, { id: 'email', nome: 'E-mail' },
+  { id: 'leads', nome: 'Leads' }, { id: 'iniciais', nome: 'Iniciais' }, { id: 'noticias', nome: 'Notícias' }, { id: 'conteudo', nome: 'Conteúdo' },
+]
+// Cada aba ganha o seu número quando for montada. Intimações = avisos de intimação ainda sem prazo lançado.
+const selo = (id: string) => id === 'inicio' ? urgentes.value : id === 'intimacoes' ? g.semPrazo.value.length : id === 'leads' ? leads.selo.value : id === 'iniciais' ? ini.selo.value : 0
+
+const tratamento = computed(() => profile.value?.role === 'admin' ? 'Dra. Lara' : (profile.value?.name || '').split(' ')[0] || 'Olá')
+const hora = Number(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', hour12: false }).format(new Date()))
+const saudacao = computed(() => `${hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite'}, ${tratamento.value}`)
+const dataHoje = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia', dateStyle: 'full' }).format(new Date())
+async function trocarFoto(ev: Event) {
+  const f = (ev.target as HTMLInputElement).files?.[0]
+  if (f) await uploadAvatar(f)
+  if (fotoIn.value) fotoIn.value.value = ''
+}
+</script>
+
+<template>
+  <div class="secretaria space-y-4">
+    <header class="flex flex-col items-center gap-3 text-center pt-2">
+      <img src="/mono-dark.png" alt="Lara Café Advocacia & Consultoria" class="h-14 w-auto dark:invert select-none" />
+      <div class="flex items-center gap-4 flex-wrap justify-center">
+        <button type="button" class="foto" :disabled="isUploading" title="Clique para trocar a foto" aria-label="Trocar foto" @click="fotoIn?.click()">
+          <img v-if="profile?.avatar_url" :src="profile.avatar_url" alt="Minha foto" />
+          <span v-else>Sua foto</span>
+        </button>
+        <input ref="fotoIn" type="file" accept="image/jpeg,image/png,image/webp" hidden @change="trocarFoto" />
+        <div class="text-left">
+          <h1 class="text-2xl font-semibold text-primary dark:text-zinc-100">{{ saudacao }}</h1>
+          <p class="text-sm text-gray-500 capitalize-first">{{ dataHoje }}</p>
+          <p v-if="avatarError" class="text-xs text-danger">{{ avatarError }}</p>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Seções da Secretária">
+      <button v-for="a in ABAS" :key="a.id" type="button" role="tab" :aria-selected="aba === a.id" :class="{ ativa: aba === a.id }" @click="irPara(a.id)">
+        {{ a.nome }}<span v-if="selo(a.id)" class="selo" :aria-label="`${selo(a.id)} novos`">{{ selo(a.id) }}</span>
+      </button>
+    </nav>
+
+    <p v-if="avisoGoogle" class="cartao text-sm" role="status" data-testid="aviso-google">{{ avisoGoogle }}</p>
+    <SecretariaInicio v-show="aba === 'inicio'" :ini="ini" :sem-prazo="g.semPrazo.value" :google-conectado="!!g.status.value?.conectado" @urgentes="urgentes = $event" @aba="irPara" />
+    <SecretariaIntimacoes v-if="aba === 'intimacoes'" :g="g" />
+    <SecretariaEmail v-if="aba === 'email'" :g="g" />
+    <SecretariaLeads v-if="aba === 'leads'" :l="leads" :g="g" />
+    <SecretariaIniciais v-if="aba === 'iniciais'" :ini="ini" />
+    <section v-if="!['inicio', 'intimacoes', 'email', 'leads', 'iniciais'].includes(aba)" class="cartao text-center py-12">
+      <h2 class="text-lg font-semibold">{{ ABAS.find(a => a.id === aba)?.nome }}</h2>
+      <p class="text-sm text-gray-500 mt-2">Em breve. Esta aba será montada na próxima etapa.</p>
+    </section>
+    <p class="text-[11px] text-gray-400 text-center max-w-3xl mx-auto pt-2">Comunicação e conteúdo do escritório seguem o Provimento 205/2021 da OAB: sem captação de clientela, sem promessa de resultado e sem expor dados de clientes. Prazos calculados aqui são apoio: confirme sempre no sistema do tribunal.</p>
+  </div>
+</template>
+
+<style scoped>
+.secretaria { --ouro: #c9a24a; --ouro-esc: #8a6a26; --ouro-suave: #f4ecd9; max-width: 1040px; margin: 0 auto; }
+:global(.dark) .secretaria { --ouro: #d4af5a; --ouro-esc: #b8903a; --ouro-suave: #2c2618; }
+.foto { width: 84px; height: 84px; border-radius: 9999px; border: 3px solid var(--ouro); background: var(--ouro-suave); overflow: hidden; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--ouro-esc); padding: 0; cursor: pointer; }
+.foto img { width: 100%; height: 100%; object-fit: cover; }
+.capitalize-first::first-letter { text-transform: uppercase; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid rgb(0 0 0 / .08); position: sticky; top: 0; z-index: 5; background: inherit; scrollbar-width: none; }
+:global(.dark) .tabs { border-color: rgb(255 255 255 / .1); }
+.tabs button { flex: 0 0 auto; padding: 12px 14px; font-weight: 600; font-size: 13px; color: #857866; border-bottom: 3px solid transparent; display: flex; gap: 7px; align-items: center; }
+.tabs button.ativa { color: inherit; border-bottom-color: var(--ouro); }
+.selo { min-width: 19px; height: 19px; padding: 0 5px; border-radius: 10px; background: var(--ouro); color: #fff; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; }
+:global(.dark) .selo { color: #17130b; }
+.cartao { background: #fff; border: 1px solid rgb(0 0 0 / .08); border-top: 3px solid var(--ouro); border-radius: 10px; padding: 16px; }
+:global(.dark) .cartao { background: #1e1b17; border-color: rgb(255 255 255 / .1); border-top-color: var(--ouro); }
+</style>

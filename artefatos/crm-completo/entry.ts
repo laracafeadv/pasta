@@ -1,0 +1,12 @@
+// Pacote das regras REAIS do CRM que o artefato reaproveita (mesmos arquivos do projeto, sem cópia manual).
+export * from '../../shared/types/crm'
+export * from '../../shared/data/formulario'
+export * from '../../shared/data/servicos'
+export * from '../../shared/data/checklist'
+export * from '../../shared/data/procedimentos'
+export { contarPrazo, TRIBUNAIS, addDays, dow, NAO_CONFIRMADO, feriadosDe, motivoNaoUtil } from '../../shared/utils/calendarioForense'
+export { valorPorExtenso } from '../../shared/utils/extenso'
+export { numeroCnjValido, formatarCnj, cpfValido, mascararDocumento } from '../../shared/utils/juridico'
+export * as INI from '../../shared/utils/iniciaisSecretaria'
+import { renderSVG } from 'uqr'
+export const qrSvg = (texto: string) => renderSVG(texto, { border: 1, ecc: 'M' })

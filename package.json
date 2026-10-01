@@ -1,0 +1,38 @@
+{
+  "name": "saas",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
+  "scripts": {
+    "build": "nuxt build",
+    "start": "node .output/server/index.mjs",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@emnapi/core": "^1.0.0",
+    "@emnapi/runtime": "^0.45.0",
+    "@headlessui/vue": "^1.7.23",
+    "@nuxt/devtools": "^3.2.2",
+    "@nuxt/icon": "^2.2.1",
+    "@nuxt/image": "^2.0.0",
+    "@nuxtjs/supabase": "^2.0.4",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@vercel/speed-insights": "^2.0.0",
+    "docx": "^9.7.2",
+    "jszip": "^3.10.2",
+    "nuxt": "^4.3.1",
+    "nuxt-llms": "^0.2.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.28",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@iconify-json/ph": "^1.2.2",
+    "@vite-pwa/nuxt": "^1.1.1"
+  }
+}
