@@ -15,7 +15,8 @@ await t('nav-pessoas-remarketing').click().catch(() => {}); ok(await t('subs-pes
 await t('nav-seta-pessoas').click(); await esp(); ok(await t('subs-pessoas').count() === 1 && await t('subs-agenda').count() === 1, 'seta expande outro módulo sem fechar o aberto')
 await t('nav-pessoas-clientes').click(); await esp(); ok(/Pessoas/.test(await t('titulo-pagina').innerText()) && await t('nav-pessoas-clientes').getAttribute('aria-current') === 'page', 'Pessoas › Clientes')
 /* badges */
-ok(await t('nav-agenda-intimacoes').locator('span').last().innerText() === '1', 'badge de intimações a tratar')
+await p.evaluate(() => { DB.intimacoes.push({ id: 1, status: 'a_tratar', lida: false, tipo: 'Despacho', texto: 'teste', data_publicacao: hojeISO(), contato_id: null }); render() }); await esp(300)
+ok(await t('nav-agenda-intimacoes').locator('span').last().innerText() === '1', 'badge de intimações a tratar (só aparece quando há intimação real)')
 ok(await t('nav-inicio').innerText().then(x => /\d/.test(x)), 'badge do Início (itens de hoje)')
 /* persistência do estado da barra */
 await p.reload(); await p.waitForSelector('[data-testid=sidebar]'); ok(await t('subs-pessoas').count() === 1, 'a barra lembra os módulos expandidos')

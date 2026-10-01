@@ -114,10 +114,7 @@ function montarSemente() {
     M(9, 7, 'ligacao', 'saida', 'Liguei para informar sobre a nova avaliação do imóvel; ela concordou com o laudo.', 60 * 24 * 9, { caso_id: 2, processo_id: 2 }),
   ]
   const I = (id, contato_id, caso_id, processo_id, tipo, texto, data, status) => ({ id, created_at: agora(-60 * 24), contato_id, caso_id, processo_id, tipo, texto, data_publicacao: data, status, prazo_dias: null, observacao: null })
-  const intimacoes = [
-    I(1, 7, 2, 2, 'Despacho', 'Intime-se o inventariante para se manifestar sobre o laudo de avaliação em 15 dias.', d(-1), 'a_tratar'),
-    I(2, 8, 3, 3, 'Audiência designada', 'Designada audiência de conciliação.', d(-6), 'tratada'),
-  ]
+  const intimacoes = [] // nenhuma intimação de exemplo: só entram as que chegam de verdade (e-mail) ou que você registra
   return { contatos, demandas, processos, partes, movimentacoes, etapas, pendencias, compromissos, tarefas, documentos, honorarios, lancamentos, atividades, comunicacoes, intimacoes, modelos: MODELOS.map((m, i) => ({ id: i + 1, ...m })), notas: [{ id: 1, caso_id: 2, tipo: 'observacao', texto: 'Cliente pediu relatório quinzenal.', created_at: agora(-60 * 24 * 6), autor_nome: 'Lara Café' }], auditoria: [], iniciais: semearIniciais(), formularios: semearFormularios(), envios: semearEnvios() }
 }
 
@@ -158,6 +155,7 @@ async function iniciarArmazenamento(aoCarregar) {
       ARM.modo = 'local'
     }
   } catch (e) { ARM.estado = 'sem banco: usando o navegador'; ARM.modo = 'local' }
+  try { migrarIntimacoesExemplo() } catch (e) { /* limpeza única */ }
   try { migrarSeedsDeFormularios() } catch (e) { /* limpeza única; sem impacto se falhar */ }
   aoCarregar && aoCarregar(); renderBarraArmazenamento()
 }
@@ -192,7 +190,7 @@ function hojeItens() {
   for (const t of DB.tarefas) if (!t.concluida && t.prazo <= h) it.push({ tipo: 'tarefa', contato_id: t.contato_id, tarefa_id: t.id, titulo: t.titulo, quando: t.prazo, atraso: t.prazo < h })
   for (const p of DB.compromissos) if (p.status === 'pendente' && (p.tipo === 'prazo') && diaDe(dataDoCompromisso(p)) <= hojeISO(AUTO().antecedenciaPrazo)) it.push({ tipo: 'prazo', contato_id: p.contato_id, compromisso_id: p.id, titulo: p.titulo, quando: diaDe(dataDoCompromisso(p)), atraso: diaDe(dataDoCompromisso(p)) < h })
   for (const x of itensFormularioHoje()) it.push(x)
-  for (const m of DB.intimacoes) if (m.status === 'a_tratar') it.push({ tipo: 'intimacao', contato_id: m.contato_id, intimacao_id: m.id, titulo: 'Intimação a tratar: ' + m.tipo, quando: m.data_publicacao })
+  for (const m of DB.intimacoes) if (m.status === 'a_tratar') { const pz = dataPrazoIntim(m); const aviso_ = !m.lida ? 'Intimação NOVA' : (!m.processo_id && !m.contato_id) ? 'Intimação não vinculada' : pz && pz.d < h ? 'Prazo vencido (' + (pz.tipo === 'sugerido' ? 'sugerido' : 'criado') + ')' : pz && pz.d <= somarDias(h, 7) ? 'Prazo próximo' : m.prazo && m.prazo.estado === 'revisar' && !m.compromisso_id ? 'Prazo a revisar' : 'Intimação a tratar'; it.push({ tipo: 'intimacao', contato_id: m.contato_id, intimacao_id: m.id, titulo: aviso_ + ': ' + m.tipo + (m.numero_cnj ? ' — ' + m.numero_cnj : ''), quando: m.data_publicacao, atraso: !!(pz && pz.d < h) }) }
   for (const m of DB.comunicacoes) if (m.direcao === 'entrada' && !m.lida) it.push({ tipo: 'mensagem', contato_id: m.contato_id, titulo: (m.canal === 'email' ? 'E-mail recebido: ' : 'Mensagem sem resposta: ') + '“' + (m.assunto || m.texto).slice(0, 46) + '…”', quando: diaDe(m.created_at) })
   return it.sort((a, b) => (a.quando < b.quando ? -1 : 1))
 }
