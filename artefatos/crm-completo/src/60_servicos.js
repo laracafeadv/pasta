@@ -61,7 +61,7 @@ function dPartes(x, red) {
   return h('div', { class: 'space-y-3' }, h('div', { class: 'flex justify-end' }, btn('Adicionar parte', { mini: true, icone: 'ph:plus-bold', onclick: () => form(null), tid: 'nova-parte' })), ps.length ? tabela([{ nome: 'Nome', cel: a => a.contato_id ? link(a.nome, () => abrirFicha(a.contato_id)) : a.nome }, { nome: 'Papel', cel: a => a.papel }, { nome: 'Polo', cel: a => a.polo ? CRM.POLOS_PARTE[a.polo] : '—' }, { nome: 'Contato', cel: a => a.telefone ? telefoneFormatado(a.telefone) : (a.email || '—') }], ps, { clique: form }) : estadoVazio('ph:users-three-bold', 'Nenhuma parte cadastrada', 'Parte contrária, herdeiros, cônjuge, interessados.'))
 }
 const dDocs = (x, red) => painelDocumentos(x, red)
-const dFicha = (x, red) => fichaPerguntasDemanda(x, red)
+const dFicha = (x, red) => h('div', { class: 'space-y-5' }, fichaPerguntasDemanda(x, red), painelFormulariosDaDemanda(x))
 
 /* ================= PROCESSOS / PROCEDIMENTOS ================= */
 function cartaoProcesso(p) {

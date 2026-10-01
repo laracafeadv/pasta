@@ -6,7 +6,7 @@
 const COLECOES = ['contatos', 'demandas', 'processos', 'partes', 'movimentacoes', 'etapas', 'pendencias', 'compromissos', 'tarefas', 'documentos', 'honorarios', 'lancamentos', 'atividades', 'comunicacoes', 'intimacoes', 'formularios', 'envios', 'modelos', 'notas', 'auditoria', 'iniciais']
 const DB = {}
 const AUTO_PADRAO = { cadencia: true, semNovidadeDias: 7, antecedenciaPrazo: 2, remarketingDias: 45, checklistAoAbrir: true, aniversarios: true, preparacaoPrazo: false }
-const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {}, ia: { ativa: false }, email_sync: null, auto: { ...AUTO_PADRAO }, integr: { supabase: '', drive_raiz: '', wa_sync: null } }
+const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {}, ia: { ativa: false }, email_sync: null, auto: { ...AUTO_PADRAO }, integr: { supabase: '', drive_raiz: '', wa_sync: null, site_url: '', form_sync: null }, form: { validade: 30, lembreteDias: 3 } }
 /** Regras automáticas com os valores do escritório (padrão = o que o CRM sempre fez). */
 const AUTO = () => ({ ...AUTO_PADRAO, ...(CONFIG.auto || {}) })
 const ARM = { modo: 'memoria', uid: null, colecao: null, pendente: new Set(), timer: null, estado: 'iniciando' }
@@ -190,6 +190,7 @@ function hojeItens() {
   }
   for (const t of DB.tarefas) if (!t.concluida && t.prazo <= h) it.push({ tipo: 'tarefa', contato_id: t.contato_id, tarefa_id: t.id, titulo: t.titulo, quando: t.prazo, atraso: t.prazo < h })
   for (const p of DB.compromissos) if (p.status === 'pendente' && (p.tipo === 'prazo') && diaDe(dataDoCompromisso(p)) <= hojeISO(AUTO().antecedenciaPrazo)) it.push({ tipo: 'prazo', contato_id: p.contato_id, compromisso_id: p.id, titulo: p.titulo, quando: diaDe(dataDoCompromisso(p)), atraso: diaDe(dataDoCompromisso(p)) < h })
+  for (const x of itensFormularioHoje()) it.push(x)
   for (const m of DB.intimacoes) if (m.status === 'a_tratar') it.push({ tipo: 'intimacao', contato_id: m.contato_id, intimacao_id: m.id, titulo: 'Intimação a tratar: ' + m.tipo, quando: m.data_publicacao })
   for (const m of DB.comunicacoes) if (m.direcao === 'entrada' && !m.lida) it.push({ tipo: 'mensagem', contato_id: m.contato_id, titulo: (m.canal === 'email' ? 'E-mail recebido: ' : 'Mensagem sem resposta: ') + '“' + (m.assunto || m.texto).slice(0, 46) + '…”', quando: diaDe(m.created_at) })
   return it.sort((a, b) => (a.quando < b.quando ? -1 : 1))

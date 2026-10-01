@@ -23,7 +23,7 @@ const MODULOS = () => {
       { id: 'financeiro', rotulo: adm ? 'Financeiro' : 'Honorários', icone: 'ph:wallet-bold', subs: [['honorarios', 'Honorários', 'ph:handshake-bold'], ['contas', 'Contas a pagar e receber', 'ph:receipt-bold', n.contasVencidas]] },
       { id: 'relatorios', rotulo: 'Relatórios', icone: 'ph:chart-bar-bold', subs: [['visao', 'Visão geral', 'ph:chart-pie-bold'], ['funil', 'Funil e carteira', 'ph:funnel-bold'], ['qualidade', 'Qualidade', 'ph:shield-check-bold']] }] },
     { grupo: 'Escritório', itens: [
-      { id: 'formularios', rotulo: 'Formulários', icone: 'ph:clipboard-text-bold', subs: [['formularios', 'Meus formulários', 'ph:clipboard-text-bold'], ['respostas', 'Envios e respostas', 'ph:chat-centered-text-bold']] },
+      { id: 'formularios', rotulo: 'Formulários', icone: 'ph:clipboard-text-bold', subs: [['formularios', 'Meus formulários', 'ph:clipboard-text-bold'], ['respostas', 'Envios e respostas', 'ph:chat-centered-text-bold', formulariosARever()]] },
       { id: 'manual', rotulo: 'Padrões operacionais', icone: 'ph:list-checks-bold', subs: [['padroes', 'Passo a passo', 'ph:list-checks-bold'], ['fluxo', 'Fluxo do CRM', 'ph:flow-arrow-bold']] },
       ...(adm ? [{ id: 'config', rotulo: 'Configurações', icone: 'ph:gear-bold', subs: [['escritorio', 'Escritório e dados', 'ph:buildings-bold'], ['automacoes', 'Automações', 'ph:lightning-bold'], ['conexoes', 'Conexões e IA', 'ph:plugs-connected-bold'], ['auditoria', 'Auditoria', 'ph:shield-check-bold']] }] : [])] },
   ]

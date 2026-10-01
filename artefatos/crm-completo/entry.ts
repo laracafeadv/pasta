@@ -8,3 +8,5 @@ export { contarPrazo, TRIBUNAIS, addDays, dow, NAO_CONFIRMADO, feriadosDe, motiv
 export { valorPorExtenso } from '../../shared/utils/extenso'
 export { numeroCnjValido, formatarCnj, cpfValido, mascararDocumento } from '../../shared/utils/juridico'
 export * as INI from '../../shared/utils/iniciaisSecretaria'
+import { renderSVG } from 'uqr'
+export const qrSvg = (texto: string) => renderSVG(texto, { border: 1, ecc: 'M' })

@@ -45,7 +45,7 @@ VIEWS.inicio = () => {
 }
 
 /* ================= HOJE ================= */
-const TIPO_HOJE = { acao: ['Próximas ações', 'ph:arrow-fat-line-right-bold'], tarefa: ['Tarefas', 'ph:check-square-bold'], prazo: ['Prazos', 'ph:hourglass-high-bold'], intimacao: ['Intimações', 'ph:megaphone-bold'], mensagem: ['Mensagens', 'ph:chat-circle-text-bold'], aniversario: ['Aniversários', 'ph:cake-bold'], relatorio: ['Relatório semanal', 'ph:file-text-bold'] }
+const TIPO_HOJE = { acao: ['Próximas ações', 'ph:arrow-fat-line-right-bold'], tarefa: ['Tarefas', 'ph:check-square-bold'], prazo: ['Prazos', 'ph:hourglass-high-bold'], intimacao: ['Intimações', 'ph:megaphone-bold'], mensagem: ['Mensagens', 'ph:chat-circle-text-bold'], aniversario: ['Aniversários', 'ph:cake-bold'], relatorio: ['Relatório semanal', 'ph:file-text-bold'], formulario: ['Formulários', 'ph:clipboard-text-bold'] }
 VIEWS.hoje = () => {
   const todos = hojeItens(); const f = UI.hoje.f
   const lista_ = f === 'todos' ? todos : todos.filter(i => i.tipo === f)
@@ -59,6 +59,7 @@ VIEWS.hoje = () => {
     if (i.tipo === 'acao') acoes.push(btn('Feito', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => abrirAndamento(c) }), btn('Adiar 1 dia', { mini: true, tipo: 'fantasma', onclick: () => { c.proxima_data = somarDias(hojeISO(), 1); salvar('contatos'); render() } }))
     if (i.tipo === 'tarefa') acoes.push(btn('Concluir', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => { concluirTarefa(por('tarefas', i.tarefa_id)); render() } }))
     if (i.tipo === 'prazo') acoes.push(btn('Cumprido', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => { const q = por('compromissos', i.compromisso_id); q.status = 'concluido'; q.concluido_em = agora(); salvar('compromissos'); render() } }))
+    if (i.tipo === 'formulario') acoes.push(btn(i.envio_acao === 'revisar' ? 'Revisar' : 'Lembrar', { mini: true, icone: i.envio_acao === 'revisar' ? 'ph:eye-bold' : 'ph:bell-ringing-bold', tid: 'hoje-form', onclick: () => { const e = por('envios', i.envio_id); i.envio_acao === 'revisar' ? verEnvio(e) : painelEnvio(e, true) } }))
     if (i.tipo === 'intimacao') acoes.push(btn('Tratar', { mini: true, tipo: 'sec', onclick: () => ir('intimacoes') }))
     if (i.tipo === 'mensagem') acoes.push(btn('Marcar lida', { mini: true, tipo: 'fantasma', onclick: () => { DB.comunicacoes.filter(m => m.contato_id === i.contato_id).forEach(m => { m.lida = true }); salvar('comunicacoes'); render() } }))
     return h('div', { class: 'flex flex-wrap items-center gap-3 rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 px-4 py-3', 'data-testid': 'hoje-item' }, ic(TIPO_HOJE[i.tipo][1], 'text-xl text-primary dark:text-cafe-creme shrink-0'), h('div', { class: 'min-w-0 flex-1 basis-48' }, h('p', { class: 'text-sm font-semibold' }, i.titulo), c ? h('button', { type: 'button', class: 'text-xs text-gray-500 hover:underline', onclick: () => abrirFicha(c.id) }, c.nome) : null), i.atraso ? badge('Atrasado', 'vermelho') : null, badge(diaRelativo(i.quando), i.atraso ? 'vermelho' : 'ambar'), h('div', { class: 'flex flex-wrap gap-1.5' }, acoes))
