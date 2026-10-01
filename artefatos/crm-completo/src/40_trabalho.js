@@ -99,7 +99,7 @@ function linhaPrazo(p, compacto) {
 function editarCompromisso(p, padrao = {}) {
   const tipo = (p && p.tipo) || padrao.tipo || 'prazo'
   const campos = [{ chave: 'tipo', rotulo: 'Tipo', tipo: 'select', opcoes: Object.entries(CRM.TIPOS_COMPROMISSO).map(([k, v]) => [k, v.nome]) }, { chave: 'titulo', rotulo: 'Título', obrigatorio: true, largo: true }, { chave: 'contato_id', rotulo: 'Cliente', tipo: 'select', opcoes: opcoesContatos(), numerico: true }, { chave: 'caso_id', rotulo: 'Demanda', tipo: 'select', opcoes: opcoesDemandas(), numerico: true }, { chave: 'processo_id', rotulo: 'Processo', tipo: 'select', opcoes: [['', '— nenhum —'], ...DB.processos.map(x => [x.id, x.numero || x.orgao])], numerico: true }, { chave: 'data_limite', rotulo: 'Data-limite (prazos)', tipo: 'data' }, { chave: 'inicio', rotulo: 'Início (audiência/consulta/reunião)', tipo: 'datahora' }, { chave: 'local', rotulo: 'Local / plataforma' }, { chave: 'observacao', rotulo: 'Observação', tipo: 'textarea' }, ...(p ? [] : [{ chave: 'preparar', rotulo: 'Criar tarefa de preparação 3 dias úteis antes (só para prazos)', tipo: 'check', largo: true }])]
-  modalForm(p ? 'Editar compromisso' : 'Novo compromisso', campos, p || { tipo, ...padrao }, v => {
+  modalForm(p ? 'Editar compromisso' : 'Novo compromisso', campos, p || { tipo, preparar: AUTO().preparacaoPrazo && tipo === 'prazo', ...padrao }, v => {
     if (v.tipo === 'prazo' && !v.data_limite) return { erro: 'Prazo precisa de data-limite (use a calculadora para chegar nela).' }
     if (v.tipo !== 'prazo' && !v.inicio && !v.data_limite) return { erro: 'Informe a data e hora.' }
     const prep = v.preparar; delete v.preparar

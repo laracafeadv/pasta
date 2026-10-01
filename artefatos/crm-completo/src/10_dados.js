@@ -5,7 +5,10 @@
    - Persistência: banco do Artifact (data/users/<id>/crm_<coleção>) quando disponível; senão localStorage. */
 const COLECOES = ['contatos', 'demandas', 'processos', 'partes', 'movimentacoes', 'etapas', 'pendencias', 'compromissos', 'tarefas', 'documentos', 'honorarios', 'lancamentos', 'atividades', 'comunicacoes', 'intimacoes', 'formularios', 'envios', 'modelos', 'notas', 'auditoria', 'iniciais']
 const DB = {}
-const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {}, ia: { ativa: false }, email_sync: null }
+const AUTO_PADRAO = { cadencia: true, semNovidadeDias: 7, antecedenciaPrazo: 2, remarketingDias: 45, checklistAoAbrir: true, aniversarios: true, preparacaoPrazo: false }
+const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {}, ia: { ativa: false }, email_sync: null, auto: { ...AUTO_PADRAO } }
+/** Regras automáticas com os valores do escritório (padrão = o que o CRM sempre fez). */
+const AUTO = () => ({ ...AUTO_PADRAO, ...(CONFIG.auto || {}) })
 const ARM = { modo: 'memoria', uid: null, colecao: null, pendente: new Set(), timer: null, estado: 'iniciando' }
 
 const d = n => hojeISO(n)
@@ -122,7 +125,7 @@ const ESCRITORIO_EXEMPLO = { advogada_nome: 'Lara Café', oab: '00000/BA', advog
 const GESTAO_EXEMPLO = { horas_produtivas_mes: 120, margem_desejada: 30, saldo_caixa: 8500, pro_labore: 6000, horas_estimadas: 20 }
 
 /* ---------- persistência ---------- */
-function carregarSemente() { const s = montarSemente(); for (const c of COLECOES) DB[c] = s[c] || []; CONFIG.escritorio = clonar(ESCRITORIO_EXEMPLO); CONFIG.gestao = clonar(GESTAO_EXEMPLO); CONFIG.perfil = { nome: 'Lara Café', papel: 'admin', email: 'contato@exemplo.com.br' }; CONFIG.revisoes = []; CONFIG.checklist_manual = {}; CONFIG.seq = {}; CONFIG.ia = { ativa: false }; CONFIG.email_sync = null }
+function carregarSemente() { const s = montarSemente(); for (const c of COLECOES) DB[c] = s[c] || []; CONFIG.escritorio = clonar(ESCRITORIO_EXEMPLO); CONFIG.gestao = clonar(GESTAO_EXEMPLO); CONFIG.perfil = { nome: 'Lara Café', papel: 'admin', email: 'contato@exemplo.com.br' }; CONFIG.revisoes = []; CONFIG.checklist_manual = {}; CONFIG.seq = {}; CONFIG.ia = { ativa: false }; CONFIG.email_sync = null; CONFIG.auto = { ...AUTO_PADRAO } }
 function salvar(col) { ARM.pendente.add(col || '*'); clearTimeout(ARM.timer); ARM.timer = setTimeout(descarregar, 500); renderBarraArmazenamento() }
 async function descarregar() {
   const cols = ARM.pendente.has('*') ? [...COLECOES, 'config'] : [...ARM.pendente]; ARM.pendente.clear()
@@ -182,17 +185,17 @@ function hojeItens() {
   const h = hojeISO(), it = []
   for (const c of DB.contatos) {
     if (c.proxima_data && c.proxima_data <= h && ['novo', 'qualificacao', 'agendado', 'diagnostico', 'proposta', 'ativo', 'concluido'].includes(c.etapa)) it.push({ tipo: 'acao', contato_id: c.id, titulo: c.proxima_acao || 'Próxima ação', quando: c.proxima_data, atraso: c.proxima_data < h, modelo: Object.values(CRM.CADENCIA).find(x => x.acao === c.proxima_acao)?.modelo || null })
-    if (c.data_nascimento && c.data_nascimento.slice(5) === h.slice(5) && c.etapa !== 'perdido') it.push({ tipo: 'aniversario', contato_id: c.id, titulo: 'Aniversário de ' + (c.nome || ''), quando: h, modelo: '/aniversario' })
-    const uc = ultimoContato(c); if (c.etapa === 'ativo' && uc && diasEntre(diaDe(uc), h) >= 7) it.push({ tipo: 'relatorio', contato_id: c.id, titulo: 'Cliente ativa há ' + diasEntre(diaDe(uc), h) + ' dias sem comunicação', quando: h, modelo: '/relatorio-semanal' })
+    if (AUTO().aniversarios && c.data_nascimento && c.data_nascimento.slice(5) === h.slice(5) && c.etapa !== 'perdido') it.push({ tipo: 'aniversario', contato_id: c.id, titulo: 'Aniversário de ' + (c.nome || ''), quando: h, modelo: '/aniversario' })
+    const uc = ultimoContato(c); if (AUTO().semNovidadeDias > 0 && c.etapa === 'ativo' && uc && diasEntre(diaDe(uc), h) >= AUTO().semNovidadeDias) it.push({ tipo: 'relatorio', contato_id: c.id, titulo: 'Cliente ativa há ' + diasEntre(diaDe(uc), h) + ' dias sem comunicação', quando: h, modelo: '/relatorio-semanal' })
   }
   for (const t of DB.tarefas) if (!t.concluida && t.prazo <= h) it.push({ tipo: 'tarefa', contato_id: t.contato_id, tarefa_id: t.id, titulo: t.titulo, quando: t.prazo, atraso: t.prazo < h })
-  for (const p of DB.compromissos) if (p.status === 'pendente' && (p.tipo === 'prazo') && diaDe(dataDoCompromisso(p)) <= hojeISO(2)) it.push({ tipo: 'prazo', contato_id: p.contato_id, compromisso_id: p.id, titulo: p.titulo, quando: diaDe(dataDoCompromisso(p)), atraso: diaDe(dataDoCompromisso(p)) < h })
+  for (const p of DB.compromissos) if (p.status === 'pendente' && (p.tipo === 'prazo') && diaDe(dataDoCompromisso(p)) <= hojeISO(AUTO().antecedenciaPrazo)) it.push({ tipo: 'prazo', contato_id: p.contato_id, compromisso_id: p.id, titulo: p.titulo, quando: diaDe(dataDoCompromisso(p)), atraso: diaDe(dataDoCompromisso(p)) < h })
   for (const m of DB.intimacoes) if (m.status === 'a_tratar') it.push({ tipo: 'intimacao', contato_id: m.contato_id, intimacao_id: m.id, titulo: 'Intimação a tratar: ' + m.tipo, quando: m.data_publicacao })
   for (const m of DB.comunicacoes) if (m.direcao === 'entrada' && !m.lida) it.push({ tipo: 'mensagem', contato_id: m.contato_id, titulo: (m.canal === 'email' ? 'E-mail recebido: ' : 'Mensagem sem resposta: ') + '“' + (m.assunto || m.texto).slice(0, 46) + '…”', quando: diaDe(m.created_at) })
   return it.sort((a, b) => (a.quando < b.quando ? -1 : 1))
 }
 function remarketingElegiveis() {
-  const lim = CRM.REMARKETING_INTERVALO_DIAS
+  const lim = AUTO().remarketingDias
   return DB.contatos.filter(c => c.etapa === 'perdido' && !c.nao_contatar && !CRM.MOTIVOS_SEM_REMARKETING.includes(c.motivo_perda)).map(c => { const ult = c.ultimo_remarketing_em || c.etapa_desde; const dias = diasEntre(diaDe(ult), hojeISO()); return { contato: c, dias, pronto: dias >= lim, faltam: Math.max(0, lim - dias) } })
 }
 function classificarPorNps(nota) { return nota == null ? null : nota >= 9 ? 'promotora' : nota >= 7 ? 'neutra' : 'detratora' }
@@ -208,7 +211,7 @@ function moverEtapa(c, nova, extra = {}) {
   if (nova === 'perdido' && !(extra.motivo_perda || c.motivo_perda)) return { erro: 'Informe o motivo para marcar como “Não contratou”.' }
   c.etapa = nova; c.etapa_desde = agora(); c.updated_at = agora(); Object.assign(c, extra)
   if (nova !== 'perdido') c.motivo_perda = nova === 'perdido' ? c.motivo_perda : null
-  const cad = CRM.CADENCIA[nova]; if (cad) { c.proxima_acao = cad.acao; c.proxima_data = somarDias(hojeISO(), cad.dias < 0 ? 0 : cad.dias) } else { c.proxima_acao = null; c.proxima_data = null }
+  const cad = AUTO().cadencia ? CRM.CADENCIA[nova] : null; if (cad) { c.proxima_acao = cad.acao; c.proxima_data = somarDias(hojeISO(), cad.dias < 0 ? 0 : cad.dias) } else { c.proxima_acao = null; c.proxima_data = null }
   if (nova === 'agendado') { const iso = c.consulta_em; const ex = DB.compromissos.find(x => x.tipo === 'consulta' && x.contato_id === c.id && x.status === 'pendente'); if (ex) ex.inicio = iso; else DB.compromissos.push({ id: proximoId('compromissos'), tipo: 'consulta', titulo: 'Consulta — ' + (c.nome || 'contato'), contato_id: c.id, caso_id: null, inicio: iso, data_limite: null, data_publicacao: null, dias_prazo: null, local: CONFIG.escritorio.plataforma_consulta || null, status: 'pendente', observacao: null, processo_id: null }); salvar('compromissos') }
   registrar(c.id, 'Anotação', `Etapa: ${CRM.etapa(antes).nome} → ${CRM.etapa(nova).nome}` + (extra.motivo_perda ? ` (${extra.motivo_perda})` : ''))
   auditar('mover_etapa', `${c.nome}: ${antes} → ${nova}`); salvar('contatos'); return { ok: true }
@@ -218,7 +221,7 @@ function abrirDemanda(o) {
   const c = contato(o.contato_id); const dm = { id: proximoId('demandas'), created_at: agora(), data_abertura: hojeISO(), data_encerramento: null, status: 'ativo', resultado: null, observacoes: null, analise: null, fatos: null, estrategia: null, conclusao: null, riscos: null, decisao: null, responsavel_id: null, procedimento: null, ...o }
   DB.demandas.push(dm)
   if (dm.tipo !== 'consultivo' && c && ['novo', 'qualificacao', 'agendado', 'diagnostico', 'proposta'].includes(c.etapa)) moverEtapa(c, 'ativo')
-  if (dm.tipo !== 'consultivo') gerarDocumentos(dm)
+  if (dm.tipo !== 'consultivo' && AUTO().checklistAoAbrir) gerarDocumentos(dm)
   registrar(dm.contato_id, 'Anotação', 'Demanda aberta: ' + dm.titulo, dm.id); auditar('abrir_demanda', dm.titulo); salvar('demandas'); salvar('documentos'); return dm
 }
 function gerarDocumentos(dm) {

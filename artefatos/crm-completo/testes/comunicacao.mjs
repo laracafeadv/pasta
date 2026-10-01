@@ -17,7 +17,7 @@ async function nova(comMcp, comIa) {
 const T = p => id => p.locator(`[data-testid="${id}"]`); const esp = p => p.waitForTimeout(150)
 let p = await nova(true, true); let t = T(p)
 /* menu simplificado */
-const itens = await p.locator('[data-testid=sidebar] nav button').count(); ok(itens === 10, 'menu lateral enxuto: 10 itens (eram 22): ' + itens)
+const itens = await p.locator('[data-testid=sidebar] nav [data-testid^="nav-"]').evaluateAll(e => e.filter(x => /^nav-[a-z]+$/.test(x.dataset.testid) && !['nav-mais'].includes(x.dataset.testid)).length); ok(itens === 10, 'barra com 10 módulos (eram 22 itens soltos): ' + itens)
 /* caixa */
 await p.click('[data-testid=nav-comunicacao]'); await esp(p); ok(await t('com-item').count() >= 4, 'caixa lista as conversas (WhatsApp, e-mail, ligação)')
 await t('com-item').filter({ hasText: 'Beatriz' }).click(); await esp(p); ok(await t('msg').count() >= 3, 'thread mostra WhatsApp + e-mail + vínculo')

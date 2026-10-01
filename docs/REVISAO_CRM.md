@@ -81,3 +81,31 @@ Viabilidade: **Real** = funciona no ambiente atual · **Pequena adaptação** ·
 | Multiusuário com perfis | Equipe | Baixo (escritório solo) | — | Alta | Backend | Backend | **P4** | Não agora |
 
 Efeito da priorização nesta rodada: dois itens P1 que faltavam foram implementados (peças e atualização à cliente); um item “de tecnologia” (comando por IA) foi rebaixado e fundido à busca; um painel de baixo valor foi removido.
+
+## 6. Auditoria do que foi removido (funcionalidades que funcionavam)
+
+Comparação entre a primeira versão completa (commit `abcf508`) e a versão após a revisão. **Nada foi restaurado automaticamente**; abaixo, o que existia, onde estava, por que saiu, onde está hoje e a recomendação.
+
+| # | O que fazia | Onde estava | Por que saiu | Hoje | Deveria voltar? |
+|---|---|---|---|---|---|
+| 1 | “O que você precisa?” achava **tarefas, prazos/compromissos e petições iniciais** (além de pessoas) e entendia frases sobre iniciais (“quais iniciais atrasadas”, “recebi o CNIS da Beatriz”, “avançar”, “falta CTPS”) com o interpretador local `INI.interpretarInicial` | Secretária › Início | Fundi a Secretária ao Início e a busca ao cabeçalho | A busca do cabeçalho só encontra pessoas, demandas e processos; o interpretador de iniciais não foi religado | **Sim** (P1): perda real de alcance de busca |
+| 2 | **Sequência de follow-up**: ao registrar a mensagem enviada, avançava a próxima ação (24h → 7 dias → 14 dias; convite → pagamento; feedback → proposta em 2 dias úteis) | Modal “Mensagem” (Hoje/Ficha) | Apaguei o modal ao unificar a comunicação e não portei essa regra | Só “Registrar andamento” ainda avança a sequência; enviar pela Comunicação não avança | **Sim** (P0/P1): quebra o fluxo central do Hoje |
+| 3 | **Iniciais atrasadas ou com data em até 2 dias apareciam na faixa “Hoje”** (e no número da aba) | Secretária › Início | A Secretária foi fundida e a faixa não foi levada | O número aparece na aba “Petições iniciais”, mas o Início não lista as iniciais | **Sim** (P1): era requisito explícito da etapa 4 |
+| 4 | **Panorama de documentos pendentes de todas as demandas** (quem deve o quê) | Dashboard e Documentos | Removi o painel do Dashboard; em Documentos o resumo mostra só as 3 primeiras demandas | Há contador na aba e o checklist por demanda, mas não a lista geral | **Sim** (P1) |
+| 5 | **Gráfico de recebido nos últimos 6 meses** | Dashboard | Disse que “já existe em Financeiro”. **Não existia: foi um erro meu** | Não existe em lugar nenhum | **Sim**, no Financeiro (P3, custo mínimo) |
+| 6 | **Prazos dos próximos 7 dias** com botão “Cumprido” | Dashboard | Painel duplicado | Hoje mostra prazos até 2 dias; Agenda › Prazos lista tudo | Opcional (P3): mini-painel no Início |
+| 7 | **Botão WhatsApp** direto na ficha do cliente | Cabeçalho da ficha | Substituído por “Comunicar” | Um clique a mais (aba Comunicação) | Opcional (P3): voltar como ação rápida |
+| 8 | Página de **privacidade/LGPD** (texto e link da política) | Tela pública | Fiz parte da remoção do login | Só o aviso no rodapé | Opcional (P3) |
+| — | Login/recuperar senha, troca de papel, “criar pasta (simulado)”, “Word” que só avisava, “Google Agenda simulado” | vários | Eram simulações | Substituídos por funções reais ou removidos | Não |
+| — | Tabela de equipe/permissões, painéis duplicados (funil, carteira) | Configurações / Dashboard | Documentação ou duplicação | Perfil explica o acesso; funil e carteira estão em Pessoas e Relatórios | Não |
+
+Funcionalidades preservadas e acessíveis: todas as de Agenda, Pessoas, Demandas (processos, partes, análise, documentos), Financeiro (inclusive piso de preço), Relatórios (inclusive revisão por amostragem), Formulários, Padrões operacionais e Configurações.
+
+## 7. Barra de navegação como central de operação
+
+- **Estrutura**: 5 grupos → 10 módulos → 29 abas. Cada módulo é uma tela completa com abas (lista, busca, filtros, criação, edição, histórico, relatórios). A barra mostra os módulos; as abas aparecem como atalhos diretos no módulo aberto ou nos que você expandir pela seta (a escolha é lembrada).
+- **Acesso imediato**: botão **+ Novo** (9 ações rápidas: contato, comunicação, formulário, tarefa, prazo/compromisso, intimação, demanda, petição inicial, honorário) e **Buscar ou pedir** (`Ctrl K`).
+- **Badges**: só onde há ação pendente (Início, tarefas atrasadas, prazos em 7 dias, intimações, leads novos, remarketing pronto, não lidas, demandas com documento pendente, iniciais, contas vencidas). Módulo recolhido mostra a soma das abas.
+- **Mais**: perfil, link público de formulário, exportar dados (administradora).
+- **Novo item com função real**: *Configurações › Automações* — 7 regras que o CRM já executava agora são ajustáveis (cadência por etapa, dias sem novidade, antecedência de prazos, intervalo do remarketing, checklist ao abrir demanda, aniversários, tarefa de preparação) e 8 regras fixas ficam listadas. Cada mudança altera o comportamento e vai para a Auditoria.
+- **Fora da barra de propósito**: Perfil (cabeçalho e “Mais”), Auditoria (aba de Configurações), Calculadora de prazos (aba Prazos), Qualidade (aba de Relatórios).

@@ -14,7 +14,8 @@ function editarLancamento(l) {
   const tipoSel = l?.tipo || 'receber'
   modalForm(l ? 'Editar lançamento' : 'Novo lançamento', [{ chave: 'tipo', rotulo: 'Tipo', tipo: 'select', opcoes: [['receber', 'A receber'], ['pagar', 'A pagar']] }, { chave: 'descricao', rotulo: 'Descrição', obrigatorio: true, largo: true }, { chave: 'categoria', rotulo: 'Categoria', tipo: 'select', opcoes: [...new Set([...CRM.CATEGORIAS_LANCAMENTO.receber, ...CRM.CATEGORIAS_LANCAMENTO.pagar])] }, { chave: 'valor', rotulo: 'Valor (R$)', tipo: 'numero', obrigatorio: true, valida: v => v != null && v <= 0 ? 'Valor deve ser maior que zero.' : null }, { chave: 'vencimento', rotulo: 'Vencimento', tipo: 'data', obrigatorio: true }, { chave: 'pago_em', rotulo: 'Pago em', tipo: 'data' }, { chave: 'contato_id', rotulo: 'Cliente', tipo: 'select', opcoes: opcoesContatos(), numerico: true }, { chave: 'recorrente', rotulo: 'Recorrente (mensal)', tipo: 'check' }], l || { tipo: tipoSel, categoria: 'Honorários', vencimento: hojeISO() }, v => { if (l) Object.assign(l, v); else DB.lancamentos.push({ id: proximoId('lancamentos'), caso_id: null, honorario_id: null, observacao: null, ...v }); salvar('lancamentos') }, { largura: 'max-w-2xl', extra: l ? btn('Excluir', { tipo: 'perigo', onclick: () => confirmar('Excluir lançamento?', l.descricao, 'Excluir', () => { DB.lancamentos = DB.lancamentos.filter(z => z !== l); salvar('lancamentos') }) }) : null })
 }
-VIEWS.financeiro = () => {
+VIEWS.financeiro = (p) => {
+  if (p && p.aba) { UI.fin.aba = p.aba; R.p = {} }
   const A = UI.fin.aba; const rec = DB.honorarios.filter(h_ => CRM.STATUS_RECEITA.includes(h_.status)); const contratado = rec.reduce((s, x) => s + x.valor, 0); const pago = DB.honorarios.filter(x => x.status === 'Pago').reduce((s, x) => s + x.valor, 0); const prop = DB.honorarios.filter(x => x.status === 'Proposta').reduce((s, x) => s + x.valor, 0)
   const aReceber = DB.lancamentos.filter(l => l.tipo === 'receber' && !l.pago_em); const aPagar = DB.lancamentos.filter(l => l.tipo === 'pagar' && !l.pago_em)
   const g = CONFIG.gestao; const custoHora = g.horas_produtivas_mes ? g.pro_labore / g.horas_produtivas_mes : 0; const minimo = CRM.precoMinimo(g.horas_estimadas || 0, custoHora, g.margem_desejada || 0)
@@ -28,7 +29,8 @@ VIEWS.financeiro = () => {
 }
 
 /* ================= RELATÓRIOS ================= */
-VIEWS.relatorios = () => {
+VIEWS.relatorios = (p) => {
+  if (p && p.aba) { UI.rel.aba = p.aba; R.p = {} }
   const A = UI.rel.aba; let corpo
   if (A === 'visao') {
     const leads = DB.contatos.filter(c => c.etapa !== 'relacionado'); const ganhos = leads.filter(c => CRM.ETAPAS_GANHAS.includes(c.etapa)); const conv = leads.length ? Math.round(ganhos.length / leads.length * 100) : 0
