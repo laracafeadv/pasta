@@ -32,7 +32,8 @@ export const DOCS_POR_AREA: Record<string, string[]> = {
   'Consumidor': ['Documento de identidade e CPF', 'Comprovante de residência', 'Contrato / fatura', 'Protocolos de atendimento', 'Extrato de negativação (SPC/Serasa)', 'Comprovantes de pagamento', 'Conversas e provas'],
   'Outra': ['Documento de identidade e CPF', 'Comprovante de residência', 'Procuração', 'Declaração de hipossuficiência'],
 }
-const sem = (s: unknown) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+export const semAcento = (s: unknown) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+const sem = semAcento
 export const acoesDaArea = (area: string | null | undefined) => (area && ACOES_POR_AREA[area]) || Object.values(ACOES_POR_AREA).flat()
 export const docsDaArea = (area: string | null | undefined) => DOCS_POR_AREA[area || ''] || DOCS_POR_AREA['Outra']!
 
