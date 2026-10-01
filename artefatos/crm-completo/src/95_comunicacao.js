@@ -55,6 +55,7 @@ function Thread(cid, opc = {}) {
   const vinculo = () => ({ caso_id: E.caso ? Number(E.caso) : null })
   const texto = h('textarea', { class: 'modal-input', rows: 4, placeholder: 'Escreva aqui. Digite /atalho para usar um modelo.', 'data-testid': 'comp-texto', 'aria-label': 'Texto' })
   const assunto = h('input', { class: 'modal-input', placeholder: 'Assunto', 'data-testid': 'email-assunto', 'aria-label': 'Assunto' }); const para = h('input', { class: 'modal-input', type: 'email', value: c.email || '', placeholder: 'e-mail do destinatário', 'data-testid': 'email-para', 'aria-label': 'Destinatário' })
+  if (opc.texto) texto.value = opc.texto
   if (opc.atalho) { const m = DB.modelos.find(x => x.atalho === opc.atalho); if (m) { texto.value = preencherModelo(m.texto, c); assunto.value = m.titulo } }
   texto.addEventListener('input', () => { if (/^\/[\w-]+$/.test(texto.value.trim())) { const m = DB.modelos.find(x => x.atalho === texto.value.trim()); if (m) { texto.value = preencherModelo(m.texto, c); if (!assunto.value) assunto.value = m.titulo } } })
   const modelos = h('select', { class: 'selecao text-xs max-w-[12rem]', 'aria-label': 'Inserir modelo', onchange: ev => { const m = DB.modelos.find(x => x.atalho === ev.target.value); ev.target.value = ''; if (m) { texto.value = preencherModelo(m.texto, c); if (!assunto.value) assunto.value = m.titulo } } }, h('option', { value: '' }, 'Inserir modelo…'), DB.modelos.filter(m => m.ativo !== false).map(m => h('option', { value: m.atalho }, m.atalho + ' ' + m.titulo)))

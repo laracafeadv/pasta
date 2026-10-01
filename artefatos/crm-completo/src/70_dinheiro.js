@@ -8,7 +8,7 @@ function editarHonorario(x, padrao = {}) {
     if (v.valor != null && v.valor < 0) return { erro: 'Valor não pode ser negativo.' }
     if (x) { Object.assign(x, v, { updated_at: agora() }); registrar(x.contato_id, 'Anotação', `Honorário ${x.status}: ${brl(x.valor)}`, x.caso_id) } else { const n = { id: proximoId('honorarios'), created_at: agora(), updated_at: agora(), ...v }; DB.honorarios.push(n); registrar(n.contato_id, 'Anotação', `Honorário registrado (${n.status}): ${brl(n.valor)}`, n.caso_id) }
     salvar('honorarios')
-  }, { largura: 'max-w-2xl', titulo2: null, extra: x ? btn('Excluir', { tipo: 'perigo', onclick: () => confirmar('Excluir honorário?', brl(x.valor), 'Excluir', () => { DB.honorarios = DB.honorarios.filter(z => z !== x); salvar('honorarios') }) }) : null })
+  }, { largura: 'max-w-2xl', extra: x ? [btn('Gerar contrato (.doc)', { tipo: 'sec', icone: 'ph:file-doc-bold', tid: 'gerar-contrato', onclick: () => gerarContrato(x) }), btn('Excluir', { tipo: 'perigo', onclick: () => confirmar('Excluir honorário?', brl(x.valor), 'Excluir', () => { DB.honorarios = DB.honorarios.filter(z => z !== x); salvar('honorarios') }) })] : null })
 }
 function editarLancamento(l) {
   const tipoSel = l?.tipo || 'receber'

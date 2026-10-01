@@ -5,7 +5,7 @@ const b = await chromium.launch({ executablePath: process.env.CHROME, args: ['--
 const erros = []; p.on('pageerror', e => erros.push(e.message)); p.on('console', m => { if (m.type() === 'error') erros.push(m.text()) })
 const t = id => p.locator(`[data-testid="${id}"]`); const esp = (ms = 120) => p.waitForTimeout(ms); const txt = () => p.locator('[role=dialog]').last().innerText()
 await p.goto('file:///home/user/pasta/artefatos/crm-completo/dist/crm.html'); await p.waitForSelector('[data-testid=sidebar]')
-ok(await t('grafico-carga').count() === 1 && await t('grafico-receita').count() === 1, 'início: gráficos de carga e receita')
+ok(await t('grafico-carga').count() === 1 && await t('grafico-receita').count() === 0, 'início: só o gráfico de carga (receita fica no Financeiro)')
 for (const aba of ['cliente', 'demandas', 'conversa', 'financeiro', 'historico']) { await p.evaluate(a => abrirFicha(6, a), aba); await esp(); ok((await txt()).length > 80, 'ficha aba ' + aba); await p.keyboard.press('Escape') }
 await p.evaluate(() => abrirFicha(6, 'cliente')); await esp(); ok(/\*\*\*/.test(await txt()), 'CPF/RG mascarados na qualificação'); await p.keyboard.press('Escape')
 for (const aba of ['visao', 'analise', 'processos', 'partes', 'docs', 'ficha']) { await p.evaluate(a => abrirDemandaDetalhe(1, a), aba); await esp(); ok((await txt()).length > 60, 'demanda aba ' + aba); await p.keyboard.press('Escape') }

@@ -106,6 +106,8 @@ const CAPACIDADES = [
   ['E-mail', 'Aviso de e-mail novo em segundo plano (com o CRM fechado)', 'NAO', 'O artefato só roda aberto. Alternativa: rotina agendada fora dele.'],
   ['IA', 'Resumir pessoa/demanda, rascunhar resposta, comando em linguagem natural, ler texto de intimação', 'REAL', 'IA da sua conta Claude, com consentimento; propõe, você confirma.'],
   ['IA', 'Ler PDFs e fotos de documentos e preencher a qualificação', 'POSSIVEL', 'Fotos funcionam onde o ambiente permite imagens; PDF exige conversão. Não implementado nesta versão.'],
+  ['Documentos', 'Procuração, contrato de honorários e relatório semanal com os textos do escritório (.doc, abre no Word)', 'REAL', 'Dados que faltam saem como [MARCADOR]; revise antes de assinar. Atualização ao cliente também sai como mensagem pronta.'],
+  ['Documentos', 'Gerar .docx e gravar direto no Drive do cliente', 'POSSIVEL', 'O CRM do site já faz (servidor + Google Drive); o artefato não grava no Drive.'],
   ['Agenda', 'Levar prazos e audiências ao Google Agenda (link e arquivo .ics)', 'REAL', 'Um clique por compromisso; sem sincronização contínua.'],
   ['Agenda', 'Sincronização automática com o Google Agenda', 'POSSIVEL', 'Conector Google Calendar (não ligado neste CRM).'],
   ['Drive', 'Guardar o link da pasta do cliente', 'REAL', 'Só o link; os arquivos ficam no Drive.'],

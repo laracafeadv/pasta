@@ -77,7 +77,9 @@ function abrirBusca() {
     if (!res.children.length) res.append(estadoVazio('ph:magnifying-glass-bold', 'Nada encontrado', 'Tente outro trecho do nome, telefone ou número.'))
   }
   entrada.addEventListener('input', buscar)
-  m = modal({ titulo: 'Buscar', largura: 'max-w-xl', corpo: [entrada, res] }); buscar()
+  const planoIA = h('div', { class: 'mt-3' })
+  const pedir = btn(CONFIG.ia.ativa ? 'Pedir à IA' : 'Pedir à IA (ligar)', { mini: true, tipo: 'sec', icone: 'ph:sparkle-bold', tid: 'ia-pedir', class: 'ia-btn', onclick: () => { const q = entrada.value.trim(); if (q.length < 6) { aviso('Descreva o que quer fazer (ex.: “criar tarefa de ligar para a Helena amanhã”).', 'erro'); return } exigirIA(async s => { planoIA.replaceChildren(carregando('Entendendo o pedido…')); try { mostrarPlano(await interpretarComando(s, q), planoIA) } catch (e) { planoIA.replaceChildren(alerta('erro', null, iaErro(e))) } }) } })
+  m = modal({ titulo: 'Buscar ou pedir', largura: 'max-w-xl', corpo: [entrada, h('div', { class: 'flex items-center justify-between mt-2' }, h('p', { class: 'text-[11px] text-gray-400' }, 'Busca no CRM; para criar tarefa, prazo ou anotação em frase, use a IA (você confirma antes de gravar).'), pedir), res, planoIA] }); buscar()
 }
 function casca() {
   return h('div', { class: 'flex min-h-screen bg-gray-100 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100' }, barraLateral(), h('div', { class: 'flex-1 min-w-0 flex flex-col' }, cabecalho(), h('main', { class: 'flex-1 min-w-0', id: 'conteudo', tabindex: '-1' }, (VIEWS[R.rota] || VIEWS.inicio)(R.p)), rodape()))

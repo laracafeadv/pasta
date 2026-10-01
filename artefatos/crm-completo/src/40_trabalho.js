@@ -38,12 +38,10 @@ VIEWS.inicio = () => {
   const prox = DB.compromissos.filter(p => p.status === 'pendente' && p.tipo !== 'prazo' && diaDe(dataDoCompromisso(p)) >= hojeISO()).sort((a, b) => dataDoCompromisso(a).localeCompare(dataDoCompromisso(b))).slice(0, 4)
   EMBED = true; let hojeEl; try { hojeEl = VIEWS.hoje() } finally { EMBED = false }
   return pagina(`${saudacao()}, ${(CONFIG.perfil.nome || '').split(' ')[0]}`, new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ }), [btn('Nova tarefa', { icone: 'ph:plus-bold', onclick: () => editarTarefa(null), tid: 'nova-tarefa-dash' }), btn('Novo contato', { tipo: 'sec', icone: 'ph:user-plus-bold', onclick: () => editarContato(null) })],
-    assistenteBox(),
     grade(4, kpi('Pedem atenção', itens.length, 'lista abaixo'), kpi('Leads em aberto', leads.length, plural(leads.filter(c => c.etapa === 'novo').length, 'novo', 'novos'), () => ir('pessoas', { aba: 'funil' })), kpi('Clientes ativos', ativos.length, `${DB.demandas.filter(x => x.status === 'ativo' && x.tipo !== 'consultivo').length} demandas`, () => ir('pessoas', { aba: 'clientes' })), kpi('A receber', brl(aReceber), 'lançamentos em aberto', () => ir('financeiro'))),
     h('div', { class: 'grid gap-5 lg:grid-cols-[1fr_340px]' }, h('div', { class: 'min-w-0' }, painel('Hoje', hojeEl)), h('div', { class: 'space-y-5 min-w-0' },
       painel('Carga dos próximos 14 dias', graficoCarga()),
-      painel('Próximos compromissos', prox.length ? lista(prox.map(p => [ic(CRM.TIPOS_COMPROMISSO[p.tipo].icone, 'text-lg text-primary dark:text-cafe-creme mt-0.5'), h('div', { class: 'min-w-0 flex-1' }, h('p', { class: 'font-semibold truncate' }, p.titulo), h('p', { class: 'text-[11px] text-gray-500' }, `${dataLonga(p.inicio)} · ${hhmm(p.inicio)}${p.local ? ' · ' + p.local : ''}`)), badge(diaRelativo(diaDe(p.inicio)), 'azul')])) : estadoVazio('ph:calendar-blank-bold', 'Agenda livre')),
-      painel('Recebido nos últimos 6 meses', graficoReceita()))))
+      painel('Próximos compromissos', prox.length ? lista(prox.map(p => [ic(CRM.TIPOS_COMPROMISSO[p.tipo].icone, 'text-lg text-primary dark:text-cafe-creme mt-0.5'), h('div', { class: 'min-w-0 flex-1' }, h('p', { class: 'font-semibold truncate' }, p.titulo), h('p', { class: 'text-[11px] text-gray-500' }, `${dataLonga(p.inicio)} · ${hhmm(p.inicio)}${p.local ? ' · ' + p.local : ''}`)), badge(diaRelativo(diaDe(p.inicio)), 'azul')])) : estadoVazio('ph:calendar-blank-bold', 'Agenda livre')))))
 }
 
 /* ================= HOJE ================= */
@@ -56,10 +54,11 @@ VIEWS.hoje = () => {
     const c = i.contato_id ? contato(i.contato_id) : null
     const acoes = []
     if (c && i.tipo === 'mensagem') acoes.push(btn('Responder', { mini: true, icone: 'ph:chats-circle-bold', onclick: () => abrirComunicacao(c.id), tid: 'hoje-msg' }))
+    else if (c && i.tipo === 'relatorio') acoes.push(btn('Atualização', { mini: true, icone: 'ph:file-text-bold', onclick: () => abrirAtualizacao(c), tid: 'hoje-atualizacao' }))
     else if (c && i.modelo) acoes.push(btn('Mensagem', { mini: true, icone: 'ph:chat-circle-text-bold', onclick: () => abrirMensagem(c.id, i.modelo), tid: 'hoje-msg' }))
     if (i.tipo === 'acao') acoes.push(btn('Feito', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => abrirAndamento(c) }), btn('Adiar 1 dia', { mini: true, tipo: 'fantasma', onclick: () => { c.proxima_data = somarDias(hojeISO(), 1); salvar('contatos'); render() } }))
     if (i.tipo === 'tarefa') acoes.push(btn('Concluir', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => { concluirTarefa(por('tarefas', i.tarefa_id)); render() } }))
-    if (i.tipo === 'prazo') acoes.push(btn('Cumprido', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => { por('compromissos', i.compromisso_id).status = 'concluido'; salvar('compromissos'); render() } }))
+    if (i.tipo === 'prazo') acoes.push(btn('Cumprido', { mini: true, tipo: 'sec', icone: 'ph:check-bold', onclick: () => { const q = por('compromissos', i.compromisso_id); q.status = 'concluido'; q.concluido_em = agora(); salvar('compromissos'); render() } }))
     if (i.tipo === 'intimacao') acoes.push(btn('Tratar', { mini: true, tipo: 'sec', onclick: () => ir('intimacoes') }))
     if (i.tipo === 'mensagem') acoes.push(btn('Marcar lida', { mini: true, tipo: 'fantasma', onclick: () => { DB.comunicacoes.filter(m => m.contato_id === i.contato_id).forEach(m => { m.lida = true }); salvar('comunicacoes'); render() } }))
     return h('div', { class: 'flex flex-wrap items-center gap-3 rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 px-4 py-3', 'data-testid': 'hoje-item' }, ic(TIPO_HOJE[i.tipo][1], 'text-xl text-primary dark:text-cafe-creme shrink-0'), h('div', { class: 'min-w-0 flex-1 basis-48' }, h('p', { class: 'text-sm font-semibold' }, i.titulo), c ? h('button', { type: 'button', class: 'text-xs text-gray-500 hover:underline', onclick: () => abrirFicha(c.id) }, c.nome) : null), i.atraso ? badge('Atrasado', 'vermelho') : null, badge(diaRelativo(i.quando), i.atraso ? 'vermelho' : 'ambar'), h('div', { class: 'flex flex-wrap gap-1.5' }, acoes))
@@ -95,7 +94,7 @@ function linhaPrazo(p, compacto) {
     ic(CRM.TIPOS_COMPROMISSO[p.tipo].icone, 'text-lg text-primary dark:text-cafe-creme mt-0.5'),
     h('div', { class: 'min-w-0 flex-1 basis-40' }, h('p', { class: 'text-sm font-semibold ' + (p.status !== 'pendente' ? 'line-through text-gray-400' : '') }, p.titulo), h('p', { class: 'text-[11px] text-gray-500' }, [p.contato_id ? nomeContato(p.contato_id) : null, pr?.numero ? 'Proc. ' + pr.numero : null, p.dias_prazo ? `${p.dias_prazo} dias úteis desde ${dataLonga(p.data_publicacao)}` : null].filter(Boolean).join(' · '))),
     p.status === 'concluido' ? badge('Cumprido', 'verde') : badge((s === 'atrasado' ? 'Atrasado · ' : '') + dataCurta(dia) + ' · ' + diaRelativo(dia), sitCor(s)),
-    compacto ? btnIcone('ph:check-bold', 'Marcar como cumprido', () => { p.status = 'concluido'; salvar('compromissos'); render(); aviso('Prazo cumprido.') }) : [p.status === 'pendente' ? btnIcone('ph:check-bold', 'Marcar como cumprido', () => { p.status = 'concluido'; salvar('compromissos'); render(); aviso('Prazo cumprido.') }) : btnIcone('ph:arrow-counter-clockwise-bold', 'Reabrir', () => { p.status = 'pendente'; salvar('compromissos'); render() }), btnIcone('ph:pencil-simple-bold', 'Editar', () => editarCompromisso(p))])
+    compacto ? btnIcone('ph:check-bold', 'Marcar como cumprido', () => { p.status = 'concluido'; p.concluido_em = agora(); salvar('compromissos'); render(); aviso('Prazo cumprido.') }) : [p.status === 'pendente' ? btnIcone('ph:check-bold', 'Marcar como cumprido', () => { p.status = 'concluido'; p.concluido_em = agora(); salvar('compromissos'); render(); aviso('Prazo cumprido.') }) : btnIcone('ph:arrow-counter-clockwise-bold', 'Reabrir', () => { p.status = 'pendente'; salvar('compromissos'); render() }), btnIcone('ph:pencil-simple-bold', 'Editar', () => editarCompromisso(p))])
 }
 function editarCompromisso(p, padrao = {}) {
   const tipo = (p && p.tipo) || padrao.tipo || 'prazo'

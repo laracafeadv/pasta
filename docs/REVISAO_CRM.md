@@ -48,3 +48,36 @@ Legenda: **REAL** · **SIMULADA** · **POSSÍVEL COM INTEGRAÇÃO** · **NÃO VI
 **WhatsApp** — REAL: abrir a conversa com a mensagem pronta (wa.me), modelos com variáveis, registrar enviadas/recebidas, histórico por cliente/demanda. POSSÍVEL COM INTEGRAÇÃO: envio/recebimento automático (WhatsApp Business Platform + servidor com webhook; o CRM do site já tem a base). NÃO VIÁVEL: receber mensagens só com o artefato (sem endereço público nem credencial segura).
 
 **IA** — REAL (IA da conta Claude, consentimento, desligada por padrão, sem CPF/RG/telefone/e-mail no pedido): resumo de pessoa e de demanda, rascunho de resposta (WhatsApp/e-mail) com as regras da OAB, comando em linguagem natural (a IA propõe, você aplica, tudo auditado), leitura de texto de intimação. POSSÍVEL: análise de PDF/foto de documentos (não implementada). *Testada com IA simulada; falta teste ao vivo.*
+
+## 5. Priorização (matriz de decisão)
+
+Critérios: impacto na operação, frequência, ligação com o fluxo central (cadastro → atendimento → demanda → tarefas → documentos → comunicação → acompanhamento → conclusão → histórico), redução de complexidade, dependências, esforço, viabilidade e risco. Regra: *o que mais melhora a operação com o menor aumento de complexidade*.
+
+Viabilidade: **Real** = funciona no ambiente atual · **Pequena adaptação** · **Integração** · **Backend** · **Demonstrável** · **Não viável**.
+
+| Funcionalidade | Problema que resolve | Impacto | Frequência | Esforço | Dependências | Viabilidade | Prioridade | Decisão |
+|---|---|---|---|---|---|---|---|---|
+| Fusão do menu (22→10) | Mesma informação em 3–4 telas | Alto | Diária | Média | — | Real | **P0** | Feito |
+| Comunicação unificada (por pessoa e demanda) | Histórico espalhado por canal | Alto | Várias vezes/dia | Média | Modelo de dados | Real | **P0** | Feito |
+| Procuração, contrato e relatório semanal com os textos do escritório | ~20–30 min por cliente novo; erro de digitação | Alto | Por cliente novo / semanal | Média | Qualificação, honorário | Real (.doc) | **P1** | **Feito agora** |
+| Atualização para a cliente a partir da demanda | Escrever do zero o “como está meu caso” | Alto | Semanal | Baixa | Comunicação, relatório | Real | **P1** | **Feito agora** |
+| Último contato derivado + alerta “sem novidade” | Prazo de contato esquecido | Alto | Diária | Baixa | Comunicação | Real | **P1** | Feito |
+| Linha do tempo única (pessoa e demanda) | Acompanhar exigia abrir 4 telas | Médio-alto | Diária | Baixa | Comunicação | Real | **P1** | Feito |
+| Tarefa de preparação a partir do prazo | Prazo sem trabalho prévio agendado | Alto (risco) | Semanal | Baixa | Prazos, tarefas | Real | **P1** | Feito |
+| Leitura de texto de intimação (CNJ, data, tipo) | Digitar cada intimação | Médio | Semanal | Baixa | Processos | Real | **P1** | Feito (local; IA só refina) |
+| E-mail: buscar/importar do Gmail e ligar à demanda | E-mails fora do histórico | Médio | Semanal | Média | Comunicação | Integração (conector) | **P2** | Feito, não testado ao vivo |
+| E-mail: rascunho e envio | Sair do CRM para responder | Médio | Semanal | Média | Acima | Integração | **P2** | Feito (envio com confirmação) |
+| IA: rascunho de resposta | Responder mais rápido | Médio | Diária | Baixa | Comunicação | Integração (sample) | **P2** | Feito (desligada por padrão) |
+| IA: resumo de pessoa/demanda | Retomar caso parado | Médio | Semanal | Baixa | Linha do tempo | Integração | **P2** | Feito |
+| Anexar arquivo ao documento (armazenamento do artefato) | Documento sem arquivo | Médio | Diária | Média | Decisão LGPD sobre armazenar | Pequena adaptação | **P2** | **Adiado**: hoje vale o link do Drive |
+| Link do Google Agenda / .ics | Levar prazo ao celular | Baixo-médio | Eventual | Baixa | — | Real | **P3** | Mantido (custo mínimo) |
+| IA: comando em linguagem natural | Criar tarefa por frase | Baixo | Eventual | Média | Confirmação | Integração | **P3** | **Rebaixado**: saiu do topo do Início; passou a ser “Pedir à IA” dentro da busca (uma barra só) |
+| Gráfico de receita no Início | Ver recebimentos | Baixo | Eventual | — | — | Real | **P4** | **Removido** (já existe em Financeiro) |
+| Envio/recebimento automático no WhatsApp | Conversa centralizada de verdade | Alto | Várias/dia | Alta | Servidor, API oficial, webhook | Backend | **P2** (no CRM do site) / **P4** no artefato | Arquitetura pronta: toda comunicação tem `origem` e `ext_id`; falta o servidor |
+| IA lendo PDF/foto de documento | Preencher qualificação | Médio | Por cliente novo | Alta | Imagens, conversão de PDF | Integração | **P4** | Não agora |
+| Regras de automação configuráveis | Fluxos sob medida | Baixo | Rara | Alta | Todo o resto estável | Backend | **P4** | Não agora |
+| Importar contatos (CSV) | Carga inicial | Baixo | Rara | Média | — | Real | **P3** | Não agora |
+| Notificação push/SMS | Avisos fora da tela | Médio | Diária | — | — | Não viável | **P4** | O sino e o Início cobrem com o CRM aberto |
+| Multiusuário com perfis | Equipe | Baixo (escritório solo) | — | Alta | Backend | Backend | **P4** | Não agora |
+
+Efeito da priorização nesta rodada: dois itens P1 que faltavam foram implementados (peças e atualização à cliente); um item “de tecnologia” (comando por IA) foi rebaixado e fundido à busca; um painel de baixo valor foi removido.
