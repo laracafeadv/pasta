@@ -1,5 +1,5 @@
 'use strict'
-/* ============ Integrações com os conectores da sua conta (Google Drive, Google Agenda, CRM do site via Supabase) ============
+/* ============ Integrações com os conectores da sua conta (Google Drive, Google Agenda, Gmail) ============
    Tudo aqui roda como VOCÊ (autorização por conector, pedida no primeiro uso). Sem o conector, os botões avisam e nada é simulado.
    Formatos de resposta do Drive e do Gmail foram observados em chamadas reais de leitura; as ESCRITAS (criar pasta, enviar arquivo,
    criar evento) seguem o esquema oficial das ferramentas, mas ainda não foram executadas ao vivo. */
@@ -93,10 +93,6 @@ async function enviarAoGoogleAgenda(p) {
   try { const r = await conector('Google Calendar', 'create_event', inp); p.gcal_id = (r && (r.id || r.eventId || (r.event && r.event.id))) || 'criado'; p.gcal_em = agora(); auditar('agenda_criar_evento', p.titulo); salvar('compromissos'); aviso('Evento criado no Google Agenda.'); return true } catch (e) { aviso(erroConector(e, 'Google Agenda'), 'erro'); return false }
 }
 
-/* ---------- CRM do site (Supabase): ponte SOMENTE LEITURA para o WhatsApp que o servidor já recebe ---------- */
-const somenteSelect = q => /^\s*select\s/i.test(q) && !/;\s*\S/.test(q) && !/\b(insert|update|delete|drop|alter|truncate|grant|revoke|create|copy|call|do|merge)\b/i.test(String(q).replace(/'[^']*'/g, "''"))
-const linhasSql = r => { let t = r; if (t && typeof t === 'object' && !Array.isArray(t)) t = t.result !== undefined ? t.result : t.rows !== undefined ? t.rows : t.data !== undefined ? t.data : t; if (Array.isArray(t)) return t; if (typeof t === 'string') { const m = t.match(/<untrusted-data-[^>]*>\s*([\s\S]*?)\s*<\/untrusted-data-/); try { const j = JSON.parse(m ? m[1] : t); if (Array.isArray(j)) return j } catch (e) { /* cai no erro abaixo */ } } throw { code: 'invalido', message: 'resposta do banco em formato inesperado' } }
-async function sqlLeitura(q) { if (!somenteSelect(q)) throw { code: 'recusado' }; return linhasSql(await conector('Supabase', 'execute_sql', { project_id: projetoSupabase(), query: q })) }
 /* ---------- IA com ferramentas (somente leitura) para perguntas sobre o CRM, o e-mail, o Drive e a agenda ---------- */
 const ehPergunta = q => /\?\s*$/.test(q) || /^\s*(quais|qual|quando|quantos?|quanto|onde|quem|h[áa]|existe|tem|me (diga|mostre|resuma|liste)|mostre|liste|resuma|o que|como est[áa])\b/i.test(q)
 function digestCRM() {

@@ -9,30 +9,7 @@ const t = tid => p.locator(`[data-testid="${tid}"]`)
 const ir = (r, x) => p.evaluate(([r, x]) => ir(r, x || {}), [r, x]); const esp = (ms = 120) => p.waitForTimeout(ms)
 await p.goto(arq); await p.waitForSelector('[data-testid=sidebar]')
 
-/* ---- 1. Construtor: criar, perguntas, opções, lógica, salvar, prévia ---- */
-await ir('formularios'); await t('novo-formulario').click(); await t('novo-nome').fill('Teste de família'); await t('novo-ctx-consulta').click(); await t('novo-criar').click(); await esp()
-ok(await t('construtor').count() === 1, 'criar formulário abre o construtor')
-await t('add-pergunta-0').click(); await t('edit-texto').fill('Tem filhos?'); await p.selectOption('[data-testid=edit-tipo]', 'sim_nao'); await esp()
-await t('edit-obrigatoria').check().catch(() => {}); 
-await t('add-pergunta-0').click(); await t('edit-texto').fill('Quais bens possui?'); await p.selectOption('[data-testid=edit-tipo]', 'selecao_multipla'); await esp()
-ok(await t('opcao-0').count() >= 1, 'tipo com opções mostra editor de opções')
-await t('opcao-texto').first().fill('Casa'); await t('opcao-adicionar').click(); await p.locator('[data-testid=opcao-texto]').nth(1).fill('Carro'); await esp()
-await t('logica-toggle').click(); await t('cond-adicionar').click(); await esp()
-ok(await t('cond-pergunta').count() === 1, 'lógica condicional: adicionar regra')
-await p.selectOption('[data-testid=cond-valor]', 'Sim'); await esp()
-ok((await t('construtor').innerText()).includes('Aparece se') || true, 'resumo da lógica')
-await t('salvar').click(); await esp()
-ok((await p.evaluate(() => DB.formularios.find(f => f.nome === 'Teste de família')?.secoes[0].itens.length)) === 2, 'salvar persiste 2 perguntas')
-ok(await p.evaluate(() => { const f = DB.formularios.find(f => f.nome === 'Teste de família'); return !!f.secoes[0].itens[1].mostrar_se && f.secoes[0].itens[1].mostrar_se.regras[0].valor === 'Sim' }), 'lógica condicional salva (Quais bens → Tem filhos = Sim)')
-await t('modo-visualizar').click(); await esp()
-ok(await t('painel-previa').count() === 1, 'prévia abre')
-ok(await p.getByText('Quais bens possui?').count() === 0, 'prévia: pergunta condicional oculta antes de responder')
-await t('op-' + await p.evaluate(() => DB.formularios.find(f => f.nome === 'Teste de família').secoes[0].itens[0].pergunta_id) + '-Sim').click(); await esp()
-ok(await p.getByText('Quais bens possui?').count() === 1, 'prévia: pergunta aparece quando condição é verdadeira')
-await t('avancar').click(); await esp(); ok(await t('previa-ok').count() === 1, 'prévia conclui sem enviar (obrigatórias ok)')
-/* validação: ciclo de condição inválida */
-await t('modo-editar').click(); await esp()
-
+/* ---- 1. (construtor de perguntas removido: o formulário é do Google Forms; ver testes/formularios.mjs) ---- */
 /* ---- 2. (envio, preenchimento pela cliente e respostas: ver testes/formularios.mjs, com o banco real simulado) ---- */
 
 /* ---- 3. Funil e regras ---- */
@@ -59,7 +36,7 @@ await t('abrir-busca').click(); await t('busca-global').fill('Helena'); await es
 
 /* ---- 5. Persistência (recarregar) ---- */
 await p.reload(); await p.waitForSelector('[data-testid=sidebar]'); await esp(300)
-ok(await p.evaluate(() => DB.formularios.some(f => f.nome === 'Teste de família') && DB.tarefas.some(x => x.titulo === 'Tarefa de teste')), 'dados persistem ao recarregar (localStorage fora do Artifact)')
+ok(await p.evaluate(() => DB.tarefas.some(x => x.titulo === 'Tarefa de teste')), 'dados persistem ao recarregar (localStorage fora do Artifact)')
 
 /* ---- 6. Permissões e tema ---- */
 await p.evaluate(() => { CONFIG.perfil.papel = 'equipe'; render() }); await esp(); ok(await t('nav-config').count() === 0, 'papel Equipe: sem Configurações no menu')

@@ -1,3 +1,5 @@
+> **Histórico — substituído por [GOOGLE_FORMS_E_WHATSAPP.md](GOOGLE_FORMS_E_WHATSAPP.md).** O formulário público nativo e a integração automática com a API da Meta foram descartados.
+
 # Integrações e IA do CRM (Artifact) — o que é real e o que depende de backend
 
 Legenda: **REAL** (funciona no Artifact) · **DISPONÍVEL** (usa conector já ligado à conta; pede autorização na 1ª vez) · **DEPENDE** (exige API/servidor) · **SIMULAÇÃO** (nunca usada como se fosse real) · **NÃO VIÁVEL** aqui.

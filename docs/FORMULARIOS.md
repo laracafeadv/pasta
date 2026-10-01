@@ -1,3 +1,5 @@
+> **Histórico — substituído por [GOOGLE_FORMS_E_WHATSAPP.md](GOOGLE_FORMS_E_WHATSAPP.md).** O formulário público nativo e a integração automática com a API da Meta foram descartados.
+
 # Formulários como ponte com o cliente — arquitetura e o que é real
 
 Legenda: **REAL** (funciona no artifact hoje) · **REAL VIA CONECTOR** (funciona usando o Supabase/Gmail/Drive já ligados à conta; não testado ao vivo) · **DEPENDE** (precisa de backend/API) · **SIMULADO** (só demonstra).

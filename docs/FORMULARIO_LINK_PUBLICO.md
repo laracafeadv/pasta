@@ -1,3 +1,5 @@
+> **Histórico — substituído por [GOOGLE_FORMS_E_WHATSAPP.md](GOOGLE_FORMS_E_WHATSAPP.md).** O formulário público nativo e a integração automática com a API da Meta foram descartados.
+
 # Formulário por link público (cliente + demanda) — auditoria, decisão e como ativar
 
 ## 1. Auditoria: o que já existia no CRM do site (Nuxt + Supabase)

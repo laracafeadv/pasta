@@ -48,7 +48,7 @@ function restaurarFoco(f) { if (!f) return; const el = document.querySelector(`[
 
 function render() {
   const foco = guardarFoco(); const y = window.scrollY; const raiz = $('app')
-  const dentro = R.rota === 'publico' ? FormulariosPublico() : casca()
+  const dentro = casca()
   raiz.replaceChildren(dentro); window.scrollTo(0, y); restaurarFoco(foco); document.title = 'CRM Lara Café'
 }
 
@@ -65,7 +65,7 @@ function linhaModulo(m, movel) {
 /** Ações rápidas: criar sem passar pelo módulo. */
 function novaComunicacaoRapida() { modalForm('Nova comunicação', [{ chave: 'contato_id', rotulo: 'Pessoa', tipo: 'select', opcoes: DB.contatos.filter(c => c.etapa !== 'relacionado').map(c => [c.id, c.nome]), numerico: true, obrigatorio: true }], {}, v => { setTimeout(() => abrirComunicacao(v.contato_id), 30) }, { rotulo: 'Abrir conversa' }) }
 const ACOES_NOVO = () => [
-  ['Atendimento', [['Novo contato', 'ph:user-plus-bold', () => editarContato(null)], ['Registrar comunicação', 'ph:chats-circle-bold', novaComunicacaoRapida], ['Novo formulário', 'ph:clipboard-text-bold', () => { ir('formularios', { aba: 'formularios' }); setTimeout(novoFormulario, 40) }]]],
+  ['Atendimento', [['Novo contato', 'ph:user-plus-bold', () => editarContato(null)], ['Registrar comunicação', 'ph:chats-circle-bold', novaComunicacaoRapida], ['Cadastrar formulário', 'ph:clipboard-text-bold', () => { ir('formularios', { aba: 'formularios' }); setTimeout(novoFormulario, 40) }]]],
   ['Trabalho', [['Nova tarefa', 'ph:check-square-bold', () => editarTarefa(null)], ['Novo prazo ou compromisso', 'ph:hourglass-high-bold', () => editarCompromisso(null, { tipo: 'prazo' })], ['Registrar intimação', 'ph:megaphone-bold', () => { ir('agenda', { aba: 'intimacoes' }); setTimeout(() => formIntimacao(null), 40) }]]],
   ['Serviços e dinheiro', [['Nova demanda', 'ph:briefcase-bold', () => abrirDemandaForm(null)], ['Nova petição inicial', 'ph:file-text-bold', () => { ir('demandas', { aba: 'iniciais' }); setTimeout(() => formInicial(null), 40) }], ['Novo honorário', 'ph:handshake-bold', () => editarHonorario(null)]]],
 ]
@@ -78,7 +78,7 @@ function botaoNovo(movel) {
 const botaoBuscar = () => h('button', { type: 'button', class: 'w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-cafe-creme/60 bg-white/5 hover:bg-white/10 hover:text-white transition-colors text-left', onclick: abrirBusca, 'data-testid': 'nav-buscar' }, ic('ph:magnifying-glass-bold', 'text-base'), h('span', { class: 'flex-1' }, 'Buscar ou pedir'), h('kbd', { class: 'text-[9px] font-semibold rounded border border-white/20 px-1 py-0.5 text-cafe-creme/50' }, 'Ctrl K'))
 function blocoMais(movel) {
   const aberto = NAVST.mais === true
-  const itens = [['Meu perfil', 'ph:user-circle-bold', () => ir('perfil')], ['Link público de formulário', 'ph:link-bold', () => ir('publico', { sel: true })], ...(CONFIG.perfil.papel === 'admin' ? [['Exportar todos os dados', 'ph:download-bold', exportarTudo]] : [])]
+  const itens = [['Meu perfil', 'ph:user-circle-bold', () => ir('perfil')], ...(CONFIG.perfil.papel === 'admin' ? [['Exportar todos os dados', 'ph:download-bold', exportarTudo]] : [])]
   return h('div', { class: 'mt-2' }, h('button', { type: 'button', class: 'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-[12px] font-semibold text-cafe-creme/60 hover:text-white hover:bg-white/5 transition-colors', 'aria-expanded': aberto ? 'true' : 'false', onclick: () => { NAVST.mais = !aberto; salvarNav(); render() }, 'data-testid': 'nav-mais' }, ic('ph:dots-three-circle-bold', 'text-base'), 'Mais', h('span', { class: 'ml-auto' }, ic(aberto ? 'ph:caret-down-bold' : 'ph:caret-right-bold', 'text-xs'))), aberto ? h('div', { class: 'ml-[18px] pl-2.5 border-l border-white/10 space-y-0.5 mt-0.5' }, itens.map(([t, i_, fn]) => h('button', { type: 'button', class: 'w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[12px] text-cafe-creme/70 hover:bg-white/5 hover:text-white text-left', onclick: fn }, ic(i_, 'text-[13px] opacity-80'), t))) : null)
 }
 function barraLateral() {

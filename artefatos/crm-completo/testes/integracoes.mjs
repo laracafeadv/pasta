@@ -39,14 +39,6 @@ await E(() => { window.__ferr = { code: 'not_granted' } }); ok(await E(() => lis
 await E(() => { DB.compromissos.push({ id: 9001, tipo: 'audiencia', titulo: 'Audiência teste', status: 'pendente', data_limite: '2031-05-05', contato_id: 6 }); return enviarAoGoogleAgenda(DB.compromissos.at(-1)) })
 const ev = (await calls()).filter(x => x.tool === 'create_event').at(-1); ok(ev && ev.inp.summary.startsWith('Audiência teste') && ev.inp.allDay === true && ev.inp.startTime.startsWith('2031-05-05') && ev.inp.endTime.startsWith('2031-05-06'), 'Agenda: create_event com dia inteiro correto')
 ok(await E(() => DB.compromissos.at(-1).gcal_id === 'EV123'), 'Agenda: guarda o id do evento criado')
-/* Supabase */
-ok(await E(() => [somenteSelect('select 1'), somenteSelect('delete from x'), somenteSelect('select 1; drop table x'), somenteSelect("select 'insert' as a")].join()) === 'true,false,false,true', 'Supabase: guarda só-leitura (select ok; delete/encadeado recusados; palavra dentro de texto ok)')
-await E(() => { CONFIG.integr.supabase = '' }); await E(() => sqlLeitura('select 1')); ok((await calls()).filter(x => x.tool === 'execute_sql').at(-1).inp.project_id === 'cuaeuazmgwdhfozrqkin', 'Supabase: sem ID configurado usa o projeto do CRM por padrão')
-await E(() => { CONFIG.integr.supabase = 'cuaeuazmgwdhfozrqkin'; const c = contato(6); c.telefone = '5571999990000'; window.__rows = [{ id: 1, created_at: new Date().toISOString(), direcao: 'entrada', conteudo: 'Oi, doutora', tipo: 'text', wa_message_id: 'wamid.A', telefone: '5571999990000' }, { id: 2, created_at: new Date().toISOString(), direcao: 'saida', conteudo: 'Olá!', tipo: 'text', wa_message_id: 'wamid.B', telefone: '5571999990000' }, { id: 3, created_at: new Date().toISOString(), direcao: 'entrada', conteudo: 'de outro', tipo: 'text', wa_message_id: 'wamid.C', telefone: '5500000000000' }] })
-const n1 = await E(() => sincronizarWhatsAppDoSite()); const n2 = await E(() => sincronizarWhatsAppDoSite())
-ok(n1 === 2 && n2 === 0, 'WhatsApp do site: importa só do telefone cadastrado e não duplica (' + n1 + '/' + n2 + ')')
-const wa = await E(() => DB.comunicacoes.filter(x => x.ext_id && x.ext_id.startsWith('wa:'))); ok(wa.length === 2 && wa.every(x => x.canal === 'whatsapp' && x.origem === 'whatsapp-api' && x.contato_id === 6) && wa.some(x => x.direcao === 'entrada') && wa.some(x => x.direcao === 'saida'), 'WhatsApp do site: direção e origem corretas')
-const sqlq = (await calls()).filter(x => x.tool === 'execute_sql').at(-1).inp; ok(/^select/i.test(sqlq.query) && sqlq.project_id === 'cuaeuazmgwdhfozrqkin', 'Supabase: só SELECT enviado ao projeto configurado')
 /* IA */
 ok(await E(() => [ehPergunta('quais prazos tenho esta semana'), ehPergunta('tem algo pendente?'), ehPergunta('criar tarefa ligar para Maria')].join()) === 'true,true,false', 'roteamento: pergunta × comando')
 await E(() => { const o = document.createElement('div'); o.id = 'saida'; document.body.append(o); return obterSample().then(s => responderPergunta(s, 'o que está pendente?', o)) }); await p.waitForTimeout(500)
@@ -55,7 +47,7 @@ const saidaTools = await E(() => JSON.stringify(window.__toolOut)); ok(!/\d{3}\.
 ok(!(await E(() => window.__tools.some(t => /criar|apagar|enviar|gravar|salvar/.test(t)))), 'IA: nenhuma ferramenta de escrita')
 /* Conexões */
 await E(() => ir('config', { aba: 'conexoes' })); await p.waitForTimeout(300)
-const txt = await p.locator('main').innerText(); ok(['FUNCIONALIDADE REAL', 'INTEGRAÇÃO DISPONÍVEL', 'DEPENDE DE API/BACKEND', 'SIMULAÇÃO'].every(x => txt.includes(x)) && /WhatsApp/.test(txt) && /Drive/.test(txt) && /Supabase/.test(txt), 'Conexões: cards e selos')
-for (const id of ['gmail', 'drive', 'agenda', 'supabase']) { const bt = p.locator(`[data-testid="testar-${id}"]`); if (await bt.count()) { await bt.click(); await p.waitForTimeout(400); ok((await p.locator(`[data-testid="teste-${id}"]`).innerText()).length > 3, 'Conexões: testar ' + id) } else ok(false, 'botão testar-' + id) }
+const txt = await p.locator('main').innerText(); ok(['FUNCIONALIDADE REAL', 'INTEGRAÇÃO DISPONÍVEL', 'DEPENDE DE API/BACKEND', 'SIMULAÇÃO'].every(x => txt.includes(x)) && /WhatsApp/.test(txt) && /Drive/.test(txt) && /Google Forms/.test(txt), 'Conexões: cards e selos')
+for (const id of ['gmail', 'drive', 'agenda']) { const bt = p.locator(`[data-testid="testar-${id}"]`); if (await bt.count()) { await bt.click(); await p.waitForTimeout(400); ok((await p.locator(`[data-testid="teste-${id}"]`).innerText()).length > 3, 'Conexões: testar ' + id) } else ok(false, 'botão testar-' + id) }
 ok(erros.length === 0, 'sem erros: ' + erros.slice(0, 3).join(' | '))
 await b.close(); console.log(falhas ? falhas + ' falha(s)' : 'TUDO OK'); process.exit(falhas ? 1 : 0)

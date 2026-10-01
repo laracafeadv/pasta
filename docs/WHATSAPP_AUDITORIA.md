@@ -1,3 +1,5 @@
+> **Histórico — substituído por [GOOGLE_FORMS_E_WHATSAPP.md](GOOGLE_FORMS_E_WHATSAPP.md).** O formulário público nativo e a integração automática com a API da Meta foram descartados.
+
 # WhatsApp Cloud API — auditoria e plano (nenhuma alteração de código feita)
 
 ## 1. Diagnóstico (o que já existe no CRM do site)

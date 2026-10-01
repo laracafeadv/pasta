@@ -3,6 +3,10 @@
 UI.leads = { q: '', area: '', mostrar: false }; UI.clientes = { q: '', f: 'todos' }; UI.msgs = { sel: null, q: '' }; UI.ficha = { aba: 'cliente' }
 
 /* ---- cadastro de contato ---- */
+function criarContatoReal(v) {
+  const n = { ...(DB.contatos[0] ? Object.fromEntries(Object.keys(DB.contatos[0]).map(k => [k, null])) : {}), exemplo: false, real: true, site_id: null, id: proximoId('contatos'), created_at: agora(), updated_at: agora(), etapa: 'novo', etapa_desde: agora(), interesses: [], objecoes: [], consulta_em: null, nps: null, classificacao: null, classificacao_desde: null, motivo_perda: null, ultimo_contato_em: null, ultima_mensagem_em: null, proxima_acao: CRM.CADENCIA.novo.acao, proxima_data: hojeISO(), qualificacao: null, respostas: {}, drive_pasta_url: null, tem_filhos: null, ...v }
+  DB.contatos.push(n); registrar(n.id, 'Anotação', 'Contato criado.'); auditar('criar_contato', n.nome); salvar('contatos'); return n
+}
 function editarContato(c) {
   const areas = Object.keys(CRM.AREAS)
   const campos = [{ chave: 'nome', rotulo: 'Nome', obrigatorio: true }, { chave: 'telefone', rotulo: 'Telefone / WhatsApp', tipo: 'tel', obrigatorio: true, dica: 'Com DDD. Ex.: (71) 99999-0000', valida: v => { const d = normalizarTelefone(v); if (d.length < 12) return 'Telefone incompleto.'; const o = DB.contatos.find(x => x.telefone === d && (!c || x.id !== c.id)); return o ? `Já cadastrado para ${o.nome}.` : null } },
@@ -12,7 +16,7 @@ function editarContato(c) {
   const val = c ? { ...c, telefone: telefoneFormatado(c.telefone) } : { origem: '', urgencia: '' }
   modalForm(c ? 'Editar cadastro' : 'Novo contato', campos, val, v => {
     v.telefone = normalizarTelefone(v.telefone)
-    if (c) { Object.assign(c, v, { updated_at: agora() }); registrar(c.id, 'Anotação', 'Cadastro atualizado.') } else { const n = { ...(DB.contatos[0] ? Object.fromEntries(Object.keys(DB.contatos[0]).map(k => [k, null])) : {}), exemplo: false, real: true, site_id: null, id: proximoId('contatos'), created_at: agora(), updated_at: agora(), etapa: 'novo', etapa_desde: agora(), interesses: [], objecoes: [], consulta_em: null, nps: null, classificacao: null, classificacao_desde: null, motivo_perda: null, ultimo_contato_em: null, ultima_mensagem_em: null, proxima_acao: CRM.CADENCIA.novo.acao, proxima_data: hojeISO(), qualificacao: null, respostas: {}, drive_pasta_url: null, tem_filhos: null, ...v }; DB.contatos.push(n); registrar(n.id, 'Anotação', 'Contato criado.'); auditar('criar_contato', n.nome) }
+    if (c) { Object.assign(c, v, { updated_at: agora() }); registrar(c.id, 'Anotação', 'Cadastro atualizado.') } else criarContatoReal(v)
     salvar('contatos')
   }, { largura: 'max-w-2xl' })
 }
