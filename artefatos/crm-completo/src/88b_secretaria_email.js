@@ -53,5 +53,5 @@ function ViewEmail() {
 VIEWS.secretaria = (p) => {
   if (p && p.aba) UI.sec.aba = p.aba
   const n = contadores()
-  return modulo({ titulo: 'Secretária', sub: 'Intimações dos tribunais e e-mails do Gmail, lidos pelo conector com o CRM aberto.', abasDef: [{ id: 'intimacoes', nome: 'Intimações', icone: 'ph:megaphone-bold', n: n.intimacoes || null }, { id: 'email', nome: 'E-mail', icone: 'ph:envelope-simple-bold', n: n.emailNaoLidos || null }], ativa: UI.sec.aba, aoMudar: id => { UI.sec.aba = id; render() }, conteudo: a => a === 'email' ? ViewEmail() : VIEWS.intimacoes() })
+  return modulo({ titulo: 'Recebidos', sub: 'Intimações dos tribunais e e-mails do Gmail, lidos pelo conector com o CRM aberto.', abasDef: [{ id: 'intimacoes', nome: 'Intimações', icone: 'ph:megaphone-bold', n: n.intimacoes || null }, { id: 'email', nome: 'E-mail', icone: 'ph:envelope-simple-bold', n: n.emailNaoLidos || null }], ativa: UI.sec.aba, aoMudar: id => { UI.sec.aba = id; render() }, conteudo: a => a === 'email' ? ViewEmail() : VIEWS.intimacoes() })
 }

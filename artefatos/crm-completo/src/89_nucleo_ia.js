@@ -5,7 +5,7 @@
    Isolamento: só entra o que pertence à Pessoa; com uma Demanda escolhida, entram os itens dela + os da Pessoa sem demanda; nunca os de outra Demanda.
    Saída: texto/estrutura com rótulos [INFORMADO] [DOCUMENTO] [INFERÊNCIA] [HIPÓTESE] [AUSENTE] [CONFIRMAR] [PESQUISAR] e fontes clicáveis ([W12] mensagem,
           [M3] material, [R5] formulário, [C2] consulta, [N1]/[A4] anotação/histórico, [P2] parecer, [X7] contexto confirmado, [F] ficha).
-   Nada é enviado, finalizado ou gravado sem a sua revisão. O que a IA não pôde ler (imagem sem leitura, áudio sem transcrição…) é dito como NÃO LIDO. */
+   Nada é enviado, finalizado ou gravado sem a sua revisão. O que o Assistente não pôde ler (imagem sem leitura, áudio sem transcrição…) é dito como NÃO LIDO. */
 const FONTE_ROTULO = { W: 'Mensagem', M: 'Material', R: 'Resposta de formulário', N: 'Anotação do caso', A: 'Registro do histórico', C: 'Consulta', P: 'Parecer', X: 'Contexto confirmado', F: 'Ficha' }
 const EPIST = { 'INFORMADO': 'verde', 'DOCUMENTO': 'azul', 'INFERÊNCIA': 'ambar', 'HIPÓTESE': 'roxo', 'AUSENTE': 'vermelho', 'CONFIRMAR': 'ambar', 'PESQUISAR': 'cinza' }
 const regrasNucleo = () => `${REGRAS_IA}
@@ -71,10 +71,10 @@ function montarContextoCaso(c, casoId, opc = {}) {
   for (let i = todas.length - 1; i >= 0; i--) { tot += todas[i].length + 1; if (tot > orcMsgs) break; ini = i }
   const incl = todas.slice(ini); stats.msgsIncluidas = incl.length
   let antigo = ''
-  if (ini > 0) { const res = DB.analises.filter(a => a.tipo === 'resumo_conversa' && filtro(a)).sort((a, b) => b.id - a.id)[0]; if (res && res.ate_msg_id >= msgs[ini - 1].id) antigo = `RESUMO DAS ${ini} MENSAGENS MAIS ANTIGAS (gerado pela IA e guardado; não é o texto original):\n${res.texto}\n\n`; else avisos.push(`A conversa tem ${msgs.length} mensagens; só as ${incl.length} mais recentes cabem na leitura. Use “Resumir parte antiga” para a IA também considerar as ${ini} anteriores.`) }
+  if (ini > 0) { const res = DB.analises.filter(a => a.tipo === 'resumo_conversa' && filtro(a)).sort((a, b) => b.id - a.id)[0]; if (res && res.ate_msg_id >= msgs[ini - 1].id) antigo = `RESUMO DAS ${ini} MENSAGENS MAIS ANTIGAS (gerado pelo Assistente e guardado; não é o texto original):\n${res.texto}\n\n`; else avisos.push(`A conversa tem ${msgs.length} mensagens; só as ${incl.length} mais recentes cabem na leitura. Use “Resumir parte antiga” para o Assistente também considerar as ${ini} anteriores.`) }
   if (incl.length) blocos.push(`CONVERSAS (${msgs.length} mensagens${ini ? ', últimas ' + incl.length + ' abaixo' : ''}):\n${antigo}${incl.join('\n')}`)
-  if (!msgs.length && !mats.length && !envs.length && !cons.length) avisos.push('Ainda não há conversa, material, resposta de formulário ou consulta para esta pessoa: a IA só terá a ficha.')
-  if (stats.materiaisSemTexto) avisos.push(`${plural(stats.materiaisSemTexto, 'material sem texto lido', 'materiais sem texto lido')}: a IA vai tratá-${stats.materiaisSemTexto > 1 ? 'los' : 'o'} como NÃO LIDO${stats.materiaisSemTexto ? ' (abra o material para ler ou colar a transcrição)' : ''}.`)
+  if (!msgs.length && !mats.length && !envs.length && !cons.length) avisos.push('Ainda não há conversa, material, resposta de formulário ou consulta para esta pessoa: o Assistente só terá a ficha.')
+  if (stats.materiaisSemTexto) avisos.push(`${plural(stats.materiaisSemTexto, 'material sem texto lido', 'materiais sem texto lido')}: o Assistente vai tratá-${stats.materiaisSemTexto > 1 ? 'los' : 'o'} como NÃO LIDO${stats.materiaisSemTexto ? ' (abra o material para ler ou colar a transcrição)' : ''}.`)
   return { texto: blocos.join('\n\n'), fontes, avisos, stats }
 }
 
@@ -136,9 +136,9 @@ function salvarAnalise({ c, casoId, tipo, titulo, texto, dados, extra }) {
 function janelaNucleo({ c, casoId, titulo, tarefa, formato, tipo, salvarComo, aoSalvar, extraRodape, tier, historicoFn }) {
   const ctx0 = montarContextoCaso(c, casoId); const saida = h('div', { class: 'min-h-[8rem] rounded-2xl border border-gray-200 dark:border-zinc-700 p-3 bg-white/60 dark:bg-zinc-900/50 max-h-[55vh] overflow-y-auto', 'data-testid': 'nucleo-saida' }, h('p', { class: 'text-sm text-gray-500' }, 'Lendo o material do caso…'))
   let ctl = null; let ultimo = ''; let pronto = false
-  const lido = h('p', { class: 'text-xs text-gray-500', 'data-testid': 'nucleo-lido' }, `A IA vai ler: ${plural(ctx0.stats.msgsIncluidas, 'mensagem', 'mensagens')} · ${plural(ctx0.stats.materiais, 'material', 'materiais')} · ${plural(ctx0.stats.respostas, 'resposta de formulário', 'respostas de formulário')} · ${plural(ctx0.stats.consultas, 'consulta', 'consultas')}` + (ctx0.stats.itensX ? ` · ${plural(ctx0.stats.itensX, 'item de contexto confirmado', 'itens de contexto confirmados')}` : '') + ' — de ' + c.nome + (casoId ? ' / ' + (nomeDemanda(casoId) || 'demanda') : '') + '.')
+  const lido = h('p', { class: 'text-xs text-gray-500', 'data-testid': 'nucleo-lido' }, `O Assistente vai ler: ${plural(ctx0.stats.msgsIncluidas, 'mensagem', 'mensagens')} · ${plural(ctx0.stats.materiais, 'material', 'materiais')} · ${plural(ctx0.stats.respostas, 'resposta de formulário', 'respostas de formulário')} · ${plural(ctx0.stats.consultas, 'consulta', 'consultas')}` + (ctx0.stats.itensX ? ` · ${plural(ctx0.stats.itensX, 'item de contexto confirmado', 'itens de contexto confirmados')}` : '') + ' — de ' + c.nome + (casoId ? ' / ' + (nomeDemanda(casoId) || 'demanda') : '') + '.')
   const botoes = h('div', { class: 'flex flex-wrap gap-2' })
-  const pintaBotoes = () => botoes.replaceChildren(btn('Copiar', { mini: true, tipo: 'sec', icone: 'ph:copy-bold', tid: 'nucleo-copiar', onclick: () => ultimo ? copiar(ultimo) : aviso('Nada para copiar ainda.', 'erro') }), btn('Salvar como análise', { mini: true, icone: 'ph:floppy-disk-bold', tid: 'nucleo-salvar', onclick: () => { if (!ultimo || !pronto) { aviso('Espere a IA terminar.', 'erro'); return } const a = salvarAnalise({ c, casoId, tipo: salvarComo || tipo || 'analise', titulo, texto: ultimo }); aviso('Salvo em Análises (rascunho para revisar).'); aoSalvar && aoSalvar(a) } }), btn('Refazer', { mini: true, tipo: 'fantasma', tid: 'nucleo-refazer', onclick: rodar }), btn('Parar', { mini: true, tipo: 'fantasma', onclick: () => ctl && ctl.abort() }), ...(extraRodape ? extraRodape(() => ultimo) : []))
+  const pintaBotoes = () => botoes.replaceChildren(btn('Copiar', { mini: true, tipo: 'sec', icone: 'ph:copy-bold', tid: 'nucleo-copiar', onclick: () => ultimo ? copiar(ultimo) : aviso('Nada para copiar ainda.', 'erro') }), btn('Salvar como análise', { mini: true, icone: 'ph:floppy-disk-bold', tid: 'nucleo-salvar', onclick: () => { if (!ultimo || !pronto) { aviso('Espere o Assistente terminar.', 'erro'); return } const a = salvarAnalise({ c, casoId, tipo: salvarComo || tipo || 'analise', titulo, texto: ultimo }); aviso('Salvo em Análises (rascunho para revisar).'); aoSalvar && aoSalvar(a) } }), btn('Refazer', { mini: true, tipo: 'fantasma', tid: 'nucleo-refazer', onclick: rodar }), btn('Parar', { mini: true, tipo: 'fantasma', onclick: () => ctl && ctl.abort() }), ...(extraRodape ? extraRodape(() => ultimo) : []))
   const rodar = () => {
     exigirIA(async s => {
       ctl && ctl.abort(); ctl = new AbortController(); pronto = false; ultimo = ''; saida.replaceChildren(h('p', { class: 'text-sm text-gray-500' }, 'Pensando…'))
@@ -147,21 +147,21 @@ function janelaNucleo({ c, casoId, titulo, tarefa, formato, tipo, salvarComo, ao
     })
   }
   pintaBotoes()
-  modal({ titulo, largura: 'max-w-3xl', corpo: h('div', { class: 'space-y-3', 'data-testid': 'nucleo-janela' }, lido, ...ctx0.avisos.map(a => alerta('aviso', null, a)), alerta('info', null, 'Rascunho gerado por IA a partir do material real do caso. Confira as fontes (botões [W12], [M3]…): você revisa antes de usar. Nada é enviado.'), saida, botoes), aoFechar: () => { ctl && ctl.abort() } })
+  modal({ titulo, largura: 'max-w-3xl', corpo: h('div', { class: 'space-y-3', 'data-testid': 'nucleo-janela' }, lido, ...ctx0.avisos.map(a => alerta('aviso', null, a)), alerta('info', null, 'Rascunho gerado pelo Assistente a partir do material real do caso. Confira as fontes (botões [W12], [M3]…): você revisa antes de usar. Nada é enviado.'), saida, botoes), aoFechar: () => { ctl && ctl.abort() } })
   rodar()
 }
 
 /* ---------- resumir a parte antiga de conversas muito longas (para caber na leitura) ---------- */
 function resumirConversaAntiga(c, casoId) {
   const ctx = montarContextoCaso(c, casoId); const msgs = DB.comunicacoes.filter(doCaso(c, casoId)).sort((a, b) => a.created_at.localeCompare(b.created_at)); const cortar = msgs.length - ctx.stats.msgsIncluidas
-  if (cortar <= 0) { aviso('A conversa inteira já cabe na leitura da IA.'); return }
+  if (cortar <= 0) { aviso('A conversa inteira já cabe na leitura do Assistente.'); return }
   exigirIA(async s => {
     aviso(`Resumindo as ${cortar} mensagens mais antigas… pode levar alguns minutos.`)
     try {
       const antigas = msgs.slice(0, cortar); const blocos = []; let atual = ''
       for (const m of antigas) { const l = `[W${m.id}] ${diaCurto(m.created_at)} ${m.direcao === 'entrada' ? 'CLIENTE' : 'ESCRITÓRIO'}: ${corta(m.texto, 800)}\n`; if (atual.length + l.length > 60000) { blocos.push(atual); atual = '' } atual += l } if (atual) blocos.push(atual)
       const partes = []; for (const b of blocos) { const r = await s(`${regrasNucleo()}\n\nTAREFA: Resuma, em tópicos objetivos e em ordem cronológica, TODOS os fatos, pedidos, documentos, datas, pessoas e pendências deste trecho de conversa. Cite as mensagens-fonte como [W123]. Não omita datas nem nomes. Responda só com o resumo.\n\n${b}`, { cache: false, modelTier: 'default' }); partes.push(r.text) }
-      salvarAnalise({ c, casoId, tipo: 'resumo_conversa', titulo: 'Resumo da parte antiga da conversa', texto: partes.join('\n\n'), extra: { ate_msg_id: antigas[antigas.length - 1].id } }); aviso('Resumo da parte antiga guardado: a IA passa a considerá-lo.'); render()
+      salvarAnalise({ c, casoId, tipo: 'resumo_conversa', titulo: 'Resumo da parte antiga da conversa', texto: partes.join('\n\n'), extra: { ate_msg_id: antigas[antigas.length - 1].id } }); aviso('Resumo da parte antiga guardado: o Assistente passa a considerá-lo.'); render()
     } catch (e) { aviso(iaErro(e), 'erro') }
   })
 }

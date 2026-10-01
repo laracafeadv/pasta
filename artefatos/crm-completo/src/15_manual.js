@@ -95,9 +95,9 @@ const MANUAL_FASES = [
       { titulo: 'Pós-venda agendado', texto: 'O sistema já agenda o lembrete de contato 30 dias depois (/pos-venda-30) e outro 1 ano depois (/pos-venda-1ano) — aparece na tela Hoje na hora certa, mas é você que envia.', automatico: 'avisa' },
       { titulo: 'Pesquisa de satisfação', texto: 'Convite e motivo são seus; a nota de 0 a 10 que a cliente responde já classifica ela sozinha na ficha.', automatico: 'avisa' },
       { titulo: 'Pedido de avaliação', texto: 'Só para quem deu nota alta: peça a avaliação no Google (/avaliacao).' },
-      { titulo: 'Remarketing', texto: 'Quem não fechou entra no Remarketing, agrupado por demanda, e pode receber conteúdo a cada 45 dias — nunca quem pediu para não receber.' },
+      { titulo: 'Retomadas', texto: 'Quem não fechou entra em Retomadas, agrupado por demanda, e pode receber conteúdo a cada 45 dias — nunca quem pediu para não receber.' },
     ],
-    links: [{ nome: 'Ir para o Remarketing', to: '/crm?aba=remarketing' }],
+    links: [{ nome: 'Ir para Retomadas', to: '/crm?aba=remarketing' }],
   },
 ]
 

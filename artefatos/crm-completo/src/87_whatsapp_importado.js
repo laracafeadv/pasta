@@ -2,7 +2,7 @@
 /* ============ WhatsApp exportado → CRM → IA que ajuda (mas nunca envia) ============
    Fluxo: você usa o WhatsApp Business normalmente → no aplicativo, “Exportar conversa” → traz o arquivo (.txt ou .zip) para cá →
    o CRM lê, separa quem escreveu o quê, liga à Pessoa e à Demanda e guarda no histórico (sem duplicar se você importar de novo) →
-   a IA analisa e sugere respostas → você revisa, copia e envia SOZINHA pelo WhatsApp.
+   o Assistente analisa e sugere respostas → você revisa, copia e envia SOZINHA pelo WhatsApp.
    NÃO existe aqui: receber mensagem automaticamente nem enviar pelo CRM. O WhatsApp exporta só quando você pede. */
 
 /* ---------- leitura do arquivo exportado ---------- */
@@ -118,10 +118,10 @@ function conversaParaIA(c, casoId, max = 120) {
   return { texto: linhas.join('\n'), n: linhas.length }
 }
 function AssistenteConversa(c, casoId) {
-  const extra = h('input', { class: 'modal-input !text-sm', placeholder: 'Opcional: orientação (ex.: “sem citar prazo”, “mais curta”) ou peça outra coisa', 'data-testid': 'assist-livre', 'aria-label': 'Orientação para a IA' })
+  const extra = h('input', { class: 'modal-input !text-sm', placeholder: 'Opcional: orientação (ex.: “sem citar prazo”, “mais curta”) ou peça outra coisa', 'data-testid': 'assist-livre', 'aria-label': 'Orientação para o Assistente' })
   const abrir = (id, rot, instrucao) => janelaNucleo({ c, casoId, titulo: rot + ' — ' + c.nome, tipo: 'assist_' + id, tarefa: instrucao + (extra.value.trim() ? '\nOrientação adicional da advogada: ' + extra.value.trim() : '') + '\nFoco: a CONVERSA ([W…]); use as demais fontes só para confirmar ou contradizer.' })
   const grupos = ASSIST.map(([titulo, lista_]) => h('div', { class: 'space-y-1.5' }, h('p', { class: 'section-label' }, titulo), h('div', { class: 'flex flex-wrap gap-1.5' }, lista_.map(([id, rot, instrucao]) => h('button', { type: 'button', class: 'chip', 'data-testid': 'assist-' + id, onclick: () => abrir(id, rot, instrucao) }, rot)))))
-  const livreBtn = btn('Pedir', { mini: true, icone: 'ph:sparkle-bold', tid: 'assist-pedir', class: 'ia-btn', onclick: () => { if (!extra.value.trim()) { aviso('Escreva o que você precisa.', 'erro'); return } abrir('livre', 'Pedido à IA', 'Atenda ao pedido da advogada sobre este caso: ' + extra.value.trim()) } })
+  const livreBtn = btn('Pedir', { mini: true, icone: 'ph:sparkle-bold', tid: 'assist-pedir', class: 'ia-btn', onclick: () => { if (!extra.value.trim()) { aviso('Escreva o que você precisa.', 'erro'); return } abrir('livre', 'Pedido ao Assistente', 'Atenda ao pedido da advogada sobre este caso: ' + extra.value.trim()) } })
   extra.addEventListener('keydown', ev => { if (ev.key === 'Enter') livreBtn.click() })
-  return h('div', { class: 'space-y-3', 'data-testid': 'assistente-conversa' }, alerta('info', null, 'A IA lê a conversa e o resto do material deste caso e devolve rascunhos com as fontes. Ela NÃO envia nada: você revisa, copia e envia pelo WhatsApp.'), ...grupos, h('div', { class: 'flex gap-2' }, h('div', { class: 'flex-1' }, extra), livreBtn), btn('Abrir o atendimento completo (contexto, materiais, formulário, consulta, parecer)', { mini: true, tipo: 'sec', icone: 'ph:brain-bold', tid: 'assist-atendimento', onclick: () => { fecharTodas(); abrirAtendimento(c.id, casoId) } }))
+  return h('div', { class: 'space-y-3', 'data-testid': 'assistente-conversa' }, alerta('info', null, 'O Assistente lê a conversa e o resto do material deste caso e devolve rascunhos com as fontes. Ela NÃO envia nada: você revisa, copia e envia pelo WhatsApp.'), ...grupos, h('div', { class: 'flex gap-2' }, h('div', { class: 'flex-1' }, extra), livreBtn), btn('Abrir o atendimento completo (contexto, materiais, formulário, consulta, parecer)', { mini: true, tipo: 'sec', icone: 'ph:brain-bold', tid: 'assist-atendimento', onclick: () => { fecharTodas(); abrirAtendimento(c.id, casoId) } }))
 }

@@ -37,7 +37,7 @@ const chamadas = (tool, f = () => true) => E(([tool, f]) => window.__chamadas.fi
 
 /* Intimações */
 await E(() => ir('secretaria')); await esp(300)
-ok((await p.locator('main').innerText()).toLowerCase().includes('secretária'), 'módulo Secretária abre')
+ok((await p.locator('main').innerText()).toLowerCase().includes('recebidos'), 'módulo Recebidos abre')
 await E(() => ir('intimacoes')); await esp(300)
 ok((await t('buscar-intimacoes').count()) > 0 || (await p.locator('main').innerText()).includes('Buscar'), 'aba Intimações tem botão de buscar')
 await t('buscar-intimacoes').first().click(); await esp(1500)

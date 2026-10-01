@@ -42,9 +42,9 @@ ok(await E(() => DB.compromissos.at(-1).gcal_id === 'EV123'), 'Agenda: guarda o 
 /* IA */
 ok(await E(() => [ehPergunta('quais prazos tenho esta semana'), ehPergunta('tem algo pendente?'), ehPergunta('criar tarefa ligar para Maria')].join()) === 'true,true,false', 'roteamento: pergunta × comando')
 await E(() => { const o = document.createElement('div'); o.id = 'saida'; document.body.append(o); return obterSample().then(s => responderPergunta(s, 'o que está pendente?', o)) }); await p.waitForTimeout(500)
-const tools = await E(() => window.__tools); ok(tools && ['crm_buscar_pessoas', 'crm_ficha', 'crm_pendencias', 'agenda_proximos', 'gmail_buscar', 'drive_arquivos'].every(x => tools.includes(x)), 'IA: 6 ferramentas de leitura expostas')
-const saidaTools = await E(() => JSON.stringify(window.__toolOut)); ok(!/\d{3}\.\d{3}\.\d{3}-\d{2}/.test(saidaTools) && !/5571999990000/.test(saidaTools) && !/@email|@exemplo/.test(saidaTools), 'IA: ferramentas não devolvem CPF, telefone nem e-mail')
-ok(!(await E(() => window.__tools.some(t => /criar|apagar|enviar|gravar|salvar/.test(t)))), 'IA: nenhuma ferramenta de escrita')
+const tools = await E(() => window.__tools); ok(tools && ['crm_buscar_pessoas', 'crm_ficha', 'crm_pendencias', 'agenda_proximos', 'gmail_buscar', 'drive_arquivos'].every(x => tools.includes(x)), 'Assistente: 6 ferramentas de leitura expostas')
+const saidaTools = await E(() => JSON.stringify(window.__toolOut)); ok(!/\d{3}\.\d{3}\.\d{3}-\d{2}/.test(saidaTools) && !/5571999990000/.test(saidaTools) && !/@email|@exemplo/.test(saidaTools), 'Assistente: ferramentas não devolvem CPF, telefone nem e-mail')
+ok(!(await E(() => window.__tools.some(t => /criar|apagar|enviar|gravar|salvar/.test(t)))), 'Assistente: nenhuma ferramenta de escrita')
 /* Conexões */
 await E(() => ir('config', { aba: 'conexoes' })); await p.waitForTimeout(300)
 const txt = await p.locator('main').innerText(); ok(['FUNCIONALIDADE REAL', 'INTEGRAÇÃO DISPONÍVEL', 'DEPENDE DE API/BACKEND', 'SIMULAÇÃO'].every(x => txt.includes(x)) && /WhatsApp/.test(txt) && /Drive/.test(txt) && /Google Forms/.test(txt), 'Conexões: cards e selos')

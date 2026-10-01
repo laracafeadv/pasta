@@ -11,23 +11,23 @@ function contadores() {
 const MODULOS = () => {
   const n = contadores(); const adm = CONFIG.perfil.papel === 'admin'
   return [
-    { grupo: 'Trabalho', itens: [
+    { grupo: 'Agenda', itens: [
       { id: 'inicio', rotulo: 'Início', icone: 'ph:sun-bold', badge: pendenciasHoje() },
-      { id: 'agenda', rotulo: 'Agenda', icone: 'ph:calendar-bold', subs: [['calendario', 'Calendário', 'ph:calendar-blank-bold'], ['tarefas', 'Tarefas', 'ph:check-square-bold', n.tarefasAtrasadas], ['prazos', 'Prazos', 'ph:hourglass-high-bold', n.prazos7]] },
-      { id: 'secretaria', rotulo: 'Secretária', icone: 'ph:headset-bold', badge: 0, subs: [['intimacoes', 'Intimações', 'ph:megaphone-bold', n.intimacoes], ['email', 'E-mail', 'ph:envelope-simple-bold', n.emailNaoLidos]] }] },
-    { grupo: 'Pessoas', itens: [
-      { id: 'atendimento', rotulo: 'Atendimento (IA)', icone: 'ph:brain-bold', subs: [['painel', 'Painel comercial', 'ph:kanban-bold'], ['identidade', 'Identidade e modelos', 'ph:palette-bold']] },
-      { id: 'pessoas', rotulo: 'Pessoas', icone: 'ph:users-bold', subs: [['funil', 'Funil de leads', 'ph:kanban-bold', n.leadsNovos], ['clientes', 'Clientes', 'ph:user-check-bold'], ['remarketing', 'Remarketing', 'ph:arrow-counter-clockwise-bold', n.remarketing]] },
-      { id: 'comunicacao', rotulo: 'Comunicação', icone: 'ph:chats-circle-bold', subs: [['caixa', 'Caixa de entrada', 'ph:tray-bold', n.naoLidas], ['modelos', 'Modelos de mensagem', 'ph:chat-circle-text-bold']] }] },
-    { grupo: 'Serviços jurídicos', itens: [
-      { id: 'demandas', rotulo: 'Demandas', icone: 'ph:briefcase-bold', subs: [['demandas', 'Demandas', 'ph:briefcase-bold'], ['processos', 'Processos', 'ph:gavel-bold'], ['documentos', 'Documentos', 'ph:files-bold', n.docsPend], ['iniciais', 'Petições iniciais', 'ph:file-text-bold', n.iniciais]] }] },
-    { grupo: 'Dinheiro', itens: [
-      { id: 'financeiro', rotulo: adm ? 'Financeiro' : 'Honorários', icone: 'ph:wallet-bold', subs: [['honorarios', 'Honorários', 'ph:handshake-bold'], ['contas', 'Contas a pagar e receber', 'ph:receipt-bold', n.contasVencidas]] },
-      { id: 'relatorios', rotulo: 'Relatórios', icone: 'ph:chart-bar-bold', subs: [['visao', 'Visão geral', 'ph:chart-pie-bold'], ['funil', 'Funil e carteira', 'ph:funnel-bold'], ['qualidade', 'Qualidade', 'ph:shield-check-bold']] }] },
+      { id: 'agenda', rotulo: 'Compromissos', icone: 'ph:calendar-bold', subs: [['calendario', 'Calendário', 'ph:calendar-blank-bold'], ['tarefas', 'Tarefas', 'ph:check-square-bold', n.tarefasAtrasadas], ['prazos', 'Prazos', 'ph:hourglass-high-bold', n.prazos7]] },
+      { id: 'secretaria', rotulo: 'Recebidos', icone: 'ph:headset-bold', badge: 0, subs: [['intimacoes', 'Intimações', 'ph:megaphone-bold', n.intimacoes], ['email', 'E-mail', 'ph:envelope-simple-bold', n.emailNaoLidos]] }] },
+    { grupo: 'Relacionamento', itens: [
+      { id: 'atendimento', rotulo: 'Atendimento', icone: 'ph:brain-bold', subs: [['painel', 'Atendimentos', 'ph:kanban-bold'], ['identidade', 'Identidade visual', 'ph:palette-bold']] },
+      { id: 'pessoas', rotulo: 'Clientes', icone: 'ph:users-bold', subs: [['funil', 'Interessados', 'ph:kanban-bold', n.leadsNovos], ['clientes', 'Clientes', 'ph:user-check-bold'], ['remarketing', 'Retomadas', 'ph:arrow-counter-clockwise-bold', n.remarketing]] },
+      { id: 'comunicacao', rotulo: 'Conversas', icone: 'ph:chats-circle-bold', subs: [['caixa', 'Mensagens', 'ph:tray-bold', n.naoLidas], ['modelos', 'Modelos', 'ph:chat-circle-text-bold']] }] },
+    { grupo: 'Advocacia', itens: [
+      { id: 'demandas', rotulo: 'Casos', icone: 'ph:briefcase-bold', subs: [['demandas', 'Casos', 'ph:briefcase-bold'], ['processos', 'Processos', 'ph:gavel-bold'], ['documentos', 'Documentos', 'ph:files-bold', n.docsPend], ['iniciais', 'Petições iniciais', 'ph:file-text-bold', n.iniciais]] }] },
+    { grupo: 'Finanças', itens: [
+      { id: 'financeiro', rotulo: 'Honorários', icone: 'ph:wallet-bold', subs: [['honorarios', 'Honorários', 'ph:handshake-bold'], ['contas', 'Contas', 'ph:receipt-bold', n.contasVencidas]] },
+      { id: 'relatorios', rotulo: 'Relatórios', icone: 'ph:chart-bar-bold', subs: [['visao', 'Visão geral', 'ph:chart-pie-bold'], ['funil', 'Carteira', 'ph:funnel-bold'], ['qualidade', 'Qualidade', 'ph:shield-check-bold']] }] },
     { grupo: 'Escritório', itens: [
-      { id: 'formularios', rotulo: 'Formulários', icone: 'ph:clipboard-text-bold', subs: [['formularios', 'Meus formulários', 'ph:clipboard-text-bold'], ['respostas', 'Envios e respostas', 'ph:chat-centered-text-bold', formulariosARever()]] },
-      { id: 'manual', rotulo: 'Padrões operacionais', icone: 'ph:list-checks-bold', subs: [['padroes', 'Passo a passo', 'ph:list-checks-bold'], ['fluxo', 'Fluxo do CRM', 'ph:flow-arrow-bold']] },
-      ...(adm ? [{ id: 'config', rotulo: 'Configurações', icone: 'ph:gear-bold', subs: [['escritorio', 'Escritório e dados', 'ph:buildings-bold'], ['automacoes', 'Automações', 'ph:lightning-bold'], ['conexoes', 'Conexões e IA', 'ph:plugs-connected-bold'], ['auditoria', 'Auditoria', 'ph:shield-check-bold']] }] : [])] },
+      { id: 'formularios', rotulo: 'Formulários', icone: 'ph:clipboard-text-bold', subs: [['formularios', 'Meus formulários', 'ph:clipboard-text-bold'], ['respostas', 'Respostas', 'ph:chat-centered-text-bold', formulariosARever()]] },
+      { id: 'manual', rotulo: 'Padrões operacionais', icone: 'ph:list-checks-bold', subs: [['padroes', 'Procedimentos', 'ph:list-checks-bold'], ['fluxo', 'Fluxo do CRM', 'ph:flow-arrow-bold']] },
+      ...(adm ? [{ id: 'config', rotulo: 'Configurações', icone: 'ph:gear-bold', subs: [['escritorio', 'Escritório', 'ph:buildings-bold'], ['automacoes', 'Rotinas', 'ph:lightning-bold'], ['conexoes', 'Conexões', 'ph:plugs-connected-bold'], ['auditoria', 'Histórico', 'ph:shield-check-bold']] }] : [])] },
   ]
 }
 const NAVST = lsGet('nav', {})      // módulo → expandido? (escolha da usuária; sem escolha, só o módulo aberto fica expandido)
@@ -134,11 +134,11 @@ function abrirBusca() {
   }
   entrada.addEventListener('input', buscar)
   const planoIA = h('div', { class: 'mt-3' })
-  const pedir = btn(CONFIG.ia.ativa ? 'Pedir à IA' : 'Pedir à IA (ligar)', { mini: true, tipo: 'sec', icone: 'ph:sparkle-bold', tid: 'ia-pedir', class: 'ia-btn', onclick: () => { const q = entrada.value.trim(); if (q.length < 6) { aviso('Descreva o que quer fazer (ex.: “criar tarefa de ligar para a Helena amanhã”).', 'erro'); return } exigirIA(async s => { if (ehPergunta(q)) { await responderPergunta(s, q, planoIA); return } planoIA.replaceChildren(carregando('Entendendo o pedido…')); try { mostrarPlano(await interpretarComando(s, q), planoIA) } catch (e) { planoIA.replaceChildren(alerta('erro', null, iaErro(e))) } }) } })
-  m = modal({ titulo: 'Buscar ou pedir', largura: 'max-w-xl', corpo: [entrada, h('div', { class: 'flex items-center justify-between mt-2' }, h('p', { class: 'text-[11px] text-gray-400' }, 'Busca no CRM. A IA responde perguntas (“quais prazos esta semana?”) e propõe tarefas, prazos e anotações em frase; você confirma antes de gravar.'), pedir), res, planoIA] }); buscar()
+  const pedir = btn(CONFIG.ia.ativa ? 'Pedir ao Assistente' : 'Pedir ao Assistente', { mini: true, tipo: 'sec', icone: 'ph:sparkle-bold', tid: 'ia-pedir', class: 'ia-btn', onclick: () => { const q = entrada.value.trim(); if (q.length < 6) { aviso('Descreva o que quer fazer (ex.: “criar tarefa de ligar para a Helena amanhã”).', 'erro'); return } exigirIA(async s => { if (ehPergunta(q)) { await responderPergunta(s, q, planoIA); return } planoIA.replaceChildren(carregando('Entendendo o pedido…')); try { mostrarPlano(await interpretarComando(s, q), planoIA) } catch (e) { planoIA.replaceChildren(alerta('erro', null, iaErro(e))) } }) } })
+  m = modal({ titulo: 'Buscar ou pedir', largura: 'max-w-xl', corpo: [entrada, h('div', { class: 'flex items-center justify-between mt-2' }, h('p', { class: 'text-[11px] text-gray-400' }, 'Busca no CRM. O Assistente responde perguntas (“quais prazos esta semana?”) e propõe tarefas, prazos e anotações em frase; você confirma antes de gravar.'), pedir), res, planoIA] }); buscar()
 }
 function casca() {
   return h('div', { class: 'flex min-h-screen bg-gray-100 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100' }, barraLateral(), h('div', { class: 'flex-1 min-w-0 flex flex-col' }, cabecalho(), h('main', { class: 'flex-1 min-w-0', id: 'conteudo', tabindex: '-1' }, (VIEWS[R.rota] || VIEWS.inicio)(R.p)), rodape()))
 }
-const rodape = () => h('footer', { class: 'px-4 sm:px-6 py-5 text-[11px] text-gray-400 text-center' }, 'Lara Café Advocacia & Consultoria · acesso restrito · dados protegidos conforme a LGPD · ', h('span', { class: 'text-amber-600 dark:text-amber-400' }, 'Dados de exemplo · WhatsApp abre o aplicativo · E-mail e IA usam os conectores da sua conta'))
+const rodape = () => h('footer', { class: 'px-4 sm:px-6 py-5 text-[11px] text-gray-400 text-center' }, 'Lara Café Advocacia & Consultoria · acesso restrito · dados protegidos conforme a LGPD · ', h('span', { class: 'text-amber-600 dark:text-amber-400' }, 'Dados de exemplo · WhatsApp abre o aplicativo · E-mail e Assistente usam os conectores da sua conta'))
 

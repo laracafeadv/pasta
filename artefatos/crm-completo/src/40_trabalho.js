@@ -67,7 +67,7 @@ VIEWS.hoje = () => {
   }
   return pagina('Hoje', null, null,
     h('div', { class: 'flex flex-wrap gap-1.5' }, [{ id: 'todos', nome: `Tudo (${todos.length})` }, ...Object.keys(TIPO_HOJE).filter(t => contagem(t)).map(t => ({ id: t, nome: `${TIPO_HOJE[t][0]} (${contagem(t)})` }))].map(x => h('button', { type: 'button', class: 'filtro ' + (x.id === f ? 'filtro-ativo' : ''), onclick: () => { UI.hoje.f = x.id; render() } }, x.nome))),
-    lista_.length ? h('div', { class: 'space-y-2' }, lista_.map(card)) : estadoVazio('ph:sun-bold', 'Tudo em dia', 'Nada pede sua atenção agora. Que tal revisar o Remarketing ou os Leads?', btn('Ir para Leads', { onclick: () => ir('leads') })))
+    lista_.length ? h('div', { class: 'space-y-2' }, lista_.map(card)) : estadoVazio('ph:sun-bold', 'Tudo em dia', 'Nada pede sua atenção agora. Que tal revisar as Retomadas ou os Interessados?', btn('Ir para Leads', { onclick: () => ir('leads') })))
 }
 function abrirAndamento(c) {
   if (!c) return
@@ -142,7 +142,7 @@ VIEWS.calendario = () => {
   const celulas = Array.from({ length: Math.ceil((CRM.dow(primeiro) + fimMes) / 7) * 7 }, (_, i) => somarDias(inicioGrade, i))
   const COR = { prazo: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200', audiencia: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200', consulta: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200', reuniao: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200', tarefa: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' }
   const proximos = eventos.filter(p => p.status === 'pendente' && diaDe(dataDoCompromisso(p)) >= hoje).sort((a, b) => dataDoCompromisso(a).localeCompare(dataDoCompromisso(b))).slice(0, 8)
-  return pagina('Agenda', 'Consultas, audiências, reuniões e prazos num só calendário.', [btn('Novo compromisso', { icone: 'ph:plus-bold', onclick: () => editarCompromisso(null, { tipo: 'consulta' }), tid: 'novo-compromisso' })],
+  return pagina('Compromissos', 'Consultas, audiências, reuniões e prazos num só calendário.', [btn('Novo compromisso', { icone: 'ph:plus-bold', onclick: () => editarCompromisso(null, { tipo: 'consulta' }), tid: 'novo-compromisso' })],
     h('div', { class: 'grid gap-5 lg:grid-cols-[1fr_320px]' },
       painel(null, h('div', { class: 'flex items-center justify-between mb-3' }, btnIcone('ph:caret-left-bold', 'Mês anterior', () => nav(-1)), h('h2', { class: 'titulo capitalize' }, new Date(Date.UTC(ano, m - 1, 1, 12)).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' })), btnIcone('ph:caret-right-bold', 'Próximo mês', () => nav(1))),
         h('div', { class: 'overflow-x-auto' }, h('div', { class: 'min-w-[560px]' }, h('div', { class: 'grid grid-cols-7 text-[10px] uppercase tracking-widest text-gray-400 mb-1' }, ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'].map(x => h('div', { class: 'px-1' }, x))), h('div', { class: 'grid grid-cols-7 gap-px bg-gray-200/70 dark:bg-zinc-800 rounded-2xl overflow-hidden border border-gray-200/70 dark:border-zinc-800' }, celulas.map(dia => h('div', { class: 'min-h-[88px] p-1.5 bg-white dark:bg-zinc-900 ' + (dia.slice(0, 7) !== mes ? 'opacity-40' : '') }, h('span', { class: 'text-xs inline-flex w-6 h-6 items-center justify-center rounded-full ' + (dia === hoje ? 'bg-primary text-white' : 'text-gray-500') }, Number(dia.slice(8))), (porDia[dia] || []).slice(0, 3).map(p => h('button', { type: 'button', class: `block w-full text-left truncate rounded-md px-1.5 py-0.5 mt-0.5 text-[10px] font-semibold ${COR[p.tipo]} ${p.status === 'concluido' ? 'line-through opacity-60' : ''}`, onclick: () => editarCompromisso(p), title: p.titulo }, (p.inicio ? hhmm(p.inicio) + ' ' : '') + p.titulo)), (porDia[dia] || []).length > 3 ? h('span', { class: 'text-[10px] text-gray-400' }, `+${porDia[dia].length - 3}`) : null)))))),
@@ -172,7 +172,7 @@ VIEWS.agenda = (p) => {
   if (p && p.aba) { UI.ag.aba = p.aba; R.p = {} }
   const A = UI.ag.aba; const sub = { calendario: 'Consultas, audiências, reuniões e prazos num só calendário.', tarefas: 'Algo que exige execução ou acompanhamento. Sempre com data.', prazos: 'Data-limite relevante, processual ou combinada. Contagem em dias úteis, com feriados e recesso forense.' }[A]
   const atrasT = DB.tarefas.filter(t => !t.concluida && t.prazo < hojeISO()).length
-  return modulo({ titulo: 'Agenda', sub, abasDef: [{ id: 'calendario', nome: 'Calendário', icone: 'ph:calendar-bold' }, { id: 'tarefas', nome: 'Tarefas', icone: 'ph:check-square-bold', n: atrasT || null }, { id: 'prazos', nome: 'Prazos', icone: 'ph:hourglass-high-bold' }], ativa: A, aoMudar: id => { UI.ag.aba = id; render() }, conteudo: a => VIEWS[a]() })
+  return modulo({ titulo: 'Compromissos', sub, abasDef: [{ id: 'calendario', nome: 'Calendário', icone: 'ph:calendar-bold' }, { id: 'tarefas', nome: 'Tarefas', icone: 'ph:check-square-bold', n: atrasT || null }, { id: 'prazos', nome: 'Prazos', icone: 'ph:hourglass-high-bold' }], ativa: A, aoMudar: id => { UI.ag.aba = id; render() }, conteudo: a => VIEWS[a]() })
 }
 /* ---- levar compromisso para fora do CRM (REAL: link do Google Agenda e arquivo .ics) ---- */
 function janelaCompromisso(p) {

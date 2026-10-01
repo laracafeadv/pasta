@@ -6,7 +6,7 @@ const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } }); awa
 const p = await ctx.newPage(); const erros = []; p.on('pageerror', e => erros.push(e.message)); p.on('console', m => { if (m.type() === 'error') erros.push(m.text()) })
 await p.addInitScript(() => {
   window.__chamadas = []; window.__prompts = []
-  const amostra = async (prompt, o = {}) => { window.__prompts.push(prompt); const texto = 'RASCUNHO DA IA'; o.onText && o.onText({ text: texto }); return { text: texto, truncated: false } }; amostra.limits = async () => ({ tools: false })
+  const amostra = async (prompt, o = {}) => { window.__prompts.push(prompt); const texto = 'RASCUNHO DA Assistente'; o.onText && o.onText({ text: texto }); return { text: texto, truncated: false } }; amostra.limits = async () => ({ tools: false })
   window.claude = { use: async n => n === 'mcp' ? { callTool: async (srv, tool, inp) => { window.__chamadas.push({ srv, tool, inp }); return { payload: {} } } } : n === 'sample' ? amostra : null }
 })
 await p.goto('file:///home/user/pasta/artefatos/crm-completo/dist/crm.html'); await p.waitForSelector('[data-testid=sidebar]')
@@ -63,23 +63,23 @@ await t('wa-copiar').click(); await esp(100)
 
 /* 5. Assistente de IA: analisa e sugere, nunca envia */
 await E(() => { document.querySelector('[data-testid=assistente-detalhes]').open = true }); await E(() => { CONFIG.ia.ativa = false }); await t('assist-resposta').click(); await esp(300)
-ok((await toasts()).includes('Ligar a IA no CRM'), 'com a IA desligada, pede o consentimento antes de enviar a conversa')
+ok((await toasts()).includes('Ligar o Assistente no CRM'), 'com o Assistente desligado, pede o consentimento antes de enviar a conversa')
 await E(() => { fecharTodas(); CONFIG.ia.ativa = true; render() }); await esp(300); await E(() => { document.querySelector('[data-testid=assistente-detalhes]').open = true })
 const ids = ['analisar', 'resumo', 'faltam', 'docs', 'fatos', 'pendencias', 'resposta', 'objetiva', 'acolhedora', 'proximo', 'simular']
 for (const id of ids) ok(await t('assist-' + id).count() === 1, 'ação disponível: ' + id)
 await E(() => { window.__prompts.length = 0; window.__chamadas.length = 0 }); await t('assist-resposta').click(); await esp(500)
 let pr = await E(() => window.__prompts)
 ok(pr.length === 1 && /CLIENTE[^\n]*: Preciso de ajuda/.test(pr[0]) && /ESCRITÓRIO[^\n]*: Bom dia, Maria!/.test(pr[0]) && /nunca envie nada/i.test(pr[0]), 'o pedido leva a conversa (cliente × escritório), com ids de fonte, e a instrução de não enviar')
-ok(!/@exemplo|5571988880000/.test(pr[0].split('CONTEXTO DO CASO')[0]), 'as instruções enviadas à IA não levam e-mail nem telefone')
-ok((await t('nucleo-saida').innerText()).includes('RASCUNHO DA IA'), 'a sugestão aparece para você revisar (janela do núcleo de IA)')
+ok(!/@exemplo|5571988880000/.test(pr[0].split('CONTEXTO DO CASO')[0]), 'as instruções enviadas ao Assistente não levam e-mail nem telefone')
+ok((await t('nucleo-saida').innerText()).includes('RASCUNHO DA Assistente'), 'a sugestão aparece para você revisar (janela do núcleo do Assistente)')
 const fechaTopo = async () => { await t('fechar').last().click(); await esp(200) }
 await fechaTopo(); await E(() => { document.querySelector('[data-testid=assistente-detalhes]').open = true })
 await t('assist-livre').fill('sem citar prazo'); await t('assist-simular').click(); await esp(500); pr = await E(() => window.__prompts)
 ok(pr.length === 2 && /simul/i.test(pr[1]) && pr[1].includes('sem citar prazo'), 'simular a continuação aceita orientação extra')
 await fechaTopo(); await E(() => { document.querySelector('[data-testid=assistente-detalhes]').open = true })
-await t('assist-livre').fill('Quais datas a cliente citou?'); await t('assist-pedir').click(); await esp(500); pr = await E(() => window.__prompts); ok(pr.length === 3 && pr[2].includes('Quais datas a cliente citou?'), 'pedido livre à IA sobre a conversa')
+await t('assist-livre').fill('Quais datas a cliente citou?'); await t('assist-pedir').click(); await esp(500); pr = await E(() => window.__prompts); ok(pr.length === 3 && pr[2].includes('Quais datas a cliente citou?'), 'pedido livre ao Assistente sobre a conversa')
 await t('nucleo-salvar').click(); await esp(300); ok(await E(id => (DB.analises || []).length > 0 || DB.atividades.some(a => a.contato_id === id), cid), 'salvar registra a análise no caso')
-const env = await E(() => window.__chamadas.filter(c => ['send_message', 'create_draft'].includes(c.tool)).length); ok(env === 0, 'em nenhum momento a IA/CRM enviou mensagem (zero chamadas de envio)')
+const env = await E(() => window.__chamadas.filter(c => ['send_message', 'create_draft'].includes(c.tool)).length); ok(env === 0, 'em nenhum momento o Assistente/CRM enviou mensagem (zero chamadas de envio)')
 await E(() => { DB.comunicacoes = DB.comunicacoes.filter(m => m.contato_id !== DB.contatos.find(c => c.nome === 'Maria Souza').id) ; render() }); await esp(200)
 
 /* 6. Tela de conexões: honesta */
