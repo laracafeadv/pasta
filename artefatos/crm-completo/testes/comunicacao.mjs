@@ -77,7 +77,7 @@ await p.evaluate(() => abrirDemandaDetalhe(1)); await esp(p); ok(await t('tempo-
 await p.keyboard.press('Escape')
 /* conexões */
 await p.evaluate(() => ir('config', { aba: 'conexoes' })); await esp(p); await t('testar-gmail').click(); await esp(p); await esp(p); ok((await t('teste-gmail').innerText()).includes('conectado'), 'testar conexão do Gmail'); await t('testar-ia').click(); await esp(p); await esp(p); ok((await t('teste-ia').innerText()).includes('respondeu'), 'testar IA')
-const cap = await p.locator('main').innerText(); ok(/REAL/.test(cap) && /POSSÍVEL COM INTEGRAÇÃO/.test(cap) && /NÃO VIÁVEL/.test(cap) && /SIMULADA/.test(cap), 'mapa de capacidades com os 4 selos')
+const cap = await p.locator('main').innerText(); ok(/FUNCIONALIDADE REAL/.test(cap) && /INTEGRAÇÃO DISPONÍVEL/.test(cap) && /DEPENDE DE API/.test(cap) && /SIMULAÇÃO/.test(cap), 'mapa de conexões com os selos')
 await t('ia-toggle').click(); await esp(p); ok(await p.evaluate(() => CONFIG.ia.ativa) === false, 'desligar a IA é imediato'); await t('ia-toggle').click(); await esp(p); ok(await t('ia-ligar').count() === 1 && await p.evaluate(() => CONFIG.ia.ativa) === false, 'ligar a IA exige consentimento explícito'); await p.keyboard.press('Escape')
 ok(p.erros.length === 0, 'sem erros: ' + p.erros.slice(0, 3).join(' | '))
 await p.context().close()

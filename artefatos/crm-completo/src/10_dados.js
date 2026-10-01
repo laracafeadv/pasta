@@ -6,7 +6,7 @@
 const COLECOES = ['contatos', 'demandas', 'processos', 'partes', 'movimentacoes', 'etapas', 'pendencias', 'compromissos', 'tarefas', 'documentos', 'honorarios', 'lancamentos', 'atividades', 'comunicacoes', 'intimacoes', 'formularios', 'envios', 'modelos', 'notas', 'auditoria', 'iniciais']
 const DB = {}
 const AUTO_PADRAO = { cadencia: true, semNovidadeDias: 7, antecedenciaPrazo: 2, remarketingDias: 45, checklistAoAbrir: true, aniversarios: true, preparacaoPrazo: false }
-const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {}, ia: { ativa: false }, email_sync: null, auto: { ...AUTO_PADRAO } }
+const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {}, ia: { ativa: false }, email_sync: null, auto: { ...AUTO_PADRAO }, integr: { supabase: '', drive_raiz: '', wa_sync: null } }
 /** Regras automáticas com os valores do escritório (padrão = o que o CRM sempre fez). */
 const AUTO = () => ({ ...AUTO_PADRAO, ...(CONFIG.auto || {}) })
 const ARM = { modo: 'memoria', uid: null, colecao: null, pendente: new Set(), timer: null, estado: 'iniciando' }
@@ -125,7 +125,7 @@ const ESCRITORIO_EXEMPLO = { advogada_nome: 'Lara Café', oab: '00000/BA', advog
 const GESTAO_EXEMPLO = { horas_produtivas_mes: 120, margem_desejada: 30, saldo_caixa: 8500, pro_labore: 6000, horas_estimadas: 20 }
 
 /* ---------- persistência ---------- */
-function carregarSemente() { const s = montarSemente(); for (const c of COLECOES) DB[c] = s[c] || []; CONFIG.escritorio = clonar(ESCRITORIO_EXEMPLO); CONFIG.gestao = clonar(GESTAO_EXEMPLO); CONFIG.perfil = { nome: 'Lara Café', papel: 'admin', email: 'contato@exemplo.com.br' }; CONFIG.revisoes = []; CONFIG.checklist_manual = {}; CONFIG.seq = {}; CONFIG.ia = { ativa: false }; CONFIG.email_sync = null; CONFIG.auto = { ...AUTO_PADRAO } }
+function carregarSemente() { const s = montarSemente(); for (const c of COLECOES) DB[c] = s[c] || []; CONFIG.escritorio = clonar(ESCRITORIO_EXEMPLO); CONFIG.gestao = clonar(GESTAO_EXEMPLO); CONFIG.perfil = { nome: 'Lara Café', papel: 'admin', email: 'contato@exemplo.com.br' }; CONFIG.revisoes = []; CONFIG.checklist_manual = {}; CONFIG.seq = {}; CONFIG.ia = { ativa: false }; CONFIG.email_sync = null; CONFIG.auto = { ...AUTO_PADRAO }; CONFIG.integr = { supabase: '', drive_raiz: '', wa_sync: null } }
 function salvar(col) { ARM.pendente.add(col || '*'); clearTimeout(ARM.timer); ARM.timer = setTimeout(descarregar, 500); renderBarraArmazenamento() }
 async function descarregar() {
   const cols = ARM.pendente.has('*') ? [...COLECOES, 'config'] : [...ARM.pendente]; ARM.pendente.clear()
