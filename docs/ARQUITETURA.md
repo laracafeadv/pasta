@@ -200,3 +200,11 @@ Quadro próprio (tabela `secretaria_iniciais`), independente de Demandas/Process
 - **Regras:** `shared/utils/iniciaisSecretaria.ts` (puras, testadas). Rotas: `GET|POST /api/secretaria/iniciais`, `PUT|DELETE /iniciais/[id]`, `POST /iniciais/[id]/mover`.
 - **Testes:** `tests/secretaria/iniciais*.test.ts`, `tests/secretaria/ui-iniciais.mjs` (Playwright, APIs simuladas), `supabase/tests/secretaria_iniciais.sql`.
 - **Correção junto:** o "hoje" do Início passou a usar o horário de Brasília (antes, depois das 21h o servidor em UTC já estava no dia seguinte e a tela acusava divergência).
+
+### Secretária — etapa 5: Notícias e Conteúdo (versão do artefato)
+
+Nesta etapa só o **artefato** foi feito; as duas abas seguem "em breve" no CRM. Motivo: dependem de uma tarefa agendada que grava no banco do artefato e do conector Gmail do Claude, que o CRM não tem (o CRM precisaria de coletor próprio com `ANTHROPIC_API_KEY`).
+
+- **Notícias:** tarefa agendada (rotina) às 6h50 de Brasília pesquisa 6 a 8 notícias (Família, Sucessões, tribunais superiores, TRT5, TJBA, INSS, OAB/BA), confere a data na própria página e grava em `data/users/<id>/painel/noticias` (titulo, resumo, fonte, link, area, publicadaEm, dia, coletadoEm); apaga as com mais de 10 dias. A aba mostra só a janela de 10 dias, agrupada por dia, com filtro por área, links https externos (`rel=noopener`) e aviso se não há notícias de hoje.
+- **Conteúdo:** links editáveis (Instagram e páginas), assunto do e-mail configurável, ideias do e-mail mais recente (a IA só organiza o texto em título/formato/gancho/roteiro, sem inventar; extração guardada em `config/conteudo_ideias` por mensagem) e revisão do Provimento 205/2021 (`shared/utils/conteudoSecretaria.ts`): alerta valores, gratuidade/desconto, promessa de resultado, chamada para contratar e sensacionalismo. É alerta, não bloqueio; a decisão é da advogada.
+- **Testes:** `tests/secretaria/conteudo.test.ts` (regras) e, no artefato, teste de navegador com Gmail e Claude simulados.
