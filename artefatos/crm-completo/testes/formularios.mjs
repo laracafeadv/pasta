@@ -1,136 +1,156 @@
-// Jornada de formulários: criar → publicar → enviar (link/WhatsApp/e-mail/QR) → cliente preenche → recebimento → revisão → cadastro.
-// Conectores (Gmail, Drive, Supabase) SIMULADOS no teste; o artefato publicado usa os reais.
+// Formulários (nativos, publicados no banco, link público individual) e WhatsApp (Cloud API via fila) — o BANCO é simulado no teste
+// por um mini-motor SQL dentro da página; a Edge Function pública e os handlers reais são testados em /home/user/pasta/tests/whatsapp.
 import { chromium } from '/tmp/node_modules/playwright-core/index.mjs'
 let falhas = 0; const ok = (c, n) => { console.log((c ? 'PASS ' : 'FAIL ') + n); if (!c) falhas++ }
 const b = await chromium.launch({ executablePath: process.env.CHROME, args: ['--no-sandbox'] })
 const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }); await ctx.route(/wa\.me|mail\.google|drive\.google/, r => r.fulfill({ status: 200, body: 'ok' }))
 const p = await ctx.newPage(); const erros = []; p.on('pageerror', e => erros.push(e.message)); p.on('console', m => { if (m.type() === 'error') erros.push(m.text()) })
 await p.addInitScript(() => {
-  window.__calls = []; window.__siteRows = []; window.__siteResp = []
-  const mcp = { callTool: async (srv, tool, inp) => { window.__calls.push({ srv, tool, inp })
-    if (srv === 'Supabase') { const q = inp.query; const dev = r => ({ payload: '<untrusted-data-x>\n' + JSON.stringify(r) + '\n</untrusted-data-x>' })
-      if (/from public\.contatos where telefone/.test(q)) return dev([{ id: 77 }]); if (/from public\.casos where/.test(q)) return dev([{ id: 12 }]); if (/from public\.formularios f where/.test(q)) return dev([{ id: 5, versao: 3, situacao: 'publicado', perguntas: 4 }]); if (/^insert into public\.formulario_envios/.test(q)) return dev([{ id: 900 }]); if (/^update public\.formulario_envios/.test(q)) return dev([])
-      if (/from public\.formulario_envios e join/.test(q)) return dev(window.__siteRows); if (/from public\.formulario_envio_respostas/.test(q)) return dev(window.__siteResp); return dev([]) }
-    if (srv === 'Google Drive' && tool === 'create_file') return { payload: { id: 'ARQ' + String(window.__calls.length).padStart(9, '0'), title: inp.title, viewUrl: 'https://drive.google.com/file/d/X/view' } }
-    if (srv === 'Gmail' && tool === 'send_message') return { payload: { id: 'SENT1' } }
-    return { payload: {} } } }
-  window.claude = { use: async n => n === 'mcp' ? mcp : null }
+  const BD = window.__bd = { contatos: [], casos: [], formularios: [], envios: [], respostas: [], saida: [], mensagens: [], templates: [], diag: null, seq: 100 }; window.__sql = []
+  const dividir = s => { const o = []; let atual = '', asp = false; for (let i = 0; i < s.length; i++) { const ch = s[i]; if (ch === "'") { if (asp && s[i + 1] === "'") { atual += "''"; i++; continue } asp = !asp } if (ch === ',' && !asp) { o.push(atual.trim()); atual = ''; continue } atual += ch } o.push(atual.trim()); return o }
+  const un = t => { t = String(t).trim().replace(/::(jsonb|date)$/, ''); if (t === 'null') return null; if (t === 'true') return true; if (t === 'false') return false; if (/^-?\d+$/.test(t)) return Number(t); if (t.startsWith("'")) return t.slice(1, -1).replace(/''/g, "'"); return t }
+  const ret = rows => ({ payload: '<untrusted-data-x>\n' + JSON.stringify(rows) + '\n</untrusted-data-x>' })
+  const exec = q => { q = q.trim(); let m
+    if ((m = q.match(/^select id from public\.contatos where telefone = '(\d+)' limit 1/))) return BD.contatos.filter(c => c.telefone === m[1]).map(c => ({ id: c.id }))
+    if ((m = q.match(/^insert into public\.contatos \(telefone, nome, email, origem, etapa, exemplo\) values \((.*)\) returning id$/s))) { const v = dividir(m[1]).map(un); const c = { id: ++BD.seq, telefone: v[0], nome: v[1], email: v[2], origem: v[3], etapa: v[4], exemplo: v[5] }; BD.contatos.push(c); return [{ id: c.id }] }
+    if ((m = q.match(/^select id from public\.casos where contato_id = (\d+) and lower\(titulo\) = lower\((.*)\) limit 1$/s))) return BD.casos.filter(c => c.contato_id === Number(m[1]) && c.titulo.toLowerCase() === un(m[2]).toLowerCase()).map(c => ({ id: c.id }))
+    if ((m = q.match(/^insert into public\.casos \(contato_id, titulo, area, tipo, status, exemplo\) values \((.*)\) returning id$/s))) { const v = dividir(m[1]).map(un); const c = { id: ++BD.seq, contato_id: v[0], titulo: v[1], area: v[2], tipo: v[3], status: v[4], exemplo: v[5] }; BD.casos.push(c); return [{ id: c.id }] }
+    if ((m = q.match(/^insert into public\.formularios \(ref, nome, descricao, contexto, situacao, ativo, versao, estrutura, publicado_em\) values \((.*)\) on conflict \(ref\) where ref is not null do update set (.*) returning id, versao$/s))) { const v = dividir(m[1]).map(un); let f = BD.formularios.find(x => x.ref === v[0]); if (f) { Object.assign(f, { nome: v[1], descricao: v[2], contexto: v[3], situacao: 'publicado', estrutura: JSON.parse(v[7]) }); f.versao++ } else { f = { id: ++BD.seq, ref: v[0], nome: v[1], descricao: v[2], contexto: v[3], situacao: 'publicado', versao: 1, estrutura: JSON.parse(v[7]) }; BD.formularios.push(f) } return [{ id: f.id, versao: f.versao }] }
+    if ((m = q.match(/^update public\.formularios set situacao = '(\w+)', ativo = (true|false) where ref = '(.*)'$/))) { const f = BD.formularios.find(x => x.ref === m[3]); if (f) f.situacao = m[1]; return [] }
+    if ((m = q.match(/^insert into public\.formulario_envios \(formulario_id, contato_id, caso_id, token, expira_em, prazo_resposta, versao_formulario, estrutura, status\) select (.*) from public\.formularios f where f\.ref = '(.*)' and f\.situacao = 'publicado' returning id, versao_formulario$/s))) { const f = BD.formularios.find(x => x.ref === m[2] && x.situacao === 'publicado'); if (!f) return []; const v = dividir(m[1]).map(un); const e = { id: ++BD.seq, formulario_id: f.id, contato_id: v[1], caso_id: v[2], token: v[3], expira_em: v[4], prazo_resposta: v[5], versao_formulario: f.versao, estrutura: f.estrutura, status: 'gerado' }; BD.envios.push(e); return [{ id: e.id, versao_formulario: e.versao_formulario }] }
+    if ((m = q.match(/^select id, token, status, enviado_em, visualizado_em, iniciado_em, respondido_em, expira_em, respondente, consentimento_em from public\.formulario_envios where token in \((.*)\)$/s))) { const tk = dividir(m[1]).map(un); return BD.envios.filter(e => tk.includes(e.token)) }
+    if ((m = q.match(/^select pergunta_ref, ordem, pergunta_texto, pergunta_tipo, secao_titulo, resposta from public\.formulario_envio_respostas where envio_id = (\d+)/))) return BD.respostas.filter(r => r.envio_id === Number(m[1])).sort((a, b) => a.ordem - b.ordem)
+    if ((m = q.match(/^update public\.formulario_envios set (.*) where id = (\d+)/s))) { const e = BD.envios.find(x => x.id === Number(m[2])); if (!e) return []; if (/status = 'cancelado'/.test(m[1])) e.status = 'cancelado'; if (/expira_em = '/.test(m[1])) e.expira_em = un(m[1].match(/expira_em = ('.*?')( |$)/)[1]); const c = m[1].match(/canal_envio = '(\w+)'/); if (c) { e.canal_envio = c[1]; e.enviado_em = e.enviado_em || new Date().toISOString(); if (e.status === 'gerado') e.status = 'enviado' } return [] }
+    /* WhatsApp */
+    if (/^select m\.id, m\.created_at, m\.direcao/.test(q)) return BD.mensagens.filter(x => !x.exemplo)
+    if (/from public\.escritorio where chave = 'wa_ultimo_webhook'/.test(q)) return BD.diag ? [{ valor: JSON.stringify(BD.diag), updated_at: BD.diag.em }] : []
+    if ((m = q.match(/^insert into public\.whatsapp_saida \(contato_id, caso_id, telefone, tipo, texto, criado_por\) values \((.*)\) returning id$/s))) { const v = dividir(m[1]).map(un); const s = { id: ++BD.seq, contato_id: v[0], caso_id: v[1], telefone: v[2], tipo: v[3], texto: v[4], status: 'pendente' }; BD.saida.push(s); return [{ id: s.id }] }
+    if ((m = q.match(/^insert into public\.whatsapp_saida \(contato_id, caso_id, telefone, tipo, template_nome, template_idioma, template_params, criado_por\) values \((.*)\) returning id$/s))) { const v = dividir(m[1]).map(un); const s = { id: ++BD.seq, contato_id: v[0], caso_id: v[1], telefone: v[2], tipo: v[3], template_nome: v[4], template_idioma: v[5], template_params: JSON.parse(v[6]), status: 'pendente' }; BD.saida.push(s); return [{ id: s.id }] }
+    if (/^insert into public\.whatsapp_saida \(tipo, criado_por\) values \('sincronizar_templates'/.test(q)) { const s = { id: ++BD.seq, tipo: 'sincronizar_templates', status: 'pendente' }; BD.saida.push(s); return [{ id: s.id }] }
+    if ((m = q.match(/^select id, status, erro, wa_message_id from public\.whatsapp_saida where id in \((.*)\)$/))) { const ids = m[1].split(',').map(Number); return BD.saida.filter(s => ids.includes(s.id)) }
+    if (/from public\.whatsapp_templates/.test(q)) return BD.templates
+    if ((m = q.match(/^update public\.mensagens_whatsapp set caso_id = (\d+) where contato_id = (\d+) and caso_id is null$/))) { BD.mensagens.filter(x => x.cid === Number(m[2]) && !x.caso_id).forEach(x => { x.caso_id = Number(m[1]) }); return [] }
+    throw new Error('SQL não previsto no teste: ' + q.slice(0, 160)) }
+  window.claude = { use: async n => n === 'mcp' ? { callTool: async (srv, tool, inp) => { window.__sql.push({ srv, tool, q: inp.query }); if (srv === 'Supabase') return ret(exec(inp.query)); return { payload: {} } } } : null }
+  /* simulações do LADO DE FORA (o que a Meta e a cliente fariam): */
+  window.__clienteResponde = (token, respostas, quem) => { const e = BD.envios.find(x => x.token === token); e.status = 'respondido'; e.respondido_em = new Date().toISOString(); e.respondente = quem || null; e.consentimento_em = e.respondido_em; let o = 0; for (const s of e.estrutura.secoes) for (const i of s.itens) if (respostas[i.pergunta_id] !== undefined) BD.respostas.push({ envio_id: e.id, ordem: o++, pergunta_ref: String(i.pergunta_id), pergunta_texto: i.texto, pergunta_tipo: i.tipo, secao_titulo: s.titulo, resposta: respostas[i.pergunta_id] }) }
 })
 await p.goto('file:///home/user/pasta/artefatos/crm-completo/dist/crm.html'); await p.waitForSelector('[data-testid=sidebar]')
-const E = (fn, a) => p.evaluate(fn, a); const t = id => p.locator(`[data-testid="${id}"]`); const esp = (n = 200) => p.waitForTimeout(n); const calls = () => E(() => window.__calls)
+const E = (fn, a) => p.evaluate(fn, a); const t = id => p.locator(`[data-testid="${id}"]`); const esp = (n = 200) => p.waitForTimeout(n); const sqls = () => E(() => window.__sql.map(x => x.q)); const bd = () => E(() => window.__bd)
 
-/* 1. Construtor: formulário com os tipos novos, em rascunho */
-const fid = await E(() => {
-  const id = proximoId('formularios'); let n = 900; const P = (texto, tipo, x = {}) => ({ pergunta_id: ++n, texto, tipo, opcoes: [], ajuda: null, obrigatoria: true, mostrar_se: null, ...x })
-  const doc = DB.documentos.find(d => d.caso_id === 1 && d.status === 'pendente'); window.__docDesc = doc ? doc.descricao : null; window.__docId = doc ? doc.id : null
-  DB.formularios.push({ id, nome: 'Dados completos', descricao: 'Dados e documentos', contexto: 'cliente', procedimentos: [], ativo: false, situacao: 'rascunho', updated_at: agora(), validade_dias: 15, instrucoes: 'Tenha o RG em mãos.', finalidade: 'Preparar a procuração.', mensagem_final: 'Recebido, obrigada!', secoes: [{ id: null, titulo: 'Dados', descricao: null, mostrar_se: null, itens: [P('E-mail', 'email', { mapear: 'email' }), P('CPF', 'cpf_cnpj', { mapear: 'cpf' }), P('Melhor horário', 'horario', { obrigatoria: false }), P('Endereço', 'endereco', { mapear: 'endereco' }), P('Documento enviado', 'arquivo', { doc_desc: doc ? doc.descricao : 'Documento' }), P('Assinatura', 'assinatura')] }] }); salvar('formularios'); return id })
-ok(await E(() => ['horario', 'cpf_cnpj', 'endereco', 'arquivo', 'assinatura'].every(x => CRM.TIPO(x))), 'tipos novos registrados (horário, CPF/CNPJ, endereço, arquivo, assinatura)')
-await E(i => ir('formularios', { editar: i }), fid); await esp(300)
-ok(await t('config-envio').count() === 1 && await t('aviso-sensivel').count() === 1, 'construtor: instruções/finalidade/validade e aviso de dados sensíveis')
-ok(await t('publicar-form').count() === 1 && await t('arquivar-form').count() === 0, 'rascunho mostra "Publicar" (não "Arquivar")')
-await t('card-E-mail').click(); await esp(); ok(await t('edit-mapear').count() === 1, 'pergunta de e-mail oferece "Levar ao cadastro"')
-await t('form-titulo').fill('Dados completos do cliente'); await t('form-validade').fill('20'); await esp()
-await t('publicar-form').click(); await esp(300)
-ok(await E(i => situacaoForm(formularioDe(i)) === 'publicado' && formularioDe(i).ativo === true && formularioDe(i).validade_dias === 20 && formularioDe(i).nome === 'Dados completos do cliente', fid), 'publicar salva e muda a situação para publicado')
+/* 0. Estrutura limpa: nada de formulário, pergunta ou envio de exemplo */
+ok(await E(() => DB.formularios.length === 0 && DB.envios.length === 0), 'o CRM começa SEM formulários, perguntas ou envios de exemplo')
+await E(() => ir('formularios')); await esp(); ok((await p.locator('main').innerText()).includes('Nenhum formulário'), 'tela de formulários começa vazia')
 
-/* 2. Situação: rascunho não é enviável; arquivado some */
-await E(() => { const f = DB.formularios.find(x => x.id === 1); f.situacao = 'rascunho'; f.ativo = false }); ok(await E(() => formsDoEscopo('demanda').every(f => f.id !== 1)), 'rascunho não entra nos formulários da ficha')
-await E(() => { const f = DB.formularios.find(x => x.id === 1); f.situacao = 'publicado'; f.ativo = true })
-await E(() => ir('formularios')); await esp(); await t('sit-filtro-arquivado').click(); await esp(); ok(await t('form-' + fid).count() === 0, 'lista filtra por situação')
-await t('sit-filtro-publicado').click(); await esp(); await t('arquivar-' + fid).click(); await esp(); ok(await E(i => situacaoForm(formularioDe(i)) === 'arquivado', fid), 'arquivar pela lista')
-await t('sit-filtro-arquivado').click(); await esp(); await t('publicar-' + fid).click(); await esp(); ok(await E(i => situacaoForm(formularioDe(i)) === 'publicado', fid), 'republicar pela lista')
+/* 1. Eu crio: formulário vazio → perguntas por mim → salvar como rascunho */
+await t('novo-formulario').click(); await t('novo-nome').fill('Dados da família'); await t('novo-criar').click(); await esp()
+ok(await E(() => DB.formularios[0].secoes[0].itens.length === 0 && DB.formularios[0].situacao === 'rascunho' && !!DB.formularios[0].ref), 'novo formulário nasce vazio, em rascunho e com identificador próprio')
+await t('add-pergunta-0').click(); await t('edit-texto').fill('Nome do cônjuge'); await t('edit-obrigatoria').check().catch(() => {}); await esp()
+await t('add-pergunta-0').click(); await t('edit-texto').fill('Tem filhos?'); await p.selectOption('[data-testid=edit-tipo]', 'sim_nao'); await esp()
+await t('salvar').click(); await esp()
+ok(await E(() => DB.formularios[0].secoes[0].itens.map(i => i.texto).join('|') === 'Nome do cônjuge|Tem filhos?' && DB.formularios[0].situacao === 'rascunho'), 'perguntas escritas por mim, salvas como rascunho')
+ok(!(await sqls()).some(q => /formularios/.test(q)), 'rascunho não vai para o banco real (só publicado)')
 
-/* 3. Envio — link de teste (sem site): honesto, não envia */
-await E(() => abrirFicha(6)); await esp(); await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption(String(fid)); await t('env-caso').selectOption('1'); await t('env-prazo').fill('2020-01-01'); ok(await t('modo-site').isDisabled() && await t('falta-site').count() === 1, 'sem endereço do site: o link público é o padrão, mas avisa o que falta (não cai em teste sozinho)')
-await t('gerar-link').click(); await esp(200); ok(await t('painel-envio').count() === 0, 'sem site configurado não gera link público')
-await p.locator('summary:has-text("Só para testar")').click(); await t('modo-teste').click(); await t('gerar-link').click(); await esp(300)
+/* 2. Publicar (versão 1) */
+await t('publicar-form').click(); await esp(500)
+let B = await bd(); ok(B.formularios.length === 1 && B.formularios[0].versao === 1 && B.formularios[0].situacao === 'publicado' && B.formularios[0].estrutura.secoes[0].itens.length === 2, 'publicar grava a versão 1 no banco, com as 2 perguntas')
+ok(await E(() => { const f = DB.formularios[0]; return f.situacao === 'publicado' && f.pub_versao === 1 && !!f.site_id }), 'formulário local fica publicado (v1) e ligado ao banco')
+ok(await t('publicar-form').count() === 0, 'sem alterações: não oferece republicar')
 
-const e1 = await E(() => DB.envios.at(-1)); ok(e1.modo === 'teste' && e1.status === 'gerado' && e1.caso_id === 1 && e1.token.length === 32 && /^[A-Za-z0-9_-]+$/.test(e1.token) && !e1.enviado_em, 'envio de teste: token 192 bits, vinculado à demanda, não marcado como enviado')
-ok(await t('env-whatsapp').isDisabled() && await t('env-email').isDisabled() && await t('copiar-link').isDisabled(), 'link de teste: WhatsApp/e-mail/copiar desabilitados (nada falso)')
-ok((await t('painel-envio').innerText()).includes('Link de teste') && (await t('msg-previa').inputValue()).includes('Beatriz'), 'painel explica o limite e mostra a prévia da mensagem')
-ok(await E(() => atrasadoEnvio(DB.envios.at(-1))) === true, 'prazo vencido sinalizado')
-await p.keyboard.press('Escape'); await E(() => fecharTodas())
+/* 3. Editar depois → alterações não publicadas → v2 */
+await t('add-pergunta-1').click().catch(async () => { await t('add-pergunta-0').click() }); await t('edit-texto').fill('E-mail'); await p.selectOption('[data-testid=edit-tipo]', 'email'); await esp(); await t('salvar').click(); await esp()
+ok((await t('construtor').innerText()).includes('Alterações não publicadas') && await t('publicar-form').count() === 1, 'editar depois mostra "Alterações não publicadas"')
+ok((await bd()).formularios[0].versao === 1 && (await bd()).formularios[0].estrutura.secoes[0].itens.length === 2, 'o banco continua com a versão 1 até eu publicar de novo')
+await E(() => { const i = DB.formularios[0].secoes[0].itens.find(x => x.tipo === 'email'); i.mapear = 'email'; salvar('formularios') }); await E(() => ir('formularios')); await E(() => ir('formularios', { editar: DB.formularios[0].id })); await esp()
+await t('publicar-form').click(); await esp(500); B = await bd()
+ok(B.formularios[0].versao === 2 && B.formularios[0].estrutura.secoes[0].itens.length === 3, 'publicar de novo sobe para a versão 2 (3 perguntas)')
 
-/* 4. Preenchimento pela cliente (atendimento): validações, parcial, upload, assinatura */
-await E(() => { const c = contato(6); c.drive_pasta_id = null; c.drive_subpastas = null; const e = DB.envios.at(-1); e.prazo_resposta = null; ir('publico', { token: e.token }) }); await esp(300)
-ok((await t('instrucoes').innerText()).includes('RG') && await t('publico-titulo').count() === 1, 'página da cliente mostra título e instruções')
-ok(await E(() => DB.envios.at(-1).status) === 'visualizado', 'abrir o link marca "visualizado"')
-const pid = async k => await E(k_ => itensDe(formularioDe(DB.envios.at(-1).formulario_id)).find(i => i.texto === k_).pergunta_id, k)
-await p.locator('[data-pid="901"]').fill('bia@exemplo.com'); await esp(600)
-ok(await E(() => DB.envios.at(-1).status) === 'iniciado', 'começar a preencher marca "iniciado"')
-await p.locator('[data-pid="902"]').fill('11122233344'); await p.locator('[data-pid="903"]').fill('14:30')
-await p.locator('[data-pid="904-cep"]').fill('41810000'); await p.locator('[data-pid="904-logradouro"]').fill('Rua das Flores'); await p.locator('[data-pid="904-numero"]').fill('45'); await p.locator('[data-pid="904-bairro"]').fill('Pituba'); await p.locator('[data-pid="904-cidade"]').fill('Salvador'); await p.locator('[data-pid="904-uf"]').selectOption('BA')
-await p.setInputFiles('[data-testid="arquivo-905"]', { name: 'certidao.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 teste') }); await esp(300)
-await p.setInputFiles('[data-testid="arquivo-905"]', { name: 'virus.exe', mimeType: 'application/x-msdownload', buffer: Buffer.from('MZ') }); await esp(300)
-ok(await E(() => (document.querySelector('[data-testid=arquivo-905]').closest('div').querySelectorAll('li').length)) === 1, 'upload: aceita PDF e recusa tipo não permitido')
-await t('assinatura-canvas').scrollIntoViewIfNeeded(); const cv = await t('assinatura-canvas').boundingBox(); await p.mouse.move(cv.x + 30, cv.y + 60); await p.mouse.down(); await p.mouse.move(cv.x + 120, cv.y + 100, { steps: 6 }); await p.mouse.move(cv.x + 200, cv.y + 50, { steps: 6 }); await p.mouse.up(); await esp()
-await t('avancar').click(); await esp(); ok((await t('publico-titulo').count()) === 1 && await p.getByText('CPF inválido.').count() === 1, 'CPF inválido bloqueia')
-await p.locator('[data-pid="902"]').fill('529.982.247-25'); await esp(); await t('aceite-privacidade').check(); await t('avancar').click(); await esp(300)
-ok((await t('erro-envio').innerText()).includes('pasta do Drive'), 'arquivo sem pasta do Drive vinculada: bloqueia e explica (não perde o arquivo em silêncio)')
-await E(() => { const c = contato(6); c.drive_pasta_id = 'PASTA00000001'; c.drive_pasta_url = 'https://drive.google.com/drive/folders/PASTA00000001' })
-await t('avancar').click(); await esp(500)
-ok(await t('obrigada').count() === 1 && (await t('obrigada').innerText()).includes('Recebido, obrigada!'), 'conclusão mostra a mensagem do formulário')
-const env = await E(() => DB.envios.at(-1)); ok(env.status === 'respondido' && env.nova === true && env.consentimento_em && env.caso_id === 1 && env.anexos.length === 1 && env.anexos[0].drive_id && /^data:image\/png/.test(env.respostas['906']) && env.respostas['904'].cidade === 'Salvador', 'resposta guardada: status, ciência de privacidade, demanda, anexo no Drive, assinatura e endereço')
-const cr = (await calls()).filter(x => x.tool === 'create_file').at(-1); ok(cr && cr.inp.parentId === 'PASTA00000001' && cr.inp.title === 'certidao.pdf' && cr.inp.base64Content, 'anexo foi enviado à pasta do cliente no Drive')
-ok(await E(() => contato(6).respostas['901'] === 'bia@exemplo.com' && !contato(6).respostas['906']), 'respostas ligadas à ficha (sem gravar a imagem da assinatura no cadastro)')
-ok(await E(() => contato(6).email) !== 'bia@exemplo.com', 'cadastro NÃO é sobrescrito automaticamente (depende da revisão)')
+/* 4. Tipo que o link público não suporta é recusado com explicação (nada falso) */
+await E(() => { const f = DB.formularios[0]; f.secoes[0].itens.push({ pergunta_id: 9999, texto: 'Envie a certidão', tipo: 'arquivo', opcoes: [], ajuda: null, obrigatoria: false, mostrar_se: null }) }); const antesV = (await bd()).formularios[0].versao
+await E(() => publicarForm(DB.formularios[0])); await esp(); ok((await bd()).formularios[0].versao === antesV && (await p.locator('body').innerText()).includes('ainda não suporta'), 'pergunta de envio de arquivo: não publica e explica')
+await E(() => { DB.formularios[0].secoes[0].itens = DB.formularios[0].secoes[0].itens.filter(i => i.pergunta_id !== 9999); salvar('formularios') })
 
-/* 5. Recebimento: caixa, Hoje, detalhe, revisão, edição, aplicação ao cadastro */
-await E(() => ir('formularios', { aba: 'respostas' })); await esp(); ok((await t('aba-respostas').innerText()).includes('(1)'), 'aba mostra quantas respostas aguardam revisão')
-await t('est-filtro-revisar').click(); await esp(); ok(await t('ver-resposta').count() === 1 && (await t('status-envio').first().innerText()).includes('Nova'), 'filtro "a revisar" lista a resposta nova')
-await E(() => ir('hoje')); await esp(); ok((await p.locator('main').innerText()).includes('Formulário respondido para revisar'), 'Hoje avisa de resposta nova')
-await E(() => ir('formularios', { aba: 'respostas' })); await esp(); await t('est-filtro-revisar').click(); await t('ver-resposta').click(); await esp()
-const det = await t('detalhe-resposta').innerText(); ok(det.includes('Quem respondeu') && det.includes('link individual') && det.includes('Ciência da privacidade') && det.includes('Rua das Flores') && det.includes('529.982.247-25') && det.includes('certidao.pdf') && det.includes('Demanda'), 'detalhe: quem, quando, privacidade, endereço, CPF, anexo e demanda')
-ok(await t('resp-Assinatura').locator('img').count() === 1, 'assinatura aparece na revisão')
-ok(await E(() => DB.envios.at(-1).nova) === false, 'abrir a resposta tira o selo "Nova"')
-await t('marcar-revisado').click(); await esp(); ok(await E(() => !!DB.envios.at(-1).revisado_em), 'marcar como revisado'); await E(() => verEnvio(DB.envios.at(-1))); await esp()
-await t('editar-respostas').click(); await esp(); await t('ed-901').fill('beatriz.nova@exemplo.com'); await t('salvar-edicao').click(); await esp()
-const ed = await E(() => DB.envios.at(-1)); ok(ed.respostas['901'] === 'beatriz.nova@exemplo.com' && ed.respostas_originais['901'] === 'bia@exemplo.com' && ed.editado_em, 'edição interna preserva o original')
-await E(() => verEnvio(DB.envios.at(-1))); await esp(); await t('revisar-aplicar').click(); await esp()
-ok(await t('proposta-email').count() === 1 && await t('proposta-cpf').count() === 1 && await t('proposta-endereco').count() === 1, 'revisão propõe e-mail, CPF e endereço')
-await t('proposta-email').locator('input').uncheck(); ok(!(await t('proposta-endereco').locator('input').isChecked()), 'onde o cadastro já tem outro valor, a proposta vem desmarcada'); await t('proposta-endereco').locator('input').check(); await t('aplicar-cadastro').click(); await esp(300)
-const c6 = await E(() => contato(6)); ok(c6.qualificacao.cpf === '529.982.247-25' && c6.qualificacao.endereco.startsWith('Rua das Flores, 45') && c6.qualificacao.cep === '41810-000' && c6.email === 'beatriz.exemplo@email.com', 'só o que foi marcado vai ao cadastro (e-mail ficou como estava)')
-const e2 = await E(() => DB.envios.at(-1)); ok(e2.aplicado_em && e2.aplicado_log.some(l => l.campo === 'Endereço' || l.campo === 'CPF' || l.campo.includes('CPF')), 'alterações registradas (antes → depois)')
-if (await E(() => window.__docId)) { const d = await E(() => DB.documentos.find(x => x.id === window.__docId)); ok(d.arquivo_provedor === 'drive' && d.status !== 'pendente', 'arquivo recebido vinculado ao documento pendente da demanda') } else ok(true, '(sem documento pendente no seed)')
-ok(await E(() => DB.atividades.some(a => a.contato_id === 6 && /aplicados ao cadastro/.test(a.texto))), 'histórico do cliente registra a aplicação')
-await E(() => abrirFicha(6)); await esp(); ok((await p.locator('[data-testid=ficha]').innerText()).includes('Respondido'), 'ficha do cliente lista o envio como respondido')
+/* 5. Enviar: pessoa real + demanda → link público individual */
+await E(() => { const c = clonar(DB.contatos[0]); Object.assign(c, { id: 50, nome: 'Maria Teste', telefone: '5571988880000', email: null, etapa: 'ativo', real: true, exemplo: false, qualificacao: null, respostas: {}, site_id: null }); DB.contatos.push(c); const d = clonar(DB.demandas[0]); Object.assign(d, { id: 80, contato_id: 50, titulo: 'Divórcio da Maria', site_id: null, exemplo: false }); DB.demandas.push(d); salvar('*') })
+await E(() => abrirFicha(50)); await esp(); await t('enviar-formulario').click(); await esp()
+ok((await p.locator('.modal-input[data-testid=env-form]').innerText()).includes('Dados da família — v2'), 'só formulários publicados aparecem, com a versão')
+await t('env-caso').selectOption('80'); await t('env-prazo').fill('2031-03-10'); await t('env-validade').fill('20'); await t('gerar-link').click(); await esp(600)
+B = await bd(); const env = B.envios[0]
+ok(B.contatos.length === 1 && B.contatos[0].telefone === '5571988880000' && B.contatos[0].exemplo === false && B.casos.length === 1 && B.casos[0].titulo === 'Divórcio da Maria' && B.casos[0].contato_id === B.contatos[0].id, 'pessoa e demanda reais criadas no banco (uma vez), ligadas entre si')
+ok(env && env.formulario_id === B.formularios[0].id && env.contato_id === B.contatos[0].id && env.caso_id === B.casos[0].id && env.prazo_resposta === '2031-03-10' && env.versao_formulario === 2 && env.estrutura.secoes[0].itens.length === 3 && env.token.length === 32 && env.status === 'gerado', 'envio no banco: formulário, versão 2, pessoa, demanda, prazo, token e estrutura congelada')
+ok((await p.locator('body').innerText()).includes('Link criado com sucesso') && (await t('link-form').inputValue()) === 'https://laracafeadv.github.io/pasta/formulario/?t=' + env.token, 'tela "Link criado com sucesso" com a URL pública individual')
+ok(await t('copiar-link').count() === 1 && await t('env-whatsapp').count() === 1 && await t('env-email').count() === 1 && await t('ver-formulario').count() === 1 && await t('ver-respostas-envio').count() === 1, 'botões: copiar, WhatsApp, e-mail, ver formulário e ver respostas')
+ok(Math.abs(new Date(env.expira_em) - (Date.now() + 20 * 864e5)) < 120000, 'validade de 20 dias')
+await t('copiar-link').click(); await esp(400); ok((await bd()).envios[0].status === 'enviado' && (await bd()).envios[0].canal_envio === 'manual', 'copiar o link marca como "enviado" (manual) também no banco')
 
-/* 6. Link real (site): criação com confirmação, SQL restrito, WhatsApp/e-mail, QR, lembrete, cancelamento */
-await E(() => { CONFIG.integr.site_url = 'https://crm.exemplo.com.br/'.replace(/\/$/, ''); CONFIG.integr.supabase = 'cuaeuazmgwdhfozrqkin' })
-await E(() => fecharTodas()); await E(() => abrirFicha(6)); await esp(); await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption('2'); ok(await t('modo-site').isEnabled() && await t('modo-site').isChecked(), 'com endereço do site, o link público é o padrão'); await t('env-caso').selectOption('1'); await t('env-prazo').fill('2031-02-15'); await t('gerar-link').click(); await esp(); 
-ok((await p.locator('body').innerText()).includes('Criar o envio no CRM do site?'), 'link real pede confirmação antes de gravar no site')
-const antesW = (await calls()).filter(x => /^insert/.test(x.inp.query || '')).length; ok(antesW === 0, 'nada gravado antes da confirmação'); await p.getByRole('button', { name: /Criar link real/i }).click(); await esp(400)
-const ws = (await calls()).filter(x => x.srv === 'Supabase' && /^(insert|update)/.test(x.inp.query)); ok(ws.length === 1 && /^insert into public\.formulario_envios \(formulario_id, contato_id, caso_id, token, expira_em, prazo_resposta, versao_formulario, status\) values \(5, 77, 12, '[A-Za-z0-9_-]{32}', '[^']+', '2031-02-15', 3, 'gerado'\) returning id$/.test(ws[0].inp.query), 'única escrita: INSERT parametrizado (pessoa, demanda do site, prazo, versão, status gerado)')
-const e3 = await E(() => DB.envios.at(-1)); ok(e3.modo === 'site' && e3.site_id === 900 && (await t('link-form').inputValue()) === 'https://crm.exemplo.com.br/pc/' + e3.token, 'link individual: endereço do site + /pc/ + código do cliente')
-ok(await t('env-whatsapp').isEnabled() && await t('env-email').isEnabled() && await t('copiar-link').isEnabled() && await t('ver-formulario').count() === 1 && await t('ver-respostas-envio').count() === 1 && (await p.locator('body').innerText()).includes('Link criado com sucesso'), 'após gerar: "Link criado com sucesso", copiar, WhatsApp, e-mail, ver formulário e ver respostas')
-await t('env-qr').click(); await esp(); ok(await t('qr-svg').locator('svg').count() === 1, 'QR Code do link gerado'); await E(() => { fecharTodas(); painelEnvio(DB.envios.at(-1)) }); await esp()
-await t('env-whatsapp').click(); await esp(); const txtWa = await t('comp-texto').inputValue(); ok(txtWa.includes('/pc/' + e3.token) && txtWa.includes('LGPD'), 'WhatsApp: mensagem pronta com o link individual')
-const [pop] = await Promise.all([p.context().waitForEvent('page', { timeout: 3000 }).catch(() => null), t('wa-abrir').click()]); await esp(300)
-ok(pop && /wa\.me\/55\d+\?text=/.test(pop.url()), 'abre o WhatsApp com a mensagem (envio manual pela usuária)')
-const e3b = await E(() => DB.envios.at(-1)); ok(e3b.status === 'enviado' && e3b.enviado_em && e3b.canal_envio === 'whatsapp', 'envio marcado como "enviado" só depois de abrir o WhatsApp'); await esp(300); ok((await calls()).some(x => /^update public\.formulario_envios set enviado_em = coalesce\(enviado_em, now\(\)\), canal_envio = 'whatsapp'/.test(x.inp.query || '')), 'o status "enviado" também é gravado no CRM do site')
-ok(await E(() => DB.comunicacoes.at(-1).canal === 'whatsapp' && DB.comunicacoes.at(-1).texto.includes('/pc/')), 'envio registrado na comunicação do cliente')
-await E(() => fecharTodas()); await E(() => { const e = DB.envios.at(-1); e.enviado_em = agora(-60 * 24 * 4); render() }); await esp()
-ok((await E(() => itensFormularioHoje().map(x => x.titulo))).some(x => /sem resposta há 4 dias/.test(x)), 'lembrete aparece no Hoje após 3+ dias sem resposta')
-await E(() => painelEnvio(DB.envios.at(-1), true)); await esp(); ok((await t('msg-previa').inputValue()).includes('lembrar'), 'mensagem de lembrete'); await t('env-email').click(); await esp()
-ok((await t('email-assunto').inputValue()).startsWith('Lembrete: '), 'lembrete por e-mail com assunto pronto'); await t('email-para').fill('beatriz@exemplo.com'); await p.getByRole('button', { name: /^Enviar e-mail|Enviar e registrar/i }).first().click().catch(() => {}); await esp(200)
-await E(() => fecharTodas())
-await E(() => painelEnvio(DB.envios.at(-1))); await esp(); await t('cancelar-link').click(); await esp(); await p.getByRole('button', { name: /^Cancelar link$/ }).last().click(); await esp(400)
-const up = (await calls()).filter(x => /^update public\.formulario_envios set expira_em = now\(\) where id = 900 and respondido_em is null$/.test(x.inp.query || '')); ok(up.length === 1 && await E(() => DB.envios.at(-1).status) === 'cancelado', 'cancelar encerra o link também no site')
-ok(await E(() => estadoEnvio(DB.envios.at(-1))) === 'cancelado' && !(await E(() => abertoEnvio(DB.envios.at(-1)))), 'estado cancelado')
-ok(await E(() => sqlEnvioSite('delete from public.formulario_envios').then(() => false, e => e.code === 'recusado')) && await E(() => sqlEnvioSite("update public.formulario_envios set status = 'x'").then(() => false, e => e.code === 'recusado')) && await E(() => sqlEnvioSite("insert into public.contatos (nome) values ('x')").then(() => false, e => e.code === 'recusado')), 'escrita no site: qualquer SQL fora do molde é recusado')
+/* 6. Versão congelada: editar e publicar v3 não muda o que a cliente recebeu */
+await E(() => { DB.formularios[0].secoes[0].itens[0].texto = 'Nome do cônjuge (EDITADO)'; salvar('formularios') }); await E(() => publicarForm(DB.formularios[0])); await esp(400); B = await bd()
+ok(B.formularios[0].versao === 3 && B.envios[0].versao_formulario === 2 && B.envios[0].estrutura.secoes[0].itens[0].texto === 'Nome do cônjuge', 'v3 publicada; o envio já feito continua na v2, com o texto original')
 
-/* 7. Ponte de leitura: respostas dadas no site */
-await E(() => { const c = contato(6); window.__siteRows = [{ id: 31, token: 'S'.repeat(32), status: 'respondido', created_at: agora(-60 * 24 * 2), visualizado_em: agora(-60 * 24), respondido_em: agora(-60), expira_em: agora(60 * 24 * 10), formulario: 'Pré-consulta (exemplo)', telefone: c.telefone }]; window.__siteResp = [{ ordem: 0, pergunta_texto: 'Conte um pouco da sua situação', pergunta_tipo: 'texto_longo', resposta: 'Preciso do divórcio.' }] })
-const n1 = await E(() => sincronizarEnviosDoSite()); const n2 = await E(() => sincronizarEnviosDoSite()); ok(n1 === 1 && n2 === 0, 'busca no site importa a resposta nova uma vez (' + n1 + '/' + n2 + ')')
-const es = await E(() => DB.envios.find(x => x.origem === 'site')); ok(es && es.status === 'respondido' && es.nova && es.contato_id === 6 && es.snap[0].texto === 'Conte um pouco da sua situação' && es.respostas.site0 === 'Preciso do divórcio.', 'resposta do site entra ligada ao cliente (pelo telefone), com pergunta e resposta')
-await E(i => verEnvio(DB.envios.find(x => x.origem === 'site')), 0); await esp(); ok((await t('detalhe-resposta').innerText()).includes('Preciso do divórcio.') && (await t('detalhe-resposta').innerText()).includes('CRM do site'), 'detalhe mostra a origem e a resposta')
-await E(() => fecharTodas())
+/* 7. A cliente responde (lado de fora) → o CRM recebe, vincula e deixa revisar */
+const ids = await E(() => DB.formularios[0].secoes[0].itens.map(i => i.pergunta_id))
+await E(([tok, ids]) => window.__clienteResponde(tok, { [ids[0]]: 'João Silva', [ids[1]]: 'Sim', [ids[2]]: 'maria.nova@exemplo.com' }, 'Maria'), [env.token, ids])
+await E(() => ir('formularios', { aba: 'respostas' })); await esp(); await t('sincronizar-form-site').click(); await esp(600)
+ok(await E(() => { const e = DB.envios[0]; return e.status === 'respondido' && e.nova === true && e.respondente === 'Maria' && e.respostas[DB.formularios[0].secoes[0].itens[2].pergunta_id] === 'maria.nova@exemplo.com' && e.caso_id === 80 }), 'resposta chega ao CRM: respondido, ligado à pessoa e à demanda, com as respostas por pergunta')
+ok((await t('aba-respostas').innerText()).includes('(1)'), 'aviso de resposta nova na aba')
+await E(() => ir('hoje')); await esp(); ok((await p.locator('main').innerText()).includes('Formulário respondido para revisar'), 'a resposta aparece no Hoje')
+await E(() => verEnvio(DB.envios[0])); await esp(); const det = await t('detalhe-resposta').innerText(); ok(det.includes('João Silva') && det.includes('maria.nova@exemplo.com') && det.includes('Divórcio da Maria') && det.includes('Maria'), 'visualização: respostas organizadas, demanda e quem respondeu')
+await t('revisar-aplicar').click(); await esp(); await t('aplicar-cadastro').click(); await esp(300); ok(await E(() => contato(50).email) === 'maria.nova@exemplo.com', 'e-mail respondido vai ao cadastro depois da minha conferência')
+await E(() => abrirFicha(50)); await esp(); ok((await p.locator('[data-testid=ficha]').innerText()).includes('Respondido'), 'na ficha da pessoa o formulário aparece como respondido'); await E(() => fecharTodas())
 
-/* 8. Estados derivados e segurança da página */
-const est = await E(() => { const base = { formulario_id: 2, contato_id: 6, token: 'T'.repeat(32), modo: 'teste' }; return [estadoEnvio({ ...base, status: 'enviado', expira_em: agora(-5) }), estadoEnvio({ ...base, status: 'parcial', expira_em: agora(60) }), estadoEnvio({ ...base, status: 'respondido', expira_em: agora(-5) }), estadoEnvio({ ...base, status: 'cancelado', expira_em: agora(60) })].join() }); ok(est === 'expirado,parcial,respondido,cancelado', 'estados: expirado, parcial, respondido e cancelado')
-await E(() => { DB.envios.push({ id: 9001, formulario_id: 2, contato_id: 6, token: 'X'.repeat(32), modo: 'teste', status: 'enviado', expira_em: agora(-5), respostas: {}, created_at: agora(-9000) }); ir('publico', { token: 'X'.repeat(32) }) }); await esp(); ok((await p.locator('body').innerText()).includes('Link expirado'), 'link expirado não abre o formulário')
-await E(() => ir('publico', { token: 'nao-existe' })); await esp(); ok((await p.locator('body').innerText()).includes('Link inválido'), 'token desconhecido: link inválido (sem revelar nada)')
-ok(await E(() => [cnpjValido('11.222.333/0001-81'), cnpjValido('11.222.333/0001-82'), CRM.cpfValido('52998224725'), CRM.cpfValido('11111111111')].join()) === 'true,false,true,false', 'validadores de CNPJ e CPF')
-await E(() => ir('formularios', { aba: 'respostas' })); await esp(); ok(await t('sincronizar-form-site').count() === 1, 'botão de busca no site disponível')
+/* 8. Cancelar, prorrogar e despublicar */
+await E(() => { const e = DB.envios[0]; e.status = 'gerado'; e.respondido_em = null; const b = window.__bd.envios[0]; b.status = 'enviado'; b.respondido_em = null }) // volta a aberto só para testar o cancelamento
+await E(() => painelEnvio(DB.envios[0])); await esp(); await t('cancelar-link').click(); await esp(); await p.getByRole('button', { name: /^Cancelar link$/ }).last().click(); await esp(500)
+ok((await bd()).envios[0].status === 'cancelado', 'cancelar encerra o link no banco (a cliente não abre mais)')
+await E(() => fecharTodas()); await E(() => ir('formularios')); await esp(); await t('sit-filtro-publicado').click(); await esp(); await E(() => despublicarForm(DB.formularios[0], 'rascunho')); await esp(400)
+ok((await bd()).formularios[0].situacao === 'arquivado' && await E(() => DB.formularios[0].situacao) === 'rascunho', 'despublicar: no banco deixa de aceitar novos links; aqui volta a rascunho')
+await E(() => enviarFormulario(contato(50), null)); await esp(); ok((await p.locator('body').innerText()).includes('Publique um formulário antes de enviar'), 'sem formulário publicado não dá para gerar link')
+
+/* 9. Dados de exemplo: marcados e removíveis; seeds antigos de formulário são limpos */
+ok(await E(() => ehExemplo(DB.contatos[0]) && !ehExemplo(contato(50))), 'pessoas de exemplo ficam marcadas; a pessoa real não')
+await E(() => { DB.formularios.push({ id: 1, nome: 'Dados da consulta', secoes: [], situacao: 'publicado' }); CONFIG.v_sem_form_exemplo = false; migrarSeedsDeFormularios() }); ok(await E(() => !DB.formularios.some(f => f.nome === 'Dados da consulta')), 'formulários de exemplo das versões antigas são removidos (uma vez)')
+await E(() => limparDadosDeExemplo()); await esp(); await p.getByRole('button', { name: /Remover exemplos/ }).click(); await esp(300)
+ok(await E(() => DB.contatos.every(c => !ehExemplo(c)) && DB.contatos.length === 1 && DB.demandas.length === 1 && DB.demandas[0].id === 80), 'remover exemplos apaga só os exemplos; a pessoa e a demanda reais ficam')
+
+/* ============ WHATSAPP ============ */
+await E(() => { window.__bd.contatos.push({ id: 500, telefone: '5571988880000', nome: 'Maria Teste' }); const m = (id, dir, txt, h, st, cid = 500, wa = 'wamid.' + id) => ({ id, created_at: new Date(Date.now() - h * 3600e3).toISOString(), direcao: dir, conteudo: txt, tipo: 'text', wa_message_id: wa, status: st, erro: null, caso_id: null, cid, telefone: cid === 500 ? '5571988880000' : '5571977776666', nome: cid === 500 ? 'Maria Teste' : 'Novo Contato' }); window.__bd.mensagens.push(m(1, 'entrada', 'Bom dia, doutora!', 1, 'recebida'), m(2, 'saida', 'Bom dia, Maria!', 0.9, 'lida'), m(3, 'entrada', 'Oi, quero uma consulta', 3, 'recebida', 600), m(4, 'entrada', 'MENSAGEM DE EXEMPLO', 2, 'recebida', 700)); window.__bd.mensagens[3].exemplo = true })
+await E(() => ir('comunicacao')); await esp(); ok((await p.locator('main').innerText()).includes('WhatsApp ainda não consultado'), 'antes de consultar: estado honesto (não finge conexão)')
+await t('sincronizar-wa').click(); await esp(700)
+ok((await p.locator('main').innerText()).includes('Aguardando a Meta'), 'sem eventos da Meta: "Aguardando a Meta" (falta configurar)')
+ok(await E(() => DB.comunicacoes.filter(m => m.ext_id === 'wa:wamid.1' || m.ext_id === 'wa:wamid.2').length === 2 && DB.comunicacoes.find(m => m.ext_id === 'wa:wamid.2').wa_status === 'lida' && contato(50).site_id === 500), 'mensagens do banco entram na pessoa certa (pelo telefone), com o status')
+ok(!(await E(() => DB.comunicacoes.some(m => m.texto === 'MENSAGEM DE EXEMPLO'))), 'mensagens de dados de exemplo não entram')
+ok(await t('associar-numero').count() === 1 && (await p.locator('main').innerText()).includes('Novo Contato'), 'número desconhecido não cria pessoa sozinho: aparece para eu associar')
+const antesN = await E(() => DB.contatos.length); await t('associar-numero').click(); await esp(); await t('salvar').click(); await esp(600)
+ok(await E(() => DB.contatos.length === 2 && DB.contatos.at(-1).telefone === '5571977776666' && DB.comunicacoes.some(m => m.texto === 'Oi, quero uma consulta')), 'associar criando a pessoa: a conversa passa a existir no CRM')
+await E(() => { window.__bd.diag = { ok: true, em: new Date().toISOString(), gravadas: 2 } }); await t('sincronizar-wa').click(); await esp(500); ok(!(await p.locator('main').innerText()).includes('Aguardando a Meta'), 'com evento da Meta registrado, o aviso some')
+await E(() => { window.__bd.diag = { ok: false, motivo: 'assinatura não confere (App Secret diferente)', em: new Date().toISOString() } }); await t('sincronizar-wa').click(); await esp(500); ok((await p.locator('main').innerText()).includes('assinatura não confere'), 'assinatura inválida é mostrada com o motivo')
+
+/* responder pelo CRM — dentro da janela de 24h: texto livre pela API */
+await E(() => { UI.com.sel = 50; render() }); await esp(); await t('comp-texto').fill("Olá, Maria! Segue o 'andamento'."); await t('wa-enviar-api').click(); await esp(600)
+let S = (await bd()).saida; ok(S.length === 1 && S[0].tipo === 'texto' && S[0].texto === "Olá, Maria! Segue o 'andamento'." && S[0].telefone === '5571988880000' && S[0].contato_id === 500, 'resposta enfileirada no banco com o texto exato (aspas escapadas), telefone e pessoa')
+ok((await t('wa-status').last().innerText()).includes('Na fila'), 'mensagem aparece como "Na fila" — ainda NÃO como enviada')
+await E(() => { const s = window.__bd.saida[0]; s.status = 'enviada'; s.wa_message_id = 'wamid.OUT1'; window.__bd.mensagens.push({ id: 9, created_at: new Date().toISOString(), direcao: 'saida', conteudo: s.texto, tipo: 'text', wa_message_id: 'wamid.OUT1', status: 'enviada', erro: null, caso_id: null, cid: 500, telefone: '5571988880000', nome: 'Maria Teste' }) }); await E(() => sincronizarWhatsApp(true)); await esp(400)
+ok(await E(() => { const l = DB.comunicacoes.filter(m => m.direcao === 'saida' && /andamento/.test(m.texto)); return l.length === 1 && l[0].wa_status === 'enviada' && l[0].ext_id === 'wa:wamid.OUT1' }), 'quando a Meta aceita: vira "Enviada" e não duplica a mensagem')
+await E(() => { window.__bd.mensagens.find(m => m.id === 9).status = 'entregue' }); await E(() => sincronizarWhatsApp(true)); ok(await E(() => DB.comunicacoes.find(m => m.ext_id === 'wa:wamid.OUT1').wa_status === 'entregue'), 'status de entrega chega depois (entregue)')
+/* falha */
+await E(() => { UI.com.sel = 50; render() }); await esp(); await t('comp-texto').fill('Segunda mensagem'); await t('wa-enviar-api').click(); await esp(500)
+await E(() => { const s = window.__bd.saida[1]; s.status = 'falhou'; s.erro = 'Falta o segredo WHATSAPP_TOKEN nas Edge Functions do Supabase.' }); await E(() => atualizarSaidasWa(true)); await esp(300)
+ok((await p.locator('[data-testid=wa-status]').last().innerText()).includes('Falhou') && (await t('wa-erro').last().innerText()).includes('WHATSAPP_TOKEN'), 'falha: marcada "Falhou" com o motivo exato (nunca como enviada)')
+/* fora da janela: só modelo aprovado */
+await E(() => { DB.comunicacoes.filter(m => m.contato_id === 50 && m.direcao === 'entrada').forEach(m => { m.created_at = new Date(Date.now() - 3 * 864e5).toISOString() }); render() }); await esp(); await E(() => { UI.com.sel = 50; render() }); await esp()
+await t('comp-texto').fill('Mensagem fora da janela'); await t('wa-enviar-api').click(); await esp(600)
+ok(await t('sem-modelos').count() === 1 && (await p.locator('body').innerText()).includes('Fora da janela de 24 horas'), 'fora da janela de 24 h: exige modelo aprovado e explica (nenhum modelo sincronizado ainda)')
+await E(() => { window.__bd.templates.push({ nome: 'lembrete_consulta', idioma: 'pt_BR', categoria: 'UTILITY', status: 'APPROVED', componentes: [{ type: 'BODY', text: 'Olá {{1}}, sua consulta é em {{2}}.' }] }) }); await E(() => { fecharTodas(); return lerModelosWa() }); await E(() => { escolherModeloWa(contato(50), null, '') }); await esp(500)
+ok(await t('tpl-lembrete_consulta').count() === 1, 'modelos aprovados vêm da Meta (sincronizados), não escritos no código')
+await t('tpl-lembrete_consulta').click(); await t('tpl-param-1').fill('Maria'); await t('tpl-param-2').fill('10/10'); await t('enviar-modelo').click(); await esp(500); S = (await bd()).saida.at(-1)
+ok(S.tipo === 'template' && S.template_nome === 'lembrete_consulta' && S.template_idioma === 'pt_BR' && S.template_params.join('|') === 'Maria|10/10', 'modelo enfileirado com nome, idioma e variáveis')
+/* vincular conversa à demanda */
+await E(() => { UI.com.sel = 50; render() }); await esp(); await t('vincular-conversa').click(); await esp(); await t('salvar').click(); await esp(600)
+ok(await E(() => DB.comunicacoes.filter(m => m.contato_id === 50 && m.canal === 'whatsapp').every(m => m.caso_id === 80)) && (await sqls()).some(q => /^update public\.mensagens_whatsapp set caso_id = \d+ where contato_id = \d+ and caso_id is null$/.test(q)), 'conversa vinculada à demanda (aqui e no banco)')
+/* segurança: SQL livre é recusado */
+ok(await E(() => sqlEscrita('delete from public.contatos').then(() => false, e => e.code === 'recusado')) && await E(() => sqlEscrita("update public.formulario_envios_x set a = 1").then(() => false, e => e.code === 'recusado')) && await E(() => sqlEscrita('drop table public.contatos').then(() => false, e => e.code === 'recusado')), 'o artifact só escreve pelos construtores permitidos (SQL livre é recusado)')
+/* Conexões: passo a passo e URL do webhook */
+await E(() => ir('config', { aba: 'conexoes' })); await esp(); const cx = await p.locator('main').innerText(); ok(await t('bloco-whatsapp').count() === 1 && (await t('url-webhook').innerText()) === 'https://cuaeuazmgwdhfozrqkin.supabase.co/functions/v1/crm-api/whatsapp' && cx.includes('WHATSAPP_APP_SECRET') && cx.includes('Sem Vercel') || cx.includes('sem Vercel'), 'Conexões: estado real, URL do webhook e passo a passo da Meta')
+ok(await t('cfg-pagina-url').count() === 1, 'Conexões: endereço da página pública configurável')
 ok(erros.length === 0, 'sem erros: ' + erros.slice(0, 3).join(' | '))
 await b.close(); console.log(falhas ? falhas + ' falha(s)' : 'TUDO OK'); process.exit(falhas ? 1 : 0)

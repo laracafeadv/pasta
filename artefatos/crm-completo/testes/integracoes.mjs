@@ -41,7 +41,7 @@ const ev = (await calls()).filter(x => x.tool === 'create_event').at(-1); ok(ev 
 ok(await E(() => DB.compromissos.at(-1).gcal_id === 'EV123'), 'Agenda: guarda o id do evento criado')
 /* Supabase */
 ok(await E(() => [somenteSelect('select 1'), somenteSelect('delete from x'), somenteSelect('select 1; drop table x'), somenteSelect("select 'insert' as a")].join()) === 'true,false,false,true', 'Supabase: guarda só-leitura (select ok; delete/encadeado recusados; palavra dentro de texto ok)')
-ok(await E(() => sqlLeitura('select 1').then(() => false, e => e.code === 'sem_projeto')), 'Supabase: sem ID de projeto → pede para configurar')
+await E(() => { CONFIG.integr.supabase = '' }); await E(() => sqlLeitura('select 1')); ok((await calls()).filter(x => x.tool === 'execute_sql').at(-1).inp.project_id === 'cuaeuazmgwdhfozrqkin', 'Supabase: sem ID configurado usa o projeto do CRM por padrão')
 await E(() => { CONFIG.integr.supabase = 'cuaeuazmgwdhfozrqkin'; const c = contato(6); c.telefone = '5571999990000'; window.__rows = [{ id: 1, created_at: new Date().toISOString(), direcao: 'entrada', conteudo: 'Oi, doutora', tipo: 'text', wa_message_id: 'wamid.A', telefone: '5571999990000' }, { id: 2, created_at: new Date().toISOString(), direcao: 'saida', conteudo: 'Olá!', tipo: 'text', wa_message_id: 'wamid.B', telefone: '5571999990000' }, { id: 3, created_at: new Date().toISOString(), direcao: 'entrada', conteudo: 'de outro', tipo: 'text', wa_message_id: 'wamid.C', telefone: '5500000000000' }] })
 const n1 = await E(() => sincronizarWhatsAppDoSite()); const n2 = await E(() => sincronizarWhatsAppDoSite())
 ok(n1 === 2 && n2 === 0, 'WhatsApp do site: importa só do telefone cadastrado e não duplica (' + n1 + '/' + n2 + ')')

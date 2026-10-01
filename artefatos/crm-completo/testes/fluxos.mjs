@@ -33,24 +33,7 @@ await t('avancar').click(); await esp(); ok(await t('previa-ok').count() === 1, 
 /* validação: ciclo de condição inválida */
 await t('modo-editar').click(); await esp()
 
-/* ---- 2. Enviar → responder como cliente → ficha ---- */
-await ir('formularios'); await p.evaluate(() => abrirFicha(4)); await esp(); await p.locator('[data-testid=ficha] >> text=Cliente').first().click().catch(() => {})
-await t('enviar-formulario').click(); await esp(); await t('env-form').selectOption({ label: 'Pré-consulta (exemplo) — Consulta' }); await p.locator('summary:has-text("Só para testar")').click(); await t('modo-teste').click(); await t('gerar-link').click(); await esp(250)
-ok(await t('painel-envio').count() === 1 && await t('msg-previa').count() === 1, 'enviar formulário gera link (teste) e painel de envio')
-await t('abrir-como-cliente').click(); await esp(200)
-ok(await t('publico-titulo').count() === 1, 'página pública abre sem login')
-await t('resumo-livre').fill('Meu pai descumpre a convivência combinada.'); 
-await t('avancar').click(); await esp(); ok(await p.getByText('Resposta obrigatória.').count() >= 1, 'validação: obrigatória vazia bloqueia')
-const pidSimNao = await p.evaluate(() => DB.formularios.find(f => f.id === 2).secoes[0].itens[1].pergunta_id); const pidTexto = await p.evaluate(() => DB.formularios.find(f => f.id === 2).secoes[0].itens[0].pergunta_id)
-await p.locator('[data-testid^="pergunta-Conte"] textarea').fill('Situação de teste.'); await t(`op-${pidSimNao}-Sim`).click(); await esp(500)
-await t('avancar').click(); await esp(); ok((await t('passo-info').innerText()).includes('2 de 2'), 'seções viram etapas (2 de 2)')
-await p.locator('[data-testid="pergunta-Quantos filhos?"] input').fill('2'); await esp(500); await t('avancar').click(); await esp(250); ok(await t('obrigada').count() === 0, 'sem aceite de privacidade não envia'); await t('aceite-privacidade').check(); await t('avancar').click(); await esp(250)
-ok(await t('obrigada').count() === 1, 'envio concluído mostra agradecimento')
-const ligado = await p.evaluate(() => { const c = DB.contatos.find(x => x.id === 4); const e = DB.envios.at(-1); return { env: e.status, resp: Object.keys(c.respostas || {}).length, pre: !!c.pre_form_respondido_em } })
-ok(ligado.env === 'respondido' && ligado.resp >= 2 && ligado.pre, 'resposta liga ao cadastro (ficha) e marca pré-formulário: ' + JSON.stringify(ligado))
-await t('voltar-crm').click(); await esp(); ok(await t('ver-resposta').count() >= 1, 'aba Envios e respostas lista a resposta')
-await t('ver-resposta').first().click(); await esp(); ok((await t('detalhe-resposta').innerText()).includes('Situação de teste') || (await t('detalhe-resposta').innerText()).length > 20, 'detalhe das respostas abre')
-await p.keyboard.press('Escape')
+/* ---- 2. (envio, preenchimento pela cliente e respostas: ver testes/formularios.mjs, com o banco real simulado) ---- */
 
 /* ---- 3. Funil e regras ---- */
 await ir('leads'); await esp()

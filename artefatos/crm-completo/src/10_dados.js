@@ -158,6 +158,7 @@ async function iniciarArmazenamento(aoCarregar) {
       ARM.modo = 'local'
     }
   } catch (e) { ARM.estado = 'sem banco: usando o navegador'; ARM.modo = 'local' }
+  try { migrarSeedsDeFormularios() } catch (e) { /* limpeza única; sem impacto se falhar */ }
   aoCarregar && aoCarregar(); renderBarraArmazenamento()
 }
 function restaurarExemplo() { carregarSemente(); salvar('*'); ARM.estado = 'dados de exemplo restaurados' }

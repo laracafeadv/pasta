@@ -96,17 +96,7 @@ async function enviarAoGoogleAgenda(p) {
 /* ---------- CRM do site (Supabase): ponte SOMENTE LEITURA para o WhatsApp que o servidor já recebe ---------- */
 const somenteSelect = q => /^\s*select\s/i.test(q) && !/;\s*\S/.test(q) && !/\b(insert|update|delete|drop|alter|truncate|grant|revoke|create|copy|call|do|merge)\b/i.test(String(q).replace(/'[^']*'/g, "''"))
 const linhasSql = r => { let t = r; if (t && typeof t === 'object' && !Array.isArray(t)) t = t.result !== undefined ? t.result : t.rows !== undefined ? t.rows : t.data !== undefined ? t.data : t; if (Array.isArray(t)) return t; if (typeof t === 'string') { const m = t.match(/<untrusted-data-[^>]*>\s*([\s\S]*?)\s*<\/untrusted-data-/); try { const j = JSON.parse(m ? m[1] : t); if (Array.isArray(j)) return j } catch (e) { /* cai no erro abaixo */ } } throw { code: 'invalido', message: 'resposta do banco em formato inesperado' } }
-async function sqlLeitura(q) { if (!somenteSelect(q)) throw { code: 'recusado' }; const proj = String((CONFIG.integr || {}).supabase || '').trim(); if (!/^[a-z0-9]{20}$/.test(proj)) throw { code: 'sem_projeto' }; return linhasSql(await conector('Supabase', 'execute_sql', { project_id: proj, query: q })) }
-async function sincronizarWhatsAppDoSite() {
-  const fones = [...new Set(DB.contatos.map(c => String(c.telefone || '')).filter(t => /^\d{12,13}$/.test(t)))]; if (!fones.length) { aviso('Nenhum cadastro com telefone completo (com DDI 55).', 'erro'); return 0 }
-  try {
-    const q = `select m.id, m.created_at, m.direcao, m.conteudo, m.tipo, m.transcricao, m.wa_message_id, c.telefone from public.mensagens_whatsapp m join public.contatos c on c.id = m.contato_id where c.telefone in (${fones.map(f => `'${f}'`).join(',')}) and m.created_at > now() - interval '90 days' order by m.created_at asc limit 300`
-    const rows = await sqlLeitura(q); let n = 0
-    for (const r of rows) { const ext = 'wa:' + (r.wa_message_id || r.id); if (DB.comunicacoes.some(x => x.ext_id === ext)) continue; const c = DB.contatos.find(x => x.telefone === String(r.telefone)); if (!c) continue; const entrada = r.direcao === 'entrada'; novaComunicacao({ contato_id: c.id, canal: 'whatsapp', direcao: entrada ? 'entrada' : 'saida', texto: String(r.conteudo || r.transcricao || `[${r.tipo || 'mensagem'}]`).slice(0, 4000), origem: 'whatsapp-api', ext_id: ext, created_at: new Date(r.created_at).toISOString(), lida: !entrada }); n++ }
-    CONFIG.integr.wa_sync = agora(); salvar('config'); aviso(n ? `${plural(n, 'mensagem importada', 'mensagens importadas')} do WhatsApp do CRM do site.` : 'Nenhuma mensagem nova no WhatsApp do CRM do site.'); return n
-  } catch (e) { aviso(erroConector(e, 'Supabase'), 'erro'); return 0 }
-}
-
+async function sqlLeitura(q) { if (!somenteSelect(q)) throw { code: 'recusado' }; return linhasSql(await conector('Supabase', 'execute_sql', { project_id: projetoSupabase(), query: q })) }
 /* ---------- IA com ferramentas (somente leitura) para perguntas sobre o CRM, o e-mail, o Drive e a agenda ---------- */
 const ehPergunta = q => /\?\s*$/.test(q) || /^\s*(quais|qual|quando|quantos?|quanto|onde|quem|h[áa]|existe|tem|me (diga|mostre|resuma|liste)|mostre|liste|resuma|o que|como est[áa])\b/i.test(q)
 function digestCRM() {
