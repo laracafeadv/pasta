@@ -28,10 +28,10 @@
 - **Segurança**: token 192 bits; link inexistente/expirado/cancelado respondem igual; resposta única atômica; validação com a mesma lógica condicional da tela; página pública devolve só o necessário; escrita só por service role; RLS intacta.
 
 ## 4. Testes
-`tests/formulario-link/e2e.mjs`: sobe o servidor Nuxt **de produção (build)** contra um Supabase falso em memória e Chromium em tamanho de celular — 48 verificações (gerar link, vínculos, congelamento, abrir/iniciar/responder, condicional, resposta única, cancelar/expirar/prorrogar, notificação, histórico, ficha da pessoa/demanda, ausência de vazamento, página sem menu). **Não foi executado contra o Supabase real** (a migração ainda não foi aplicada).
+`tests/formulario-link/e2e.mjs`: sobe o servidor Nuxt **de produção (build)** contra um Supabase falso em memória e Chromium em tamanho de celular — 48 verificações (gerar link, vínculos, congelamento, abrir/iniciar/responder, condicional, resposta única, cancelar/expirar/prorrogar, notificação, histórico, ficha da pessoa/demanda, ausência de vazamento, página sem menu). A migração **foi aplicada no Supabase de produção em 02/10/2026** (aditiva; 24 envios anteriores intactos). O fluxo completo ainda **não foi executado contra o Supabase real** (depende do deploy do código).
 
 ## 5. Como ativar (depende de você)
-1. **Aplicar a migração** no Supabase do site (aditiva; posso aplicar pelo conector se você autorizar).
+1. ~~Aplicar a migração~~ — **feito** (aplicada por instruções individuais porque a ferramenta de migração expirava; registrada em `schema_migrations`).
 2. **Publicar o código** (merge da branch `claude/repository-crm-rxcz8y` → deploy na Vercel). Conferir `NUXT_PUBLIC_SITE_URL` = endereço público (ex.: `https://crm.laracafe.com.br`).
 3. No artifact: Configurações › Conexões → endereço do site + ID do projeto Supabase. O artifact passa a gerar o **link público real** (padrão) e a acompanhar o status/respostas pelo conector do Supabase.
 
