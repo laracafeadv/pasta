@@ -38,6 +38,7 @@ export function servidor(porta) {
         const conflito = u.searchParams.get('on_conflict')
         for (const l of lista) {
           if (conflito && prefer.includes('merge-duplicates')) { const cols = conflito.split(','); const ex = t.find(r => cols.every(c => String(r[c]) === String(l[c]))); if (ex) { Object.assign(ex, l); novas.push(ex); continue } }
+          if (nome === 'contatos' && l.telefone && t.some(r => r.telefone === l.telefone)) return json(409, { code: '23505', message: 'duplicate key' })
           if (nome === 'formulario_envios' && t.some(r => r.token === l.token)) return json(409, { code: '23505', message: 'duplicate key' })
           if (nome === 'mensagens_whatsapp' && l.wa_message_id && t.some(r => r.wa_message_id === l.wa_message_id)) return json(409, { code: '23505', message: 'duplicate key' })
           const nova = { id: ++seq, created_at: new Date().toISOString(), ...l }; t.push(nova); novas.push(nova)
