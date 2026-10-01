@@ -21,7 +21,7 @@
           {{ t.label }}<span v-if="t.badge" class="ml-1.5 opacity-70">{{ t.badge }}</span>
         </button>
         <div class="ml-auto flex gap-2">
-          <Button size="sm" variant="outline" icon="ph:paper-plane-tilt-bold" data-testid="enviar-formulario-topo" title="Escolher um formulário e gerar o link para enviar no WhatsApp" @click="abrirEditorPreFormulario">Enviar formulário</Button>
+          <Button size="sm" variant="outline" icon="ph:paper-plane-tilt-bold" data-testid="enviar-formulario-topo" title="Escolher um formulário e gerar o link para enviar no WhatsApp" @click="abrirEnviarFormulario()">Enviar formulário</Button>
           <Button size="sm" variant="outline" icon="ph:pencil-simple-bold" @click="emit('editar', dados.contato)">Editar</Button>
           <Button v-if="etapa(dados.contato.etapa).aberta" size="sm" icon="ph:check-bold" @click="emit('andamento', dados.contato)">Registrar andamento</Button>
         </div>
@@ -89,7 +89,7 @@
             <div class="flex flex-wrap items-center gap-2">
               <button type="button" class="text-[11px] font-semibold uppercase tracking-wider px-4 py-2 rounded-full bg-primary text-white"
                       :title="dados.contato.pre_form_respondido_em ? 'Já respondido — gerar de novo cria um link novo' : 'Escolha o formulário; o link é gerado e copiado para você colar no WhatsApp'"
-                      @click="abrirEditorPreFormulario">
+                      @click="abrirEnviarFormulario()">
                 <Icon name="ph:paper-plane-tilt-bold" class="align-middle" /> {{ dados.contato.pre_form_respondido_em ? 'Enviar novamente' : 'Enviar formulário' }}
               </button>
               <button type="button" class="text-[11px] text-gray-500 hover:text-primary underline underline-offset-2" title="Sem perguntas extras: só o campo 'Conte um pouco da sua situação'" @click="enviarPreFormularioRapido">só o resumo livre (1 clique)</button>
@@ -100,6 +100,7 @@
           </div>
           <p v-if="avisoFormulario" class="text-xs mt-1" :class="avisoFormulario.erro ? 'text-danger' : 'text-success-dark'">{{ avisoFormulario.texto }}</p>
         </div>
+        <FormulariosEnviados :key="`fe${dados.contato.id}-${recarregarForm}`" class="md:col-span-2 card" :contato-id="dados.contato.id" :recarregar="recarregarForm" :abrir-envio="abrirEnvioId" @enviar="abrirEnviarFormulario()" />
         <InformacoesCliente :key="`i${dados.contato.id}`" class="md:col-span-2" :contato-id="dados.contato.id" iniciar-aberto />
         <details class="md:col-span-2 rounded-2xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50" @toggle="qualificacaoAberta = ($event.target as HTMLDetailsElement).open">
           <summary class="cursor-pointer p-4 text-[10px] font-bold uppercase tracking-widest text-primary dark:text-zinc-200">Dados pessoais e qualificação (CPF, RG, endereço — usados nas peças)</summary>
@@ -288,6 +289,7 @@
               <li v-for="t in tarefasDaDemanda(k.id)" :key="`t${t.id}`" class="py-1.5 flex gap-2 items-center"><Icon name="ph:check-square-bold" class="text-gray-400" /><span class="w-20 shrink-0 font-medium">{{ dataCurta(t.prazo) }}</span><span class="flex-1">{{ t.titulo }}</span><span class="text-xs text-gray-500">tarefa</span></li>
             </ul>
           </div>
+          <FormulariosEnviados class="mt-3" :caso-id="k.id" :recarregar="recarregarForm" @enviar="abrirEnviarFormulario(k.id)" />
           <details class="mt-3">
             <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-gray-400">Documentos desta demanda <span class="normal-case tracking-normal font-normal">· {{ docsDaDemanda(k.id).filter(d => ['recebido', 'conferido', 'final'].includes(d.status)).length }}/{{ docsDaDemanda(k.id).length }} recebidos</span></summary>
             <DocumentosDemanda class="mt-2" :docs="docsDaDemanda(k.id)" :contato-id="dados.contato.id" :caso-id="k.id" :processos="processosDaDemanda(k.id)" :partes="partesDaDemanda(k.id)" @mudou="carregar" @cobrar="cobrarDocs" />
@@ -352,6 +354,19 @@
     </template>
   </Modal>
 
+  <EnviarFormularioModal
+    v-if="dados"
+    :is-open="envioModalAberto"
+    :contato-id="dados.contato.id"
+    :nome-pessoa="dados.contato.nome"
+    :telefone="dados.contato.telefone"
+    :email="dados.contato.email"
+    :casos="dados.casos"
+    :caso-inicial="casoInicialEnvio"
+    @close="envioModalAberto = false"
+    @criado="recarregarForm++"
+    @ver-respostas="id => { abrirEnvioId = id }"
+  />
   <PreFormularioEditor
     :is-open="editorPreFormAberto"
     @close="editorPreFormAberto = false"
@@ -364,6 +379,8 @@ import { computed, nextTick, reactive, ref, watch } from 'vue'
 import Modal from '../Modal.vue'
 import Button from '../Button.vue'
 import PreFormularioEditor from './PreFormularioEditor.vue'
+import EnviarFormularioModal from './EnviarFormularioModal.vue'
+import FormulariosEnviados from './FormulariosEnviados.vue'
 import { PROCEDIMENTOS } from '~~/shared/data/checklist'
 import { CADENCIA, CLASSIFICACOES, DECISOES_DEMANDA, STATUS_DEMANDA, TIPOS_ATIVIDADE, TIPOS_DEMANDA, TIPOS_COMPROMISSO, dataCompromisso, etapa, type Atividade, type Demanda, type DemandaNota, type Compromisso, type Contato, type Movimentacao, type Parte, type Processo, type Documento, type Honorario, type Lancamento, type MensagemWhatsapp } from '../../../shared/types/crm'
 import QualificacaoForm from './QualificacaoForm.vue'
@@ -728,6 +745,12 @@ async function enviarFormulario() {
 // Formulário pré-consulta: contexto leve, enviado antes da consulta (não substitui o de cima).
 // O resumo livre já vai sempre; "Escolher formulário" deixa escolher um formulário do banco de perguntas.
 const editorPreFormAberto = ref(false)
+// Link público individual (pessoa + formulário + demanda): é o caminho principal para enviar formulários.
+const envioModalAberto = ref(false)
+const casoInicialEnvio = ref<number | null>(null)
+const recarregarForm = ref(0)
+const abrirEnvioId = ref<number | null>(null)
+function abrirEnviarFormulario(casoId: number | null = null) { casoInicialEnvio.value = casoId; envioModalAberto.value = true }
 async function enviarPreFormularioRapido() {
   if (!dados.value) return
   if (dados.value.contato.pre_form_respondido_em && !confirm('Ela já respondeu. Gerar um link novo para corrigir ou completar?')) return

@@ -21,6 +21,10 @@ export interface EstruturaEntrada {
   contexto: keyof typeof CONTEXTOS
   procedimentos: string[]
   ativo: boolean
+  situacao: 'rascunho' | 'publicado' | 'arquivado'
+  instrucoes: string | null
+  finalidade: string | null
+  mensagem_final: string | null
   secoes: SecaoForm[]
 }
 
@@ -31,6 +35,7 @@ export function limparEstrutura(body: any): EstruturaEntrada {
   const contexto = (body?.contexto in CONTEXTOS ? body.contexto : 'cliente') as keyof typeof CONTEXTOS
   const validos = new Set([...PROCEDIMENTOS.map(p => p.valor), ...SERVICOS_IDS.map(id => `${id}/*`)])
   const procedimentos = contexto === 'demanda' && Array.isArray(body?.procedimentos) ? [...new Set<string>(body.procedimentos.map(String).filter((v: string) => validos.has(v)))] : []
+  const situacao = (['rascunho', 'publicado', 'arquivado'].includes(body?.situacao) ? body.situacao : body?.ativo === false ? 'arquivado' : 'publicado') as 'rascunho' | 'publicado' | 'arquivado'
   const brutas: any[] = Array.isArray(body?.secoes) ? body.secoes.slice(0, 40) : []
   if (!brutas.length) throw erro(400, 'O formulário precisa de ao menos uma seção.')
   const vistos = new Set<number>()
@@ -60,17 +65,18 @@ export function limparEstrutura(body: any): EstruturaEntrada {
   if (total > 300) throw erro(400, 'Formulário grande demais (máx. 300 perguntas).')
   const problema = validarCondicoes(secoes)
   if (problema) throw erro(400, problema)
-  return { nome, descricao: String(body?.descricao ?? '').trim().slice(0, 1000) || null, contexto, procedimentos, ativo: body?.ativo !== false, secoes }
+  return { nome, descricao: String(body?.descricao ?? '').trim().slice(0, 1000) || null, contexto, procedimentos, ativo: body?.ativo !== false, situacao, instrucoes: String(body?.instrucoes ?? '').trim().slice(0, 2000) || null, finalidade: String(body?.finalidade ?? '').trim().slice(0, 500) || null, mensagem_final: String(body?.mensagem_final ?? '').trim().slice(0, 500) || null, secoes }
 }
 
 export interface FormularioCarregado extends Omit<EstruturaEntrada, 'secoes'> {
   id: number
+  versao: number
   secoes: (SecaoForm & { itens: (PerguntaForm & { respostas: number; usada_em: { id: number; nome: string }[] })[] })[]
 }
 
 /** Carrega o formulário completo (seções, perguntas, condições) + quantas respostas cada pergunta já tem. */
 export async function carregarFormulario(client: any, id: number): Promise<FormularioCarregado> {
-  const { data: f } = await client.from('formularios').select('id, nome, descricao, contexto, procedimentos, ativo').eq('id', id).maybeSingle()
+  const { data: f } = await client.from('formularios').select('id, nome, descricao, contexto, procedimentos, ativo, situacao, versao, instrucoes, finalidade, mensagem_final').eq('id', id).maybeSingle()
   if (!f) throw erro(404, 'Formulário não encontrado.')
   const [{ data: secoes }, { data: itens }] = await Promise.all([
     client.from('formulario_secoes').select('id, titulo, descricao, ordem, mostrar_se').eq('formulario_id', id).order('ordem').order('id'),
@@ -95,7 +101,7 @@ export async function carregarFormulario(client: any, id: number): Promise<Formu
     porSecao.set(chave, [...(porSecao.get(chave) ?? []), i])
   }
   return {
-    id: f.id, nome: f.nome, descricao: f.descricao ?? null, contexto: f.contexto, procedimentos: f.procedimentos ?? [], ativo: f.ativo,
+    id: f.id, nome: f.nome, descricao: f.descricao ?? null, contexto: f.contexto, procedimentos: f.procedimentos ?? [], ativo: f.ativo, situacao: f.situacao ?? (f.ativo ? 'publicado' : 'arquivado'), versao: f.versao ?? 1, instrucoes: f.instrucoes ?? null, finalidade: f.finalidade ?? null, mensagem_final: f.mensagem_final ?? null,
     secoes: lista.map((s: any) => ({
       id: s.id, titulo: s.titulo, descricao: s.descricao ?? null, mostrar_se: normalizarCondicao(s.mostrar_se),
       itens: (porSecao.get(s.id) ?? []).map((i: any) => ({
@@ -144,10 +150,10 @@ export async function salvarEstrutura(client: any, id: number | null, e: Estrutu
     ])
     anteriores = it.data ?? []
     secoesAnteriores = se.data ?? []
-    const { error } = await client.from('formularios').update({ nome: e.nome, descricao: e.descricao, contexto: e.contexto, procedimentos: e.procedimentos, ativo: e.ativo }).eq('id', formId)
+    const { error } = await client.from('formularios').update({ nome: e.nome, descricao: e.descricao, contexto: e.contexto, procedimentos: e.procedimentos, ativo: e.situacao === 'publicado', situacao: e.situacao, instrucoes: e.instrucoes, finalidade: e.finalidade, mensagem_final: e.mensagem_final }).eq('id', formId)
     if (error) throw erro(500, 'Erro ao salvar o formulário.')
   } else {
-    const { data, error } = await client.from('formularios').insert({ nome: e.nome, descricao: e.descricao, contexto: e.contexto, procedimentos: e.procedimentos, ativo: e.ativo }).select('id').single()
+    const { data, error } = await client.from('formularios').insert({ nome: e.nome, descricao: e.descricao, contexto: e.contexto, procedimentos: e.procedimentos, ativo: e.situacao === 'publicado', situacao: e.situacao, instrucoes: e.instrucoes, finalidade: e.finalidade, mensagem_final: e.mensagem_final }).select('id').single()
     if (error || !data) throw erro(500, 'Erro ao criar o formulário.')
     formId = data.id as number
   }
@@ -314,8 +320,11 @@ export async function estruturaPublica(client: any, formularioId: number) {
   const secoes: SecaoForm[] = f.secoes
     .map(s => ({ id: s.id, titulo: s.titulo, descricao: s.descricao, mostrar_se: s.mostrar_se, itens: s.itens.filter(i => !tipoInterno(i.tipo)).map(({ respostas: _r, usada_em: _u, ...i }: any) => i as PerguntaForm) }))
     .filter(s => s.itens.length)
-  return { nome: f.nome, descricao: f.descricao, contexto: f.contexto, secoes }
+  return { nome: f.nome, descricao: f.descricao, contexto: f.contexto, instrucoes: f.instrucoes, finalidade: f.finalidade, mensagem_final: f.mensagem_final, versao: f.versao, secoes }
 }
+
+/** Assinatura do que a cliente vê (texto, tipo, opções, obrigatoriedade, lógica): muda só quando a estrutura muda de verdade. */
+export const assinaturaEstrutura = (secoes: SecaoForm[]) => JSON.stringify(secoes.map(s => [s.titulo, s.descricao, s.mostrar_se, s.itens.map(i => [i.pergunta_id, i.texto, i.tipo, i.opcoes, i.ajuda, i.obrigatoria, i.mostrar_se])]))
 
 export interface LinhaResposta { pergunta_id: number; ordem: number; pergunta_texto: string; pergunta_tipo: string; secao_titulo: string; resposta: Valor }
 

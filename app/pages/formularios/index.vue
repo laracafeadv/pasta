@@ -67,8 +67,8 @@ async function carregarRespostas() {
     respostasCarregando.value = false
   }
 }
-const STATUS_LABEL: Record<string, string> = { enviado: 'Enviado', visualizado: 'Visualizado', respondido: 'Respondido' }
-const STATUS_COR: Record<string, string> = { enviado: 'text-gray-400', visualizado: 'text-warning-dark', respondido: 'text-success-dark' }
+const STATUS_LABEL: Record<string, string> = { gerado: 'Link gerado', enviado: 'Enviado', visualizado: 'Aberto', iniciado: 'Iniciado', respondido: 'Respondido', cancelado: 'Cancelado' }
+const STATUS_COR: Record<string, string> = { gerado: 'text-gray-400', enviado: 'text-gray-500', visualizado: 'text-warning-dark', iniciado: 'text-warning-dark', respondido: 'text-success-dark', cancelado: 'text-gray-400' }
 
 const detalheAberto = ref(false)
 const detalhe = ref<FormularioEnvioDetalhe | null>(null)

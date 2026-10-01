@@ -341,7 +341,7 @@ export interface Formulario {
   itens: FormularioItem[]
 }
 
-export type StatusEnvioFormulario = 'enviado' | 'visualizado' | 'respondido'
+export type StatusEnvioFormulario = 'gerado' | 'enviado' | 'visualizado' | 'iniciado' | 'respondido' | 'cancelado'
 
 export interface FormularioEnvio {
   id: number
