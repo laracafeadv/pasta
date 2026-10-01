@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { hojeISO } from '~/stores/crm'
 import { ATALHOS_PADRAO, type AtalhoSecretaria, type InicioSecretaria, type ItemAgenda, type LembreteRapido } from '~~/shared/data/secretaria'
 import { NAO_CONFIRMADO, TRIBUNAIS, addDays, contarPrazo, dow, feriadosDe, type ContextoPrazo } from '~~/shared/utils/calendarioForense'
 import { interpretarTexto, type PropostaSecretaria } from '~~/shared/utils/secretariaTexto'
+import type { SecretariaIniciais } from '~/composables/useSecretariaIniciais'
+import { ACOES_POR_AREA, interpretarInicial, resumoIniciais, type PropostaInicial } from '~~/shared/utils/iniciaisSecretaria'
 
-const props = defineProps<{ semPrazo?: { id: string; cnj: string; tribunal: string; movimentacao: string }[]; googleConectado?: boolean }>()
+// "hoje" sempre no horário de Brasília (o servidor roda em UTC: depois das 21h o dia dele já é o seguinte)
+const hojeISO = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Bahia' }).format(new Date())
+const props = defineProps<{ ini?: SecretariaIniciais; semPrazo?: { id: string; cnj: string; tribunal: string; movimentacao: string }[]; googleConectado?: boolean }>()
 const emit = defineEmits<{ urgentes: [number]; aba: [string] }>()
 
 // Início da Secretária: Hoje, campo "O que você precisa?", atalhos, agenda de 14 dias, lembretes e contagem de prazo.
@@ -58,9 +61,46 @@ const texto = ref('')
 const prop = ref<PropostaSecretaria & { duracao: number; local: string; cliente: string } | null>(null)
 const nlErro = ref<string | null>(null)
 const criando = ref(false)
+// ── iniciais no campo "O que você precisa?" ──
+const propIni = ref<(PropostaInicial & { escolhido?: string | number }) | null>(null)
+const lista = computed(() => props.ini?.iniciais.value ?? [])
+function interpretarIni(): boolean {
+  if (!props.ini) return false
+  const p = interpretarInicial(texto.value, hoje.value, lista.value); if (!p) return false
+  prop.value = null; propIni.value = { ...p, escolhido: p.inicial_id }; return true
+}
+const nomeIni = (id?: string | number) => lista.value.find(x => String(x.id) === String(id))?.cliente ?? ''
+async function confirmarIni() {
+  const p = propIni.value, ini = props.ini; if (!p || !ini) return
+  criando.value = true; nlErro.value = null
+  try {
+    const id = p.escolhido ?? p.inicial_id
+    if (p.op === 'nova') {
+      if (!String(p.cliente ?? '').trim()) { nlErro.value = 'Informe o cliente.'; return }
+      const area = Object.entries(ACOES_POR_AREA).find(([, l]) => l.includes(p.acao ?? ''))?.[0]
+      await ini.criar({ cliente: p.cliente!.trim(), acao: p.acao || null, area: area ?? null, meta_protocolo: p.meta || null, etapa: 'aguardando' })
+      aviso.value = `Inicial de ${p.cliente!.trim()} criada em "Aguardando documentos".`
+    } else if (p.op === 'doc_pendente') {
+      if (!String(p.doc ?? '').trim()) { nlErro.value = 'Diga qual documento falta.'; return }
+      await ini.docPendente(id!, p.doc!); aviso.value = `Documento "${p.doc!.trim()}" incluído no checklist de ${nomeIni(id)}.`
+    } else if (p.op === 'doc_recebido') {
+      if (!p.doc) { nlErro.value = 'Escolha qual documento chegou.'; return }
+      await ini.docRecebido(id!, String(p.doc)); aviso.value = `Documento marcado como recebido na inicial de ${nomeIni(id)}.`
+    } else if (p.op === 'avancar') {
+      const moveu = await ini.avancar(id!)
+      if (moveu) aviso.value = `Inicial de ${nomeIni(id)} avançou de etapa.`; else emit('aba', 'iniciais')
+    }
+    propIni.value = null; texto.value = ''
+  } catch (e: any) { nlErro.value = msg(e, 'Não foi possível concluir.') } finally { criando.value = false }
+}
+// ── "Hoje": iniciais atrasadas ou vencendo em até 2 dias ──
+const iniHoje = computed(() => props.ini?.noHoje.value ?? [])
+const textoIni = (x: { i: any; a: any }) => `${x.i.cliente} — ${x.a.tipo === 'fatal' ? 'prazo fatal' : 'meta'} ${x.a.dias < 0 ? 'vencida' : x.a.dias === 0 ? 'hoje' : x.a.dias === 1 ? 'amanhã' : 'em 2 dias'}`
 function interpretar() {
   nlErro.value = null; aviso.value = null
   if (!texto.value.trim()) return
+  if (interpretarIni()) return
+  propIni.value = null
   const p = interpretarTexto(texto.value, hoje.value)
   prop.value = { ...p, dias: p.tipo === 'prazo' ? (p.dias ?? 15) : p.dias, duracao: 60, local: '', cliente: '' }
 }
@@ -87,6 +127,10 @@ function resumoDoDia() {
   L.push(prazosHoje.value.length ? `• PRAZOS QUE VENCEM HOJE (${prazosHoje.value.length}): ${tit(prazosHoje.value)}.` : '• Nenhum prazo vence hoje.')
   L.push(prazosAmanha.value.length ? `• Prazos de amanhã (${prazosAmanha.value.length}): ${tit(prazosAmanha.value)}.` : '• Nenhum prazo vence amanhã.')
   if (atrasados.value.length) L.push(`• Lembretes atrasados (${atrasados.value.length}): ${atrasados.value.map(l => l.texto).join('; ')}.`)
+  if (props.ini) {
+    const r = resumoIniciais(lista.value, hoje.value)
+    if (r.atrasadas || iniHoje.value.length) L.push(`• INICIAIS: ${r.atrasadas} atrasada(s), ${r.vencendo} vencendo em 7 dias${iniHoje.value.length ? '; atenção hoje: ' + iniHoje.value.slice(0, 5).map(textoIni).join('; ') : ''}.`)
+  }
   const hojeTodos = eventos.value.filter(e => e.dia === hoje.value && e.tipo !== 'prazo')
   if (hojeTodos.length) L.push('• Hoje: ' + hojeTodos.map(e => `${e.hora ?? 'dia todo'} ${e.titulo}`).join('; ') + '.')
   const prox = eventos.value.filter(e => e.dia > hoje.value && ['prazo', 'audiencia', 'consulta'].includes(e.tipo)).slice(0, 5)
@@ -175,6 +219,10 @@ const fdsVenc = computed(() => res.value ? dow(res.value.vencimento) : 1)
           <ul v-if="props.semPrazo?.length"><li v-for="i in props.semPrazo.slice(0, 3)" :key="i.id">{{ i.cnj || i.tribunal }} · {{ i.movimentacao }}</li></ul>
           <span v-else class="vazio">{{ props.googleConectado ? 'Nada por aqui.' : 'Conecte o Google na aba Intimações.' }}</span>
         </button>
+        <button v-if="props.ini" type="button" class="tile" :class="{ alerta: iniHoje.length }" data-testid="tile-iniciais" @click="emit('aba', 'iniciais')">
+          <span class="t">Iniciais atrasadas ou a vencer</span><span class="n">{{ iniHoje.length }}</span>
+          <ul v-if="iniHoje.length"><li v-for="x in iniHoje.slice(0, 3)" :key="x.i.id">{{ textoIni(x) }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
+        </button>
         <button type="button" class="tile" data-testid="tile-hoje" @click="irPara('sAgenda')">
           <span class="t">Compromissos de hoje</span><span class="n">{{ compromissosHoje.length }}</span>
           <ul v-if="compromissosHoje.length"><li v-for="e in compromissosHoje.slice(0, 3)" :key="e.id">{{ e.hora }} {{ e.titulo }}</li></ul><span v-else class="vazio">Nada por aqui.</span>
@@ -191,6 +239,30 @@ const fdsVenc = computed(() => res.value ? dow(res.value.vencimento) : 1)
         <button type="button" class="btn sec" data-testid="resumo" @click="resumoDoDia">Resumo do dia</button>
       </div>
       <p v-if="nlErro" class="text-sm text-danger mt-2">{{ nlErro }}</p>
+      <div v-if="propIni" class="conf" data-testid="proposta-inicial">
+        <strong>{{ propIni.op === 'consulta' ? (propIni.titulo || 'Iniciais') : 'Entendi assim (inicial). Confira antes de aplicar:' }}</strong>
+        <template v-if="propIni.op === 'consulta'">
+          <p v-if="propIni.aviso" class="text-sm">{{ propIni.aviso }}</p>
+          <p v-else-if="!propIni.itens?.length" class="text-sm" data-testid="consulta-vazia">Nenhuma inicial nessa situação.</p>
+          <ul v-if="propIni.itens?.length" class="text-sm" data-testid="consulta-itens"><li v-for="x in propIni.itens" :key="x.id">{{ x.texto }}</li></ul>
+          <div class="flex gap-2"><button type="button" class="btn" @click="emit('aba', 'iniciais'); propIni = null">Abrir aba Iniciais</button><button type="button" class="btn sec" @click="propIni = null">Fechar</button></div>
+        </template>
+        <template v-else>
+          <p class="text-sm">{{ propIni.entendeu.join(' · ') }}</p>
+          <label v-if="propIni.candidatos?.length" class="rot">Qual inicial?<select v-model="propIni.escolhido" class="campo" data-testid="ini-candidato"><option v-for="c in propIni.candidatos" :key="c.id" :value="c.id">{{ c.texto }}</option></select></label>
+          <p v-else-if="propIni.op !== 'nova'" class="text-sm">Inicial: <b>{{ nomeIni(propIni.escolhido) }}</b></p>
+          <div v-if="propIni.op === 'nova'" class="flex gap-2 flex-wrap items-end">
+            <label class="rot grow min-w-[160px]">Cliente<input v-model="propIni.cliente" class="campo" /></label>
+            <label class="rot grow min-w-[160px]">Ação<input v-model="propIni.acao" class="campo" /></label>
+            <label class="rot">Meta de protocolo<input v-model="propIni.meta" type="date" class="campo" /></label>
+          </div>
+          <label v-if="propIni.op === 'doc_pendente'" class="rot">Documento que falta<input v-model="propIni.doc" class="campo" data-testid="ini-doc" /></label>
+          <label v-if="propIni.op === 'doc_recebido'" class="rot">Documento recebido
+            <select v-model="propIni.doc" class="campo" data-testid="ini-doc-recebido"><option :value="undefined">Escolha…</option><option v-for="d in (lista.find(x => String(x.id) === String(propIni?.escolhido))?.checklist ?? []).filter(c => !c.ok)" :key="d.id" :value="d.id">{{ d.texto }}</option></select></label>
+          <p v-if="propIni.op === 'avancar'" class="text-sm">Avança uma etapa. Se for protocolar ou houver documentos pendentes, a aba Iniciais pede a confirmação.</p>
+          <div class="flex gap-2"><button type="button" class="btn" :disabled="criando" data-testid="confirmar-inicial" @click="confirmarIni">Confirmar</button><button type="button" class="btn sec" @click="propIni = null">Cancelar</button></div>
+        </template>
+      </div>
       <div v-if="prop" class="conf" data-testid="proposta">
         <strong>Entendi assim. Confira antes de criar:</strong>
         <div class="flex gap-2 flex-wrap items-end">

@@ -6,6 +6,8 @@ import SecretariaInicio from '~/components/secretaria/SecretariaInicio.vue'
 import SecretariaIntimacoes from '~/components/secretaria/SecretariaIntimacoes.vue'
 import SecretariaEmail from '~/components/secretaria/SecretariaEmail.vue'
 import SecretariaLeads from '~/components/secretaria/SecretariaLeads.vue'
+import SecretariaIniciais from '~/components/secretaria/SecretariaIniciais.vue'
+import { useSecretariaIniciais } from '~/composables/useSecretariaIniciais'
 import { useSecretariaLeads } from '~/composables/useSecretariaLeads'
 import { useSecretariaGoogle } from '~/composables/useSecretariaGoogle'
 import { useProfileStore } from '~/stores/profile'
@@ -15,7 +17,7 @@ definePageMeta({ middleware: ['auth', 'staff'] })
 useHead({ title: 'Secretária' })
 
 // Painel pessoal para organizar o dia, independente das demais telas do CRM (agenda e prazos próprios).
-// Só o Início está pronto; as outras abas mostram "em breve".
+// Abas prontas: Início, Intimações, E-mail, Leads e Iniciais; as demais mostram "em breve".
 const aba = ref<string>('inicio')
 const profileStore = useProfileStore()
 const { profile } = storeToRefs(profileStore)
@@ -23,6 +25,7 @@ const { uploadAvatar, isUploading, error: avatarError } = useAvatar()
 const fotoIn = ref<HTMLInputElement | null>(null)
 const g = useSecretariaGoogle()
 const leads = useSecretariaLeads()
+const ini = useSecretariaIniciais()
 const rota = useRoute()
 const AVISO_GOOGLE: Record<string, string> = { ok: 'Conta Google conectada.', negado: 'Você não autorizou o acesso ao Google. Para usar Intimações e E-mail, conecte de novo e aceite as permissões.', erro: 'Não foi possível conectar ao Google. Tente de novo.', 'nao-configurado': 'A conexão com o Google ainda não foi configurada no servidor.' }
 const avisoGoogle = computed(() => AVISO_GOOGLE[String(rota.query.google ?? '')] ?? '')
@@ -34,15 +37,18 @@ async function atualizar() {
   if (aba.value === 'email') await g.carregarCaixa()
   if (aba.value === 'leads') leads.carregarConsultas(true)
 }
+// as iniciais não dependem do Google: o número da aba e o "Hoje" mudam com a data, então recarrega de tempos em tempos
+function atualizarIniciais() { if (!document.hidden) ini.carregar() }
 onMounted(async () => {
   if (!profile.value) profileStore.fetchMe()
   const q = String(rota.query.google ?? '')
   if (q === 'ok') aba.value = 'intimacoes'
   leads.carregar()
+  ini.carregar()
   await g.carregarStatus()
   if (g.status.value?.conectado) { await g.carregarIntimacoes(); if (aba.value === 'email') g.carregarCaixa() }
   // atualiza sozinho a cada 5 minutos, com a página visível
-  timer = setInterval(atualizar, 300000)
+  timer = setInterval(() => { atualizar(); atualizarIniciais() }, 300000)
   document.addEventListener('visibilitychange', aoVoltar)
 })
 function aoVoltar() { if (!document.hidden && velha(g.intim.em, 300000)) atualizar() }
@@ -55,7 +61,7 @@ const ABAS = [
   { id: 'leads', nome: 'Leads' }, { id: 'iniciais', nome: 'Iniciais' }, { id: 'noticias', nome: 'Notícias' }, { id: 'conteudo', nome: 'Conteúdo' },
 ]
 // Cada aba ganha o seu número quando for montada. Intimações = avisos de intimação ainda sem prazo lançado.
-const selo = (id: string) => id === 'inicio' ? urgentes.value : id === 'intimacoes' ? g.semPrazo.value.length : id === 'leads' ? leads.selo.value : 0
+const selo = (id: string) => id === 'inicio' ? urgentes.value : id === 'intimacoes' ? g.semPrazo.value.length : id === 'leads' ? leads.selo.value : id === 'iniciais' ? ini.selo.value : 0
 
 const tratamento = computed(() => profile.value?.role === 'admin' ? 'Dra. Lara' : (profile.value?.name || '').split(' ')[0] || 'Olá')
 const hora = Number(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', hour12: false }).format(new Date()))
@@ -93,11 +99,12 @@ async function trocarFoto(ev: Event) {
     </nav>
 
     <p v-if="avisoGoogle" class="cartao text-sm" role="status" data-testid="aviso-google">{{ avisoGoogle }}</p>
-    <SecretariaInicio v-show="aba === 'inicio'" :sem-prazo="g.semPrazo.value" :google-conectado="!!g.status.value?.conectado" @urgentes="urgentes = $event" @aba="irPara" />
+    <SecretariaInicio v-show="aba === 'inicio'" :ini="ini" :sem-prazo="g.semPrazo.value" :google-conectado="!!g.status.value?.conectado" @urgentes="urgentes = $event" @aba="irPara" />
     <SecretariaIntimacoes v-if="aba === 'intimacoes'" :g="g" />
     <SecretariaEmail v-if="aba === 'email'" :g="g" />
     <SecretariaLeads v-if="aba === 'leads'" :l="leads" :g="g" />
-    <section v-if="!['inicio', 'intimacoes', 'email', 'leads'].includes(aba)" class="cartao text-center py-12">
+    <SecretariaIniciais v-if="aba === 'iniciais'" :ini="ini" />
+    <section v-if="!['inicio', 'intimacoes', 'email', 'leads', 'iniciais'].includes(aba)" class="cartao text-center py-12">
       <h2 class="text-lg font-semibold">{{ ABAS.find(a => a.id === aba)?.nome }}</h2>
       <p class="text-sm text-gray-500 mt-2">Em breve. Esta aba será montada na próxima etapa.</p>
     </section>

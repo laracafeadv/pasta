@@ -34,3 +34,15 @@ export interface LeadSecretaria {
 }
 export type LeadEntrada = Partial<Omit<LeadSecretaria, 'id' | 'created_at' | 'updated_at'>>
 export interface ConsultaNaAgenda { st: 'verde' | 'amarelo' | 'vermelho' | 'erro'; dia?: string; hora?: string; link?: string; msg?: string }
+
+// ── Iniciais (petições iniciais) ──
+export type EtapaInicial = 'aguardando' | 'produzir' | 'redacao' | 'revisao' | 'pronta' | 'protocolada'
+export interface ItemChecklist { id: string; texto: string; ok: boolean }
+export interface InicialSecretaria {
+  id: number | string; created_at?: string; updated_at?: string
+  cliente: string; acao: string | null; area: string | null; parte_contraria: string | null
+  meta_protocolo: string | null; prazo_fatal: string | null; prazo_fatal_tipo: 'prescricao' | 'decadencia' | 'outro' | null
+  prioridade: 'alta' | 'normal' | 'baixa'; etapa: EtapaInicial; etapa_desde: string
+  checklist: ItemChecklist[]; obs: string | null; processo_numero: string | null; protocolo_data: string | null
+}
+export type InicialEntrada = Partial<Omit<InicialSecretaria, 'id' | 'created_at' | 'updated_at'>>

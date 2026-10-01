@@ -15,7 +15,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
 const valida = (y: number, m: number, d: number) => { const t = new Date(Date.UTC(y, m - 1, d)); return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d }
 
 /** Acha uma data no texto. Devolve a data ISO e o trecho consumido. */
-function acharData(t: string, hoje: string, passado = false): { iso: string; trecho: string } | null {
+export function acharData(t: string, hoje: string, passado = false): { iso: string; trecho: string } | null {
   const y0 = Number(hoje.slice(0, 4))
   let m: RegExpMatchArray | null
   if ((m = t.match(/\bdepois de amanha\b/))) return { iso: addDays(hoje, 2), trecho: m[0] }

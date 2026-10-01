@@ -187,3 +187,16 @@ Quadro próprio da Secretária (tabela `secretaria_leads`), **independente** das
 - **Importar conversa:** .txt ou .zip exportado do WhatsApp (o .zip é lido no navegador com `jszip`). Com `ANTHROPIC_API_KEY` (e opcional `ANTHROPIC_MODEL`) a IA preenche a ficha; sem ela, o servidor extrai só o que o arquivo mostra (nome, telefone, datas) e avisa. Nada é salvo antes de a usuária conferir.
 - **Limites:** não testado contra o Google nem a API da Anthropic reais, nem com exportações reais do WhatsApp em .zip; só com APIs simuladas.
 - **Testes:** `tests/secretaria/leads*.test.ts`, `tests/secretaria/ui-leads.mjs` (Playwright, APIs simuladas), `supabase/tests/secretaria_leads.sql`.
+
+### Secretária — etapa 4: aba Iniciais (petições iniciais)
+
+Quadro próprio (tabela `secretaria_iniciais`), independente de Demandas/Processos do CRM.
+
+- **Etapas:** Aguardando documentos → A produzir → Em redação → Em revisão → Pronta para protocolar → Protocolada. Cards arrastáveis, botão "Avançar" (uma etapa por vez) e "Mover para…".
+- **Protocolar:** exige a data (padrão: hoje); o número do processo é opcional na hora (pode chegar depois) e, se digitado, o dígito verificador do CNJ é conferido (módulo 97). Voltar de Protocolada não apaga data nem número.
+- **Pendências:** chegar a "Pronta" ou "Protocolada" com documentos pendentes pede confirmação ("Avançar mesmo assim"); o servidor também recusa sem `confirmar_pendencias`.
+- **Datas:** a meta de protocolo nunca passa do prazo fatal (prescrição/decadência), validado na tela, no servidor e no banco. O alerta de cada card vale a data mais próxima entre as duas; vencida = atrasada; até 7 dias = vencendo.
+- **Ligação com o painel:** iniciais atrasadas ou com a data mais próxima em até 2 dias entram na faixa "Hoje" (cartão "Iniciais atrasadas ou a vencer"), no número da aba e no "Resumo do dia". O campo "O que você precisa?" entende textos que citam "inicial": consultar ("quais iniciais estão atrasadas?"), "nova inicial de divórcio para Ana Lima, meta dia 20/10", "inicial do João: falta PPP", "recebi a CTPS da inicial do João", "avançar inicial da Maria" — sempre como proposta a confirmar; nome ambíguo pede escolha.
+- **Regras:** `shared/utils/iniciaisSecretaria.ts` (puras, testadas). Rotas: `GET|POST /api/secretaria/iniciais`, `PUT|DELETE /iniciais/[id]`, `POST /iniciais/[id]/mover`.
+- **Testes:** `tests/secretaria/iniciais*.test.ts`, `tests/secretaria/ui-iniciais.mjs` (Playwright, APIs simuladas), `supabase/tests/secretaria_iniciais.sql`.
+- **Correção junto:** o "hoje" do Início passou a usar o horário de Brasília (antes, depois das 21h o servidor em UTC já estava no dia seguinte e a tela acusava divergência).
