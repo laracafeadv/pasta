@@ -1,0 +1,9 @@
+// Pacote das regras REAIS do CRM que o artefato reaproveita (mesmos arquivos do projeto, sem cópia manual).
+export * from '../../shared/types/crm'
+export * from '../../shared/data/formulario'
+export * from '../../shared/data/servicos'
+export * from '../../shared/data/checklist'
+export * from '../../shared/data/procedimentos'
+export { contarPrazo, TRIBUNAIS, addDays, dow, NAO_CONFIRMADO, feriadosDe, motivoNaoUtil } from '../../shared/utils/calendarioForense'
+export { numeroCnjValido, formatarCnj, cpfValido, mascararDocumento } from '../../shared/utils/juridico'
+export * as INI from '../../shared/utils/iniciaisSecretaria'

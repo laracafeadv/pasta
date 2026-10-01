@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply antialiased text-[#2c2c2c] bg-slate-100 dark:text-slate-100 dark:bg-slate-950 overflow-x-hidden m-0 p-0 font-sans; }
+  h1, h2, .font-serif { font-family: 'Marcellus', Georgia, serif !important; font-weight: 400 !important; letter-spacing: 0 !important; }
+  ::selection { background: #3c2923; color: #edeae2; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(139, 111, 71, 0.25); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(139, 111, 71, 0.5); }
+  button { font: inherit; }
+  [hidden] { display: none !important; }
+}
+
+@layer components {
+  .modal-input { @apply w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 focus:outline-none focus:border-primary/50 transition-all text-sm font-medium shadow-sm dark:shadow-none; }
+  .eyebrow { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: #6f5636; font-weight: 600; }
+  .dark .eyebrow { color: #cbc3b4; }
+  .btn-mini { @apply text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full transition-colors; }
+  .btn-ico { @apply w-9 h-9 inline-flex items-center justify-center rounded-full border border-gray-300 dark:border-zinc-700 text-gray-500 hover:text-primary hover:border-primary transition-colors disabled:opacity-60; }
+  .chip { @apply text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:border-primary hover:text-primary dark:hover:text-white transition-colors inline-flex items-center gap-1.5; }
+  .chip-suave { @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-zinc-700 bg-white/60 dark:bg-zinc-900/60 px-3.5 py-1.5 text-xs text-gray-600 dark:text-zinc-300 hover:border-primary hover:text-primary transition-colors; }
+  .chip-suave b { @apply text-primary dark:text-zinc-100; }
+  .chip-escuro { @apply bg-primary text-white border-primary; }
+  .filtro { @apply rounded-full border border-gray-300 dark:border-zinc-700 px-3 py-1 text-[11px] font-semibold text-gray-500 dark:text-zinc-400 hover:text-primary transition-colors; }
+  .filtro-ativo { @apply bg-primary text-white border-primary hover:text-white; }
+  .selecao { @apply rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900 px-4 py-2 text-sm; }
+  .painel { @apply rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-5 sm:p-6; }
+  .titulo { @apply text-lg font-serif text-primary dark:text-zinc-100; }
+  .card { @apply rounded-3xl bg-white/80 dark:bg-zinc-900/70 border border-gray-200/70 dark:border-zinc-800 p-6; }
+  .fcard { @apply rounded-lg border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-4 space-y-1.5; }
+  .fcard h3 { @apply text-[10px] font-bold uppercase tracking-widest text-primary mb-2 dark:text-zinc-200; }
+  .field { @apply flex flex-col gap-1.5; }
+  .field > span, .campo > span { @apply text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400; }
+  .campo { @apply flex flex-col gap-1.5; }
+  .rotulo { @apply text-sm font-semibold text-gray-700 dark:text-zinc-200; }
+  .tab-btn { @apply text-sm font-semibold px-4 py-2 rounded-full border border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:text-primary dark:hover:text-white transition-colors; }
+  .tab-btn-ativo { @apply bg-primary text-white border-primary; }
+  .pill { @apply text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-primary dark:text-zinc-300; }
+  .tag { @apply text-[11px] px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300; }
+  .kpi { @apply rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 p-4 flex flex-col gap-1; }
+  .kpi > b { @apply text-2xl text-primary dark:text-zinc-100; }
+  .kpi > small { @apply text-xs text-gray-500; }
+  .kpi > span { @apply text-[10px] font-bold uppercase tracking-widest text-gray-400; }
+  .acao { @apply p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-primary disabled:opacity-30 disabled:hover:bg-transparent; }
+  .acao-sec { @apply p-1.5 rounded-full hover:bg-white/20 disabled:opacity-30; }
+  .filtro-hist { @apply rounded-full border border-gray-300 dark:border-zinc-700 px-3 py-1 text-[11px] font-semibold text-gray-500 hover:text-primary transition-colors; }
+  .filtro-hist-ativo { @apply bg-primary text-white border-primary hover:text-white; }
+  .section-label { @apply mt-2 text-[10px] font-bold uppercase tracking-widest text-primary border-b border-gray-100 dark:border-zinc-800 pb-1; }
+  th { @apply font-semibold; }
+  .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #cbc3b4 transparent; }
+  .glass-card { @apply bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-2xl; }
+}
+
+.capitalize-first::first-letter{text-transform:uppercase}
+
+.painel,.card{min-width:0}
+.selecao{max-width:100%}
