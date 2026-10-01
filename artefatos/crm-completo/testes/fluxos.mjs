@@ -79,12 +79,12 @@ await p.reload(); await p.waitForSelector('[data-testid=sidebar]'); await esp(30
 ok(await p.evaluate(() => DB.formularios.some(f => f.nome === 'Teste de família') && DB.tarefas.some(x => x.titulo === 'Tarefa de teste')), 'dados persistem ao recarregar (localStorage fora do Artifact)')
 
 /* ---- 6. Permissões e tema ---- */
-await ir('perfil'); await t('papel-equipe').click(); await esp(); ok(await t('nav-config').count() === 0, 'papel Equipe: sem Configurações no menu')
-await ir('config'); ok((await p.locator('main').innerText()).includes('Sem permissão'), 'papel Equipe: rota bloqueada'); await ir('perfil'); await t('papel-admin').click()
+await p.evaluate(() => { CONFIG.perfil.papel = 'equipe'; render() }); await esp(); ok(await t('nav-config').count() === 0, 'papel Equipe: sem Configurações no menu')
+await ir('config'); ok((await p.locator('main').innerText()).includes('Sem permissão'), 'papel Equipe: rota bloqueada'); await p.evaluate(() => { CONFIG.perfil.papel = 'admin'; render() })
 await t('tema').click(); await esp(); ok(await p.evaluate(() => document.documentElement.classList.contains('dark')) !== undefined, 'alternar tema')
 
 /* ---- 7. Responsividade: sem rolagem horizontal em 390px ---- */
 await p.setViewportSize({ width: 390, height: 800 })
-for (const r of ['dashboard', 'leads', 'hoje', 'tarefas', 'clientes', 'demandas', 'documentos', 'financeiro', 'formularios', 'mapa', 'manual', 'agenda']) { await ir(r); await esp(60); const w = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth); ok(w <= 1, `mobile sem rolagem horizontal: ${r} (${w}px)`) }
+for (const r of ['inicio', 'agenda', 'tarefas', 'prazos', 'pessoas', 'clientes', 'comunicacao', 'demandas', 'documentos', 'financeiro', 'relatorios', 'formularios', 'manual', 'mapa', 'config']) { await ir(r); await esp(60); const w = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth); ok(w <= 1, `mobile sem rolagem horizontal: ${r} (${w}px)`) }
 ok(erros.length === 0, 'sem erros: ' + erros.slice(0, 4).join(' | '))
 await b.close(); console.log(falhas ? falhas + ' falha(s)' : 'TUDO OK'); process.exit(falhas ? 1 : 0)

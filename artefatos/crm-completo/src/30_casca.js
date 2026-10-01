@@ -2,31 +2,33 @@
 /* ============ Casca: roteador, barra lateral, cabeçalho, busca, notificações, login ============ */
 const VIEWS = {}            // rota -> (params) => elemento
 const NAV = () => [
-  { titulo: 'Trabalho', itens: [['dashboard', 'Dashboard', 'ph:squares-four-bold'], ['secretaria', 'Secretária', 'ph:notebook-bold'], ['hoje', 'Hoje', 'ph:sun-bold', pendenciasHoje()], ['tarefas', 'Tarefas', 'ph:check-square-bold'], ['prazos', 'Prazos', 'ph:hourglass-high-bold'], ['intimacoes', 'Intimações', 'ph:megaphone-bold'], ['agenda', 'Agenda', 'ph:calendar-bold']] },
-  { titulo: 'Pessoas', itens: [['leads', 'Leads', 'ph:kanban-bold'], ['clientes', 'Clientes', 'ph:users-bold'], ['mensagens', 'Mensagens', 'ph:chat-circle-text-bold'], ['remarketing', 'Remarketing', 'ph:arrow-counter-clockwise-bold']] },
-  { titulo: 'Serviços jurídicos', itens: [['demandas', 'Demandas', 'ph:briefcase-bold'], ['processos', 'Processos', 'ph:gavel-bold'], ['documentos', 'Documentos', 'ph:files-bold']] },
-  { titulo: 'Dinheiro', itens: [['financeiro', 'Financeiro', 'ph:wallet-bold'], ['relatorios', 'Relatórios', 'ph:chart-bar-bold']] },
-  { titulo: 'Escritório', itens: [['formularios', 'Formulários', 'ph:clipboard-text-bold'], ['manual', 'Padrões operacionais', 'ph:list-checks-bold'], ['mapa', 'Mapa operacional', 'ph:flow-arrow-bold'], ...(CONFIG.perfil.papel === 'admin' ? [['config', 'Configurações', 'ph:gear-bold'], ['auditoria', 'Auditoria', 'ph:shield-check-bold']] : [])] },
-].map(g => g.titulo === 'Dinheiro' ? { ...g, itens: g.itens.map(i => i[0] === 'financeiro' && CONFIG.perfil.papel !== 'admin' ? ['financeiro', 'Honorários', i[2]] : i) } : g)
+  { titulo: 'Trabalho', itens: [['inicio', 'Início', 'ph:sun-bold', pendenciasHoje()], ['agenda', 'Agenda', 'ph:calendar-bold', DB.intimacoes.filter(i => i.status === 'a_tratar').length]] },
+  { titulo: 'Pessoas', itens: [['pessoas', 'Pessoas', 'ph:users-bold'], ['comunicacao', 'Comunicação', 'ph:chats-circle-bold', DB.comunicacoes.filter(m => m.direcao === 'entrada' && !m.lida).length]] },
+  { titulo: 'Serviços jurídicos', itens: [['demandas', 'Demandas', 'ph:briefcase-bold']] },
+  { titulo: 'Dinheiro', itens: [['financeiro', CONFIG.perfil.papel === 'admin' ? 'Financeiro' : 'Honorários', 'ph:wallet-bold'], ['relatorios', 'Relatórios', 'ph:chart-bar-bold']] },
+  { titulo: 'Escritório', itens: [['formularios', 'Formulários', 'ph:clipboard-text-bold'], ['manual', 'Padrões operacionais', 'ph:list-checks-bold'], ...(CONFIG.perfil.papel === 'admin' ? [['config', 'Configurações', 'ph:gear-bold']] : [])] },
+]
+/** Rotas antigas continuam valendo: apontam para a aba certa do módulo que as absorveu. */
+const ALIAS = { dashboard: ['inicio', {}], hoje: ['inicio', {}], secretaria: ['inicio', {}], tarefas: ['agenda', { aba: 'tarefas' }], prazos: ['agenda', { aba: 'prazos' }], intimacoes: ['agenda', { aba: 'intimacoes' }], leads: ['pessoas', { aba: 'funil' }], clientes: ['pessoas', { aba: 'clientes' }], remarketing: ['pessoas', { aba: 'remarketing' }], mensagens: ['comunicacao', { aba: 'modelos' }], processos: ['demandas', { aba: 'processos' }], documentos: ['demandas', { aba: 'documentos' }], mapa: ['manual', { aba: 'fluxo' }], auditoria: ['config', { aba: 'auditoria' }] }
 const ROTAS_ROTULO = { perfil: 'Meu perfil' }
-const R = { rota: 'dashboard', p: {} }
+const R = { rota: 'inicio', p: {} }
 let menuMovel = false
 
 let CONSTR = null
-function ir(rota, p = {}) { fecharTodas(); REDES.clear(); if (!(rota === 'formularios' && p.editar)) CONSTR = null; R.rota = rota; R.p = p; menuMovel = false; try { history.replaceState(null, '', '#' + rota) } catch (e) { /* sem histórico */ } render(); window.scrollTo(0, 0) }
-function lerHash() { const r = (location.hash || '').replace('#', ''); return VIEWS[r] ? r : null }
+function ir(rota, p = {}) { if (ALIAS[rota]) { const [r2, p2] = ALIAS[rota]; rota = r2; p = { ...p2, ...p } } fecharTodas(); REDES.clear(); if (!(rota === 'formularios' && p.editar)) CONSTR = null; R.rota = rota; R.p = p; menuMovel = false; try { history.replaceState(null, '', '#' + rota) } catch (e) { /* sem histórico */ } render(); window.scrollTo(0, 0) }
+function lerHash() { const r = (location.hash || '').replace('#', ''); return VIEWS[r] ? r : ALIAS[r] ? ALIAS[r][0] : null }
 
 function guardarFoco() { const a = document.activeElement; if (!a || !a.getAttribute) return null; const k = a.getAttribute('data-testid') || a.getAttribute('data-campo'); if (!k || !/^(INPUT|TEXTAREA)$/.test(a.tagName) || a.closest('[role=dialog]')) return null; return { k, attr: a.getAttribute('data-testid') ? 'data-testid' : 'data-campo', ini: a.selectionStart, fim: a.selectionEnd } }
 function restaurarFoco(f) { if (!f) return; const el = document.querySelector(`[${f.attr}="${f.k}"]`); if (el) { el.focus(); try { el.setSelectionRange(f.ini, f.fim) } catch (e) { /* tipo sem seleção */ } } }
 
 function render() {
   const foco = guardarFoco(); const y = window.scrollY; const raiz = $('app')
-  const dentro = R.rota === 'login' ? telaLogin() : R.rota === 'recuperar' ? telaRecuperar() : R.rota === 'privacidade' ? telaPrivacidade() : R.rota === 'publico' ? FormulariosPublico() : casca()
+  const dentro = R.rota === 'publico' ? FormulariosPublico() : casca()
   raiz.replaceChildren(dentro); window.scrollTo(0, y); restaurarFoco(foco); document.title = 'CRM Lara Café'
 }
 
 function itemNav([rota, rotulo, icone, n], movel) {
-  const ativo = R.rota === rota || (rota === 'clientes' && R.rota === 'ficha')
+  const ativo = R.rota === rota
   const base = movel ? 'flex items-center justify-between px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] rounded-full ' + (ativo ? 'bg-cafe-creme text-cafe' : 'text-cafe-creme/80') : 'flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[13px] font-semibold transition-colors w-full text-left ' + (ativo ? 'bg-white/10 text-white' : 'text-cafe-creme/80 hover:bg-white/5 hover:text-white')
   return h('button', { type: 'button', class: base, onclick: () => ir(rota), 'aria-current': ativo ? 'page' : null, 'data-testid': 'nav-' + rota }, movel ? rotulo : [ic(icone, 'text-base shrink-0'), h('span', { class: 'truncate' }, rotulo)], n ? h('span', { class: 'ml-auto min-w-[17px] h-[17px] px-1 rounded-full bg-danger text-white text-[10px] font-bold inline-flex items-center justify-center' }, n) : null)
 }
@@ -49,7 +51,7 @@ function cabecalho() {
   const notif = menuPopover('pop-sino', sino, [h('p', { class: 'px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400' }, 'O que pede atenção'), itens.length ? h('ul', { class: 'max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-zinc-800' }, itens.slice(0, 7).map(i => h('li', {}, h('button', { type: 'button', class: 'w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800', onclick: () => ir('hoje') }, h('span', { class: 'block truncate' }, i.titulo), h('span', { class: 'text-[11px] text-gray-400' }, (i.contato_id ? nomeContato(i.contato_id) + ' · ' : '') + diaRelativo(i.quando)))))) : h('p', { class: 'px-4 py-5 text-sm text-gray-500' }, 'Tudo em dia por aqui.'), h('button', { type: 'button', class: 'w-full px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-primary dark:text-cafe-creme border-t border-gray-100 dark:border-zinc-800', onclick: () => ir('hoje') }, 'Abrir o Hoje')])
   const perfilBtn = h('button', { type: 'button', class: 'h-10 inline-flex items-center gap-2 rounded-full pl-1 pr-2 hover:bg-gray-100 dark:hover:bg-zinc-800', 'aria-label': 'Menu do perfil', 'data-testid': 'perfil-btn' }, avatar(CONFIG.perfil.nome), h('span', { class: 'hidden sm:block text-sm font-semibold text-gray-700 dark:text-zinc-200' }, (CONFIG.perfil.nome || '').split(' ')[0]))
   const itemMenu = (t, ic_, fn) => h('button', { type: 'button', class: 'w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-800', onclick: fn }, ic(ic_), t)
-  const perfil = menuPopover('pop-perfil', perfilBtn, [h('div', { class: 'px-4 py-3 border-b border-gray-100 dark:border-zinc-800' }, h('p', { class: 'font-semibold text-sm' }, CONFIG.perfil.nome), h('p', { class: 'text-xs text-gray-500' }, CONFIG.perfil.email + ' · ' + (CONFIG.perfil.papel === 'admin' ? 'Administradora' : 'Equipe'))), itemMenu('Meu perfil', 'ph:user-circle-bold', () => ir('perfil')), itemMenu('Abrir link público de formulário', 'ph:link-bold', () => ir('publico', { sel: true })), itemMenu('Sair', 'ph:sign-out-bold', () => ir('login'))])
+  const perfil = menuPopover('pop-perfil', perfilBtn, [h('div', { class: 'px-4 py-3 border-b border-gray-100 dark:border-zinc-800' }, h('p', { class: 'font-semibold text-sm' }, CONFIG.perfil.nome), h('p', { class: 'text-xs text-gray-500' }, CONFIG.perfil.email + ' · ' + (CONFIG.perfil.papel === 'admin' ? 'Administradora' : 'Equipe'))), itemMenu('Meu perfil', 'ph:user-circle-bold', () => ir('perfil')), itemMenu('Abrir link público de formulário', 'ph:link-bold', () => ir('publico', { sel: true }))])
   return h('header', { class: 'sticky top-0 z-[100] w-full bg-white/90 dark:bg-zinc-950/90 backdrop-blur border-b border-gray-200/70 dark:border-zinc-800', 'data-testid': 'header' },
     h('div', { class: 'flex items-center justify-between h-14 lg:h-16 gap-3 px-4 sm:px-6' },
       h('button', { type: 'button', class: 'flex items-center gap-3 shrink-0 min-w-0 lg:hidden', onclick: () => ir('dashboard'), 'aria-label': 'Início' }, h('img', { src: LOGOS.monoDark, alt: 'Lara Café', class: 'h-6 w-auto dark:invert select-none' })),
@@ -78,33 +80,7 @@ function abrirBusca() {
   m = modal({ titulo: 'Buscar', largura: 'max-w-xl', corpo: [entrada, res] }); buscar()
 }
 function casca() {
-  return h('div', { class: 'flex min-h-screen bg-gray-100 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100' }, barraLateral(), h('div', { class: 'flex-1 min-w-0 flex flex-col' }, cabecalho(), h('main', { class: 'flex-1 min-w-0', id: 'conteudo', tabindex: '-1' }, (VIEWS[R.rota] || VIEWS.dashboard)(R.p)), rodape()))
+  return h('div', { class: 'flex min-h-screen bg-gray-100 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100' }, barraLateral(), h('div', { class: 'flex-1 min-w-0 flex flex-col' }, cabecalho(), h('main', { class: 'flex-1 min-w-0', id: 'conteudo', tabindex: '-1' }, (VIEWS[R.rota] || VIEWS.inicio)(R.p)), rodape()))
 }
-const rodape = () => h('footer', { class: 'px-4 sm:px-6 py-5 text-[11px] text-gray-400 text-center' }, 'Lara Café Advocacia & Consultoria · acesso restrito · dados protegidos conforme a LGPD · ', h('span', { class: 'text-amber-600 dark:text-amber-400' }, 'Versão de demonstração: clientes e integrações externas são simulados'))
+const rodape = () => h('footer', { class: 'px-4 sm:px-6 py-5 text-[11px] text-gray-400 text-center' }, 'Lara Café Advocacia & Consultoria · acesso restrito · dados protegidos conforme a LGPD · ', h('span', { class: 'text-amber-600 dark:text-amber-400' }, 'Dados de exemplo · WhatsApp abre o aplicativo · E-mail e IA usam os conectores da sua conta'))
 
-function telaLogin() {
-  const msg = h('p', { class: 'text-sm text-danger', role: 'alert', hidden: true })
-  const e = h('input', { type: 'email', class: 'modal-input', placeholder: 'voce@laracafe.adv.br', autocomplete: 'email', 'data-testid': 'login-email' })
-  const s = h('input', { type: 'password', class: 'modal-input', placeholder: '••••••••', autocomplete: 'current-password', 'data-testid': 'login-senha' })
-  const enviar = ev => { ev.preventDefault(); if (!e.value || !s.value) { msg.hidden = false; msg.textContent = 'Preencha e-mail e senha.'; return } ir('dashboard') }
-  return h('div', { class: 'min-h-screen relative flex items-center justify-center px-4 py-14 overflow-hidden bg-cafe' },
-    h('div', { class: 'absolute inset-0', style: 'background:radial-gradient(ellipse at top left,rgba(139,111,71,.3),transparent 55%),radial-gradient(ellipse at bottom right,#3c2923,#2a1c18)' }),
-    h('img', { src: LOGOS.monoLight, alt: '', class: 'absolute -right-24 -bottom-24 h-[34rem] opacity-[0.06] pointer-events-none select-none' }),
-    h('div', { class: 'relative z-10 w-full max-w-md' },
-      h('div', { class: 'rounded-[2rem] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-2xl shadow-black/30 ring-1 ring-white/10 px-8 py-10 sm:px-10 sm:py-12' },
-        h('div', { class: 'text-center' }, h('img', { src: LOGOS.monoDark, alt: 'Lara Café', class: 'h-14 w-auto mx-auto dark:invert' }), h('p', { class: 'eyebrow mt-5' }, 'Área do escritório'), h('h1', { class: 'text-3xl text-primary dark:text-zinc-100 mt-1' }, 'Acesso restrito'), h('p', { class: 'text-sm text-gray-500 mt-2' }, 'Use o e-mail e a senha do seu usuário.')),
-        h('form', { class: 'space-y-4 mt-8', onsubmit: enviar }, h('label', { class: 'block' }, rotuloCampo('E-mail'), e), h('label', { class: 'block' }, rotuloCampo('Senha'), s), h('div', { class: 'flex items-center justify-between' }, h('label', { class: 'flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-300' }, h('input', { type: 'checkbox', class: 'accent-[#6f5636]' }), 'Lembrar de mim'), h('button', { type: 'button', class: 'text-sm font-semibold text-primary dark:text-cafe-creme hover:underline', onclick: () => ir('recuperar'), 'data-testid': 'esqueci-senha' }, 'Esqueceu a senha?')), msg, h('button', { type: 'submit', class: 'w-full rounded-full bg-primary text-white py-3 text-xs font-semibold uppercase tracking-wider', 'data-testid': 'login-entrar' }, 'Entrar'), h('p', { class: 'text-[11px] text-amber-600 text-center' }, 'Demonstração: qualquer e-mail e senha entram (sem autenticação real).'))),
-      h('p', { class: 'text-xs text-cafe-creme/60 text-center leading-relaxed mt-6' }, 'Acesso restrito · dados protegidos conforme a LGPD · ', h('button', { type: 'button', class: 'underline underline-offset-2 hover:text-cafe-creme', onclick: () => ir('privacidade'), 'data-testid': 'ver-privacidade' }, 'Política de privacidade'))))
-}
-
-function telaRecuperar() {
-  const e = h('input', { type: 'email', class: 'modal-input', placeholder: 'voce@laracafe.adv.br', 'data-testid': 'rec-email' }); const msg = h('p', { class: 'text-sm', role: 'status', hidden: true })
-  return h('div', { class: 'min-h-screen flex items-center justify-center px-4 py-14 bg-cafe' }, h('div', { class: 'w-full max-w-md rounded-[2rem] bg-white/95 dark:bg-zinc-900/95 px-8 py-10 space-y-5 shadow-2xl' }, h('img', { src: LOGOS.monoDark, alt: 'Lara Café', class: 'h-12 w-auto mx-auto dark:invert' }), h('div', {}, h('h1', { class: 'text-2xl text-primary dark:text-zinc-100' }, 'Recuperar senha'), h('p', { class: 'text-sm text-gray-500' }, 'Informe seu e-mail para receber as instruções de recuperação.')),
-    h('form', { class: 'space-y-4', onsubmit: ev => { ev.preventDefault(); msg.hidden = false; if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.value)) { msg.className = 'text-sm text-danger'; msg.textContent = 'Informe um e-mail válido.'; return } msg.className = 'text-sm text-success'; msg.textContent = 'Se o e-mail existir, enviaremos as instruções. (Simulado: nenhum e-mail é enviado.)' } }, h('label', { class: 'block' }, rotuloCampo('E-mail'), e), msg, h('button', { type: 'submit', class: 'w-full rounded-full bg-primary text-white py-3 text-xs font-semibold uppercase tracking-wider' }, 'Enviar instruções')), h('button', { type: 'button', class: 'text-sm text-gray-500 hover:underline', onclick: () => ir('login') }, '← Voltar ao login')))
-}
-function telaPrivacidade() {
-  return h('div', { class: 'min-h-screen bg-[#edeae2] dark:bg-zinc-950 py-12 px-4' }, h('div', { class: 'max-w-3xl mx-auto px-6 py-12 rounded-[2rem] bg-white/70 dark:bg-zinc-900/60 border border-gray-200/70 dark:border-zinc-800 space-y-5 text-sm leading-relaxed' }, h('p', { class: 'eyebrow' }, 'Privacidade'), h('h1', { class: 'text-4xl text-primary dark:text-zinc-100' }, 'Como tratamos os dados'),
-    h('p', {}, 'Este sistema é de uso interno do escritório ', h('strong', {}, 'Lara Café Advocacia & Consultoria'), '. Ele guarda os dados que clientes e interessados informam no atendimento (inclusive pelo WhatsApp) exclusivamente para a prestação dos serviços jurídicos, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018) e com o dever de sigilo profissional.'),
-    h('p', {}, 'A política completa, com finalidades, bases legais, prazos de guarda e como exercer seus direitos, está publicada no site do escritório:'), h('a', { href: 'https://laracafe.com.br/politica-de-privacidade', target: '_blank', rel: 'noopener', class: 'inline-block px-6 py-2.5 rounded-full border border-primary/40 text-primary dark:text-zinc-200 text-xs font-semibold uppercase tracking-[0.14em] hover:bg-primary hover:text-white transition-colors' }, 'Ler a política de privacidade'),
-    h('p', { class: 'text-gray-500' }, 'Pedidos sobre seus dados: laracafe.adv@gmail.com'), btn('Voltar', { tipo: 'sec', onclick: () => ir('login') })))
-}

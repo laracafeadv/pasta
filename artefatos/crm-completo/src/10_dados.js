@@ -3,9 +3,9 @@
    - Estruturas = as do CRM real (shared/types/crm.ts). Os dados dos clientes são FICTÍCIOS (exemplo).
    - Os 66 modelos de mensagem e o formulário "Dados da consulta" são os reais.
    - Persistência: banco do Artifact (data/users/<id>/crm_<coleção>) quando disponível; senão localStorage. */
-const COLECOES = ['contatos', 'demandas', 'processos', 'partes', 'movimentacoes', 'etapas', 'pendencias', 'compromissos', 'tarefas', 'documentos', 'honorarios', 'lancamentos', 'atividades', 'mensagens', 'intimacoes', 'formularios', 'envios', 'modelos', 'notas', 'auditoria', 'iniciais']
+const COLECOES = ['contatos', 'demandas', 'processos', 'partes', 'movimentacoes', 'etapas', 'pendencias', 'compromissos', 'tarefas', 'documentos', 'honorarios', 'lancamentos', 'atividades', 'comunicacoes', 'intimacoes', 'formularios', 'envios', 'modelos', 'notas', 'auditoria', 'iniciais']
 const DB = {}
-const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {} }
+const CONFIG = { escritorio: {}, gestao: {}, perfil: {}, revisoes: [], checklist_manual: {}, seq: {}, ia: { ativa: false }, email_sync: null }
 const ARM = { modo: 'memoria', uid: null, colecao: null, pendente: new Set(), timer: null, estado: 'iniciando' }
 
 const d = n => hojeISO(n)
@@ -100,25 +100,29 @@ function montarSemente() {
     A(1, 6, 'Reunião', 'Consulta realizada por vídeo; decidido divórcio extrajudicial.', 30), A(2, 6, 'Documento recebido', 'Recebeu RG, CPF e certidão de casamento.', 22, { caso_id: 1 }), A(3, 6, 'WhatsApp', 'Enviada a lista de documentos dos imóveis.', 15, { caso_id: 1 }),
     A(4, 7, 'Anotação', 'Herdeiro Antônio pediu nova avaliação do imóvel.', 9, { caso_id: 2 }), A(5, 4, 'Reunião', 'Consulta estratégica concluída.', 1), A(6, 10, 'Relacionamento', 'Nota 10 na pesquisa de satisfação.', 30),
   ]
-  const M = (id, contato_id, direcao, texto, min) => ({ id, contato_id, direcao, tipo: 'texto', texto, created_at: agora(-min), lida: direcao === 'saida' })
-  const mensagens = [
-    M(1, 1, 'entrada', 'Oi, boa tarde! Vi seu Instagram. Quero saber como funciona um divórcio com acordo.', 40), M(2, 1, 'entrada', 'Tenho dois filhos pequenos, isso muda alguma coisa?', 38),
-    M(3, 2, 'entrada', 'Meu pai faleceu em maio, preciso fazer o inventário.', 60 * 26), M(4, 2, 'saida', 'Sinto muito pela perda. Posso te explicar os caminhos em uma conversa rápida?', 60 * 25),
-    M(5, 4, 'saida', 'Obrigada pela confiança na consulta de hoje, Patrícia. Amanhã envio nosso feedback.', 60 * 24), M(6, 6, 'entrada', 'Dra., a certidão do apartamento saiu! Mando por aqui?', 60 * 5),
+  // Comunicações: um único registro para WhatsApp, e-mail, ligação e reunião (substitui "mensagens" e as anotações de contato).
+  const M = (id, contato_id, canal, direcao, texto, min, extra) => ({ id, contato_id, caso_id: null, processo_id: null, canal, direcao, assunto: null, texto, anexos: [], origem: 'manual', ext_id: null, link: null, lida: direcao === 'saida', created_at: agora(-min), ...extra })
+  const comunicacoes = [
+    M(1, 1, 'whatsapp', 'entrada', 'Oi, boa tarde! Vi seu Instagram. Quero saber como funciona um divórcio com acordo.', 40), M(2, 1, 'whatsapp', 'entrada', 'Tenho dois filhos pequenos, isso muda alguma coisa?', 38),
+    M(3, 2, 'whatsapp', 'entrada', 'Meu pai faleceu em maio, preciso fazer o inventário.', 60 * 26), M(4, 2, 'whatsapp', 'saida', 'Sinto muito pela perda. Posso te explicar os caminhos em uma conversa rápida?', 60 * 25),
+    M(5, 4, 'whatsapp', 'saida', 'Obrigada pela confiança na consulta de hoje, Patrícia. Amanhã envio nosso feedback.', 60 * 24), M(6, 6, 'whatsapp', 'entrada', 'Dra., a certidão do apartamento saiu! Mando por aqui?', 60 * 5, { caso_id: 1 }),
+    M(7, 6, 'email', 'saida', 'Segue a minuta da escritura para sua conferência. Qualquer ajuste me diga até sexta.', 60 * 24 * 3, { caso_id: 1, assunto: 'Minuta da escritura de divórcio', anexos: [{ nome: 'minuta-escritura.docx' }] }),
+    M(8, 6, 'email', 'entrada', 'Li a minuta e está tudo certo. Pode seguir para o cartório.', 60 * 24 * 2, { caso_id: 1, assunto: 'Re: Minuta da escritura de divórcio', lida: true }),
+    M(9, 7, 'ligacao', 'saida', 'Liguei para informar sobre a nova avaliação do imóvel; ela concordou com o laudo.', 60 * 24 * 9, { caso_id: 2, processo_id: 2 }),
   ]
   const I = (id, contato_id, caso_id, processo_id, tipo, texto, data, status) => ({ id, created_at: agora(-60 * 24), contato_id, caso_id, processo_id, tipo, texto, data_publicacao: data, status, prazo_dias: null, observacao: null })
   const intimacoes = [
     I(1, 7, 2, 2, 'Despacho', 'Intime-se o inventariante para se manifestar sobre o laudo de avaliação em 15 dias.', d(-1), 'a_tratar'),
     I(2, 8, 3, 3, 'Audiência designada', 'Designada audiência de conciliação.', d(-6), 'tratada'),
   ]
-  return { contatos, demandas, processos, partes, movimentacoes, etapas, pendencias, compromissos, tarefas, documentos, honorarios, lancamentos, atividades, mensagens, intimacoes, modelos: MODELOS.map((m, i) => ({ id: i + 1, ...m })), notas: [{ id: 1, caso_id: 2, tipo: 'observacao', texto: 'Cliente pediu relatório quinzenal.', created_at: agora(-60 * 24 * 6), autor_nome: 'Lara Café' }], auditoria: [], iniciais: semearIniciais(), formularios: semearFormularios(), envios: semearEnvios() }
+  return { contatos, demandas, processos, partes, movimentacoes, etapas, pendencias, compromissos, tarefas, documentos, honorarios, lancamentos, atividades, comunicacoes, intimacoes, modelos: MODELOS.map((m, i) => ({ id: i + 1, ...m })), notas: [{ id: 1, caso_id: 2, tipo: 'observacao', texto: 'Cliente pediu relatório quinzenal.', created_at: agora(-60 * 24 * 6), autor_nome: 'Lara Café' }], auditoria: [], iniciais: semearIniciais(), formularios: semearFormularios(), envios: semearEnvios() }
 }
 
 const ESCRITORIO_EXEMPLO = { advogada_nome: 'Lara Café', oab: '00000/BA', advogada_qualificacao: 'brasileira, solteira', email: 'contato@exemplo.com.br', telefone: '(71) 90000-0000', endereco: 'Rua Exemplo, 100, Pituba, Salvador/BA', cidade_foro: 'Salvador/BA', proposta_valor: 'Advocacia humana e estratégica para famílias e sucessões.', tom_de_voz: 'Acolhedor; sem ponto final no fim das mensagens.', nao_atende: 'Trabalhista e previdenciário: encaminho a parceiras.', valor_consulta: 'R$ 350,00', consulta_abatida: 'sim', duracao_consulta: '60 minutos', plataforma_consulta: 'Google Meet', horario_atendimento: 'segunda a sexta, das 9h às 18h', chave_pix: 'exemplo@pix.com', dados_bancarios: 'Banco, agência, conta, titular (exemplo)', link_avaliacao: 'https://g.page/exemplo' }
 const GESTAO_EXEMPLO = { horas_produtivas_mes: 120, margem_desejada: 30, saldo_caixa: 8500, pro_labore: 6000, horas_estimadas: 20 }
 
 /* ---------- persistência ---------- */
-function carregarSemente() { const s = montarSemente(); for (const c of COLECOES) DB[c] = s[c] || []; CONFIG.escritorio = clonar(ESCRITORIO_EXEMPLO); CONFIG.gestao = clonar(GESTAO_EXEMPLO); CONFIG.perfil = { nome: 'Lara Café', papel: 'admin', email: 'contato@exemplo.com.br' }; CONFIG.revisoes = []; CONFIG.checklist_manual = {}; CONFIG.seq = {} }
+function carregarSemente() { const s = montarSemente(); for (const c of COLECOES) DB[c] = s[c] || []; CONFIG.escritorio = clonar(ESCRITORIO_EXEMPLO); CONFIG.gestao = clonar(GESTAO_EXEMPLO); CONFIG.perfil = { nome: 'Lara Café', papel: 'admin', email: 'contato@exemplo.com.br' }; CONFIG.revisoes = []; CONFIG.checklist_manual = {}; CONFIG.seq = {}; CONFIG.ia = { ativa: false }; CONFIG.email_sync = null }
 function salvar(col) { ARM.pendente.add(col || '*'); clearTimeout(ARM.timer); ARM.timer = setTimeout(descarregar, 500); renderBarraArmazenamento() }
 async function descarregar() {
   const cols = ARM.pendente.has('*') ? [...COLECOES, 'config'] : [...ARM.pendente]; ARM.pendente.clear()
@@ -141,12 +145,13 @@ async function iniciarArmazenamento(aoCarregar) {
       const meta = await ARM.colecao.doc('crm_meta').get()
       if (meta.exists) {
         for (const c of COLECOES) { const s = await ARM.colecao.doc('crm_' + c).get(); if (s.exists) DB[c] = JSON.parse(s.data().v) }
+        { const m = await ARM.colecao.doc('crm_mensagens').get(); if (m.exists && !DB.comunicacoes.some(x => x.origem === 'migrado') && JSON.parse(m.data().v).length && DB.comunicacoes.length === 0) migrarMensagens(JSON.parse(m.data().v)) }
         const cf = await ARM.colecao.doc('crm_config').get(); if (cf.exists) Object.assign(CONFIG, JSON.parse(cf.data().v))
         ARM.estado = 'carregado do banco'
       } else { await ARM.colecao.doc('crm_meta').set({ semeado: true, em: agora(), versao: 1 }); ARM.pendente.add('*'); await descarregar(); ARM.estado = 'dados de exemplo gravados' }
     } else {
       const s = lsGet('db', null)
-      if (s && s.DB) { Object.assign(DB, s.DB); Object.assign(CONFIG, s.CONFIG); ARM.estado = 'carregado deste navegador' } else ARM.estado = 'dados de exemplo (neste navegador)'
+      if (s && s.DB) { Object.assign(DB, s.DB); Object.assign(CONFIG, s.CONFIG); if (s.DB.mensagens && !(s.DB.comunicacoes || []).length) migrarMensagens(s.DB.mensagens); delete DB.mensagens; ARM.estado = 'carregado deste navegador' } else ARM.estado = 'dados de exemplo (neste navegador)'
       ARM.modo = 'local'
     }
   } catch (e) { ARM.estado = 'sem banco: usando o navegador'; ARM.modo = 'local' }
@@ -178,12 +183,12 @@ function hojeItens() {
   for (const c of DB.contatos) {
     if (c.proxima_data && c.proxima_data <= h && ['novo', 'qualificacao', 'agendado', 'diagnostico', 'proposta', 'ativo', 'concluido'].includes(c.etapa)) it.push({ tipo: 'acao', contato_id: c.id, titulo: c.proxima_acao || 'Próxima ação', quando: c.proxima_data, atraso: c.proxima_data < h, modelo: Object.values(CRM.CADENCIA).find(x => x.acao === c.proxima_acao)?.modelo || null })
     if (c.data_nascimento && c.data_nascimento.slice(5) === h.slice(5) && c.etapa !== 'perdido') it.push({ tipo: 'aniversario', contato_id: c.id, titulo: 'Aniversário de ' + (c.nome || ''), quando: h, modelo: '/aniversario' })
-    if (c.etapa === 'ativo' && c.ultimo_contato_em && diasEntre(diaDe(c.ultimo_contato_em), h) >= 7) it.push({ tipo: 'relatorio', contato_id: c.id, titulo: 'Cliente ativa há ' + diasEntre(diaDe(c.ultimo_contato_em), h) + ' dias sem novidade', quando: h, modelo: '/relatorio-semanal' })
+    const uc = ultimoContato(c); if (c.etapa === 'ativo' && uc && diasEntre(diaDe(uc), h) >= 7) it.push({ tipo: 'relatorio', contato_id: c.id, titulo: 'Cliente ativa há ' + diasEntre(diaDe(uc), h) + ' dias sem comunicação', quando: h, modelo: '/relatorio-semanal' })
   }
   for (const t of DB.tarefas) if (!t.concluida && t.prazo <= h) it.push({ tipo: 'tarefa', contato_id: t.contato_id, tarefa_id: t.id, titulo: t.titulo, quando: t.prazo, atraso: t.prazo < h })
   for (const p of DB.compromissos) if (p.status === 'pendente' && (p.tipo === 'prazo') && diaDe(dataDoCompromisso(p)) <= hojeISO(2)) it.push({ tipo: 'prazo', contato_id: p.contato_id, compromisso_id: p.id, titulo: p.titulo, quando: diaDe(dataDoCompromisso(p)), atraso: diaDe(dataDoCompromisso(p)) < h })
   for (const m of DB.intimacoes) if (m.status === 'a_tratar') it.push({ tipo: 'intimacao', contato_id: m.contato_id, intimacao_id: m.id, titulo: 'Intimação a tratar: ' + m.tipo, quando: m.data_publicacao })
-  for (const m of DB.mensagens) if (m.direcao === 'entrada' && !m.lida) it.push({ tipo: 'mensagem', contato_id: m.contato_id, titulo: 'Mensagem sem resposta: “' + m.texto.slice(0, 46) + '…”', quando: diaDe(m.created_at) })
+  for (const m of DB.comunicacoes) if (m.direcao === 'entrada' && !m.lida) it.push({ tipo: 'mensagem', contato_id: m.contato_id, titulo: (m.canal === 'email' ? 'E-mail recebido: ' : 'Mensagem sem resposta: ') + '“' + (m.assunto || m.texto).slice(0, 46) + '…”', quando: diaDe(m.created_at) })
   return it.sort((a, b) => (a.quando < b.quando ? -1 : 1))
 }
 function remarketingElegiveis() {
@@ -232,7 +237,7 @@ function excluirDemanda(dm) { if (DB.processos.some(p => p.caso_id === dm.id)) r
 function excluirProcesso(p) { DB.movimentacoes = DB.movimentacoes.filter(x => x.processo_id !== p.id); DB.etapas = DB.etapas.filter(x => x.processo_id !== p.id); DB.pendencias = DB.pendencias.filter(x => x.processo_id !== p.id); DB.processos = DB.processos.filter(x => x.id !== p.id); DB.compromissos.forEach(x => { if (x.processo_id === p.id) x.processo_id = null }); auditar('excluir_processo', p.numero || p.orgao || String(p.id)); ['movimentacoes', 'etapas', 'pendencias', 'processos', 'compromissos'].forEach(salvar); return { ok: true } }
 function excluirContato(c) {
   if (demandasDe(c.id).length) return { erro: 'Esta pessoa tem demandas. Encerre/remova as demandas antes de excluir o cadastro.' }
-  DB.contatos = DB.contatos.filter(x => x.id !== c.id); for (const col of ['atividades', 'mensagens', 'tarefas', 'documentos', 'honorarios', 'compromissos', 'envios']) DB[col] = DB[col].filter(x => x.contato_id !== c.id)
+  DB.contatos = DB.contatos.filter(x => x.id !== c.id); for (const col of ['atividades', 'comunicacoes', 'tarefas', 'documentos', 'honorarios', 'compromissos', 'envios']) DB[col] = DB[col].filter(x => x.contato_id !== c.id)
   auditar('excluir_contato', c.nome || c.telefone); COLECOES.forEach(salvar); return { ok: true }
 }
 function concluirTarefa(t, v = true) { t.concluida = v; t.updated_at = agora(); salvar('tarefas'); if (t.contato_id) registrar(t.contato_id, 'Anotação', (v ? 'Tarefa concluída: ' : 'Tarefa reaberta: ') + t.titulo, t.caso_id) }
@@ -262,3 +267,19 @@ function semearIniciais() {
     I(4, 'Luciana Martins', 'Ação de reconhecimento de união estável', 'Família', 'produzir', d(6), null, 'baixa', [['Provas da convivência', false]]),
   ]
 }
+
+/* ---------- comunicação: último contato e linha do tempo (derivados, sem digitar nada) ---------- */
+const CANAIS = { whatsapp: ['WhatsApp', 'ph:whatsapp-logo-bold'], email: ['E-mail', 'ph:envelope-simple-bold'], ligacao: ['Ligação', 'ph:phone-bold'], reuniao: ['Reunião', 'ph:users-bold'], nota: ['Anotação', 'ph:note-pencil-bold'] }
+const comunicacoesDe = (cid, caso) => DB.comunicacoes.filter(m => m.contato_id === cid && (caso == null || m.caso_id === caso)).sort((a, b) => a.created_at.localeCompare(b.created_at))
+const ultimoContato = c => { const m = DB.comunicacoes.filter(x => x.contato_id === c.id).map(x => x.created_at).sort().pop(); return [m, c.ultimo_contato_em].filter(Boolean).sort().pop() || null }
+function novaComunicacao(o) { const m = { id: proximoId('comunicacoes'), caso_id: null, processo_id: null, assunto: null, anexos: [], origem: 'manual', ext_id: null, link: null, created_at: agora(), lida: o.direcao === 'saida', ...o }; DB.comunicacoes.push(m); const c = contato(m.contato_id); if (c) { c.ultimo_contato_em = m.created_at; c.updated_at = agora(); if (m.direcao === 'entrada') c.ultima_mensagem_em = m.created_at; salvar('contatos') } salvar('comunicacoes'); return m }
+/** Linha do tempo única: comunicações + anotações/eventos + movimentações + notas da análise. Filtra por pessoa e/ou demanda. */
+function linhaDoTempo({ contato_id, caso_id }) {
+  const it = []
+  for (const m of DB.comunicacoes) if ((contato_id == null || m.contato_id === contato_id) && (caso_id == null || m.caso_id === caso_id)) it.push({ quando: m.created_at, tipo: CANAIS[m.canal][0], icone: CANAIS[m.canal][1], titulo: (m.direcao === 'entrada' ? 'Recebido' : 'Enviado') + (m.assunto ? ' — ' + m.assunto : ''), texto: m.texto, origem: 'comunicacao' })
+  for (const a of DB.atividades) if ((contato_id == null || a.contato_id === contato_id) && (caso_id == null || a.caso_id === caso_id)) it.push({ quando: a.created_at, tipo: a.tipo, icone: 'ph:clock-counter-clockwise-bold', titulo: a.tipo, texto: a.texto, origem: 'atividade' })
+  if (caso_id != null) { for (const p of DB.processos.filter(p => p.caso_id === caso_id)) for (const mv of DB.movimentacoes.filter(x => x.processo_id === p.id)) it.push({ quando: mv.data + 'T12:00:00', tipo: mv.tipo, icone: 'ph:gavel-bold', titulo: mv.tipo, texto: mv.texto, origem: 'movimentacao' }); for (const n of DB.notas.filter(n => n.caso_id === caso_id)) it.push({ quando: n.created_at, tipo: 'Análise', icone: 'ph:scales-bold', titulo: CRM.TIPOS_NOTA_DEMANDA[n.tipo], texto: n.texto, origem: 'nota' }) }
+  return it.sort((a, b) => b.quando.localeCompare(a.quando))
+}
+
+function migrarMensagens(antigas) { DB.comunicacoes = antigas.map((m, i) => ({ id: i + 1, caso_id: null, processo_id: null, canal: 'whatsapp', direcao: m.direcao, assunto: null, texto: m.texto, anexos: [], origem: 'migrado', ext_id: null, link: null, lida: !!m.lida, created_at: m.created_at, contato_id: m.contato_id })) }
